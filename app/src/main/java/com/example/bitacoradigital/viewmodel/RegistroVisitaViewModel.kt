@@ -127,6 +127,56 @@ class RegistroVisitaViewModel(
         fotosAdicionales.value = fotosAdicionales.value - uri
     }
 
+    fun registrarVisita() {
+        viewModelScope.launch {
+            try {
+                val token = sessionPrefs.sessionToken.first() ?: throw Exception("Token vacío")
+
+                val zonaId = obtenerDestinoFinal()?.perimetroId
+                    ?: throw Exception("Zona destino no seleccionada")
+
+                val fechaIso8601 = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
+
+                val json = org.json.JSONObject().apply {
+                    put("nombre", nombre.value)
+                    put("apellido_pat", apellidoPaterno.value)
+                    put("apellido_mat", apellidoMaterno.value)
+                    put("numero", telefono.value)
+                    put("id_perimetro", zonaId)
+                    put("fecha", fechaIso8601)
+                }
+
+                val mediaType = "application/json; charset=utf-8".toMediaType()
+                val body = json.toString().toRequestBody(mediaType)
+
+                val request = Request.Builder()
+                    .url("http://bitacora.cs3.mx:8001/api/v1/registro-visita/")
+                    .post(body)
+                    .addHeader("x-session-token", token)
+                    .addHeader("Content-Type", "application/json")
+                    .build()
+
+                val client = OkHttpClient()
+                val response = withContext(Dispatchers.IO) {
+                    client.newCall(request).execute()
+                }
+
+                if (response.isSuccessful) {
+                    Log.d("RegistroVisita", "Registro exitoso: ${response.body?.string()}")
+                    registroCompleto.value = true
+                } else {
+                    val errorBody = response.body?.string()
+                    Log.e("RegistroVisita", "Error en el registro: $errorBody")
+                    _errorDestino.value = "Registro fallido: ${response.code}"
+                }
+
+            } catch (e: Exception) {
+                Log.e("RegistroVisita", "Excepción en el registro", e)
+                _errorDestino.value = "Error al registrar visita: ${e.localizedMessage}"
+            }
+        }
+    }
+
 }
 data class NivelDestino(
     val nivel: Int,
@@ -138,55 +188,6 @@ data class OpcionDestino(
     val perimetroId: Int,
     val nombre: String
 )
-fun registrarVisita() {
-    viewModelScope.launch {
-        try {
-            val token = sessionPrefs.sessionToken.first() ?: throw Exception("Token vacío")
-
-            val zonaId = obtenerDestinoFinal()?.perimetroId
-                ?: throw Exception("Zona destino no seleccionada")
-
-            val fechaIso8601 = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
-
-            val json = org.json.JSONObject().apply {
-                put("nombre", nombre.value)
-                put("apellido_pat", apellidoPaterno.value)
-                put("apellido_mat", apellidoMaterno.value)
-                put("numero", telefono.value)
-                put("id_perimetro", zonaId)
-                put("fecha", fechaIso8601)
-            }
-
-            val mediaType = "application/json; charset=utf-8".toMediaType()
-            val body = json.toString().toRequestBody(mediaType)
-
-            val request = Request.Builder()
-                .url("http://bitacora.cs3.mx:8001/api/v1/registro-visita/")
-                .post(body)
-                .addHeader("x-session-token", token)
-                .addHeader("Content-Type", "application/json")
-                .build()
-
-            val client = OkHttpClient()
-            val response = withContext(Dispatchers.IO) {
-                client.newCall(request).execute()
-            }
-
-            if (response.isSuccessful) {
-                Log.d("RegistroVisita", "Registro exitoso: ${response.body?.string()}")
-                registroCompleto.value = true
-            } else {
-                val errorBody = response.body?.string()
-                Log.e("RegistroVisita", "Error en el registro: $errorBody")
-                _errorDestino.value = "Registro fallido: ${response.code}"
-            }
-
-        } catch (e: Exception) {
-            Log.e("RegistroVisita", "Excepción en el registro", e)
-            _errorDestino.value = "Error al registrar visita: ${e.localizedMessage}"
-        }
-    }
-}
 
 
 
