@@ -50,7 +50,7 @@ fun PasoConfirmacion(viewModel: RegistroVisitaViewModel) {
                 Text("👤 Nombre: $nombre $paterno $materno")
                 destino?.let {
                     Spacer(Modifier.height(4.dp))
-                    Text("📍 Destino: Perímetro ID $it") // Puedes mejorar esto con una función de nombre si lo tienes
+                    Text("📍 Destino: ${it.nombre} (ID ${it.perimetro_id})")
                 }
             }
         }
@@ -91,7 +91,7 @@ fun PasoConfirmacion(viewModel: RegistroVisitaViewModel) {
 
         Button(
             onClick = {
-                viewModel.registroCompleto.value = true // futuro: mandar a endpoint
+                viewModel.registrarVisita()
                 viewModel.avanzarPaso()
             },
             modifier = Modifier.fillMaxWidth()

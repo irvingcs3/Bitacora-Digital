@@ -134,7 +134,7 @@ class RegistroVisitaViewModel(
             try {
                 val token = sessionPrefs.sessionToken.first() ?: throw Exception("Token vacío")
 
-                val zonaId = obtenerDestinoFinal()?.perimetroId
+                val zonaId = destinoSeleccionado.value?.perimetro_id
                     ?: throw Exception("Zona destino no seleccionada")
 
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
