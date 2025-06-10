@@ -14,7 +14,7 @@ interface AuthApi {
     suspend fun login(@Body request: LoginRequest): LoginResponse
 
     @POST("_allauth/app/v1/auth/signup")
-    suspend fun signup(@Body request: SignupRequest): SignupResponse
+    suspend fun signup(@Body request: SignupRequest): retrofit2.Response<SignupResponse>
 
     @POST("_allauth/app/v1/auth/email/verify")
     suspend fun verifyEmail(
