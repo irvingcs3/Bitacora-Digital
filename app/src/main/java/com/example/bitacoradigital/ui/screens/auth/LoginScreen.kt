@@ -25,6 +25,7 @@ fun LoginScreen(
     homeViewModel: HomeViewModel, // ← NUEVO
     onLoginSuccess: () -> Unit,
     onLoginDenied: () -> Unit,
+    onAwaitCode: () -> Unit = {},
     onRegisterClick: () -> Unit,
     onForgotPasswordClick: () -> Unit = {}
 )
@@ -93,7 +94,8 @@ fun LoginScreen(
                         }
                         onLoginSuccess()
                     },
-                    onLoginDenied = onLoginDenied
+                    onLoginDenied = onLoginDenied,
+                    onAwaitCode = onAwaitCode
                 )
             },
             modifier = Modifier.fillMaxWidth()

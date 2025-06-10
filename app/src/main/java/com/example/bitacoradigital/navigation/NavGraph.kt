@@ -57,6 +57,7 @@ fun AppNavGraph(
                 homeViewModel = homeViewModel, // ⬅️ IMPORTANTE
                 onLoginSuccess = { navController.navigate("home") { popUpTo("login") { inclusive = true } } },
                 onLoginDenied = { navController.navigate("denegado") { popUpTo("login") { inclusive = true } } },
+                onAwaitCode = { navController.navigate("verify") },
                 onRegisterClick = { navController.navigate("register") }
             )
         }
