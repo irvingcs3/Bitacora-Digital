@@ -1,0 +1,89 @@
+package com.example.bitacoradigital.viewmodel
+
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.example.bitacoradigital.data.SessionPreferences
+import com.example.bitacoradigital.model.User
+import com.example.bitacoradigital.network.RetrofitInstance
+import com.google.gson.Gson
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+
+class SessionViewModel(application: Application) : AndroidViewModel(application) {
+
+    val prefs = SessionPreferences(application)
+    private val gson = Gson()
+    val sessionToken: StateFlow<String?> get() = _token
+
+    private val _usuario = MutableStateFlow<User?>(null)
+    val usuario: StateFlow<User?> = _usuario.asStateFlow()
+
+    private val _token = MutableStateFlow<String?>(null)
+    val token: StateFlow<String?> = _token.asStateFlow()
+
+    private val _tieneAccesoABitacora = MutableStateFlow<Boolean?>(null)
+    val tieneAccesoABitacora: StateFlow<Boolean?> = _tieneAccesoABitacora.asStateFlow()
+    val favoritoEmpresaId = prefs.favoritoEmpresaId
+    val favoritoPerimetroId = prefs.favoritoPerimetroId
+
+
+    init {
+        recuperarSesion()
+    }
+
+    private fun recuperarSesion() {
+        viewModelScope.launch {
+            prefs.sessionToken.combine(prefs.jsonSession) { token, json ->
+                try {
+                    if (!token.isNullOrBlank() && !json.isNullOrBlank()) {
+                        val user = gson.fromJson(json, User::class.java)
+                        val acceso = user.empresas.any { it.B }
+
+                        _token.value = token
+                        _usuario.value = user
+                        _tieneAccesoABitacora.value = acceso
+                    } else {
+                        // Si están vacíos o nulos
+                        _tieneAccesoABitacora.value = null
+                    }
+                } catch (e: Exception) {
+                    // Si hay error al deserializar, limpiamos sesión
+                    prefs.cerrarSesion()
+                    _tieneAccesoABitacora.value = null
+                }
+            }.collect()
+        }
+    }
+
+
+    suspend fun guardarSesion(token: String, user: User) {
+        _token.value = token
+        _usuario.value = user
+        val tieneAcceso = user.empresas.any { it.B }
+        _tieneAccesoABitacora.value = tieneAcceso
+        prefs.guardarSesion(token, user.id, gson.toJson(user))
+    }
+
+    suspend fun cerrarSesion() {
+        prefs.cerrarSesion()
+        _token.value = null
+        _usuario.value = null
+        _tieneAccesoABitacora.value = null // ← esto es CRUCIAL
+    }
+
+    companion object {
+        fun Factory(context: Context): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return SessionViewModel(context.applicationContext as Application) as T
+                }
+            }
+        }
+    }
+
+}

@@ -1,0 +1,67 @@
+package com.example.bitacoradigital.viewmodel
+
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.bitacoradigital.model.PerimetroVisual
+import com.example.bitacoradigital.model.User
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import com.example.bitacoradigital.viewmodel.SessionViewModel
+
+class HomeViewModel : ViewModel() {
+
+    private val _perimetrosVisuales = MutableStateFlow<List<PerimetroVisual>>(emptyList())
+    val perimetrosVisuales: StateFlow<List<PerimetroVisual>> = _perimetrosVisuales
+
+    private val _perimetroSeleccionado = MutableStateFlow<PerimetroVisual?>(null)
+    val perimetroSeleccionado: StateFlow<PerimetroVisual?> = _perimetroSeleccionado
+
+    fun cargarDesdeLogin(user: User, sessionViewModel: SessionViewModel) {
+        val lista = mutableListOf<PerimetroVisual>()
+
+        user.empresas.filter { it.B }.forEach { empresa ->
+            empresa.perimetros.forEach { p ->
+                p.rol.forEach { (rol, modulos) ->
+                    lista.add(
+                        PerimetroVisual(
+                            empresaId = empresa.id,
+                            empresaNombre = empresa.nombre,
+                            perimetroId = p.id,
+                            perimetroNombre = p.nombre,
+                            rol = rol,
+                            modulos = modulos
+                        )
+                    )
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            val favEmpresaId = sessionViewModel.favoritoEmpresaId.firstOrNull()
+            val favPerimetroId = sessionViewModel.favoritoPerimetroId.firstOrNull()
+
+            val actualizados = lista.map {
+                it.copy(esFavorito = it.empresaId == favEmpresaId && it.perimetroId == favPerimetroId)
+            }
+            _perimetrosVisuales.value = actualizados
+            _perimetroSeleccionado.value = actualizados.firstOrNull { it.esFavorito } ?: actualizados.firstOrNull()
+        }
+    }
+
+    fun seleccionarPerimetro(perimetroVisual: PerimetroVisual) {
+        _perimetroSeleccionado.value = perimetroVisual
+    }
+
+    fun marcarFavorito(perimetroId: Int, empresaId: Int, sessionViewModel: SessionViewModel) {
+        viewModelScope.launch {
+            sessionViewModel.prefs.guardarFavorito(empresaId, perimetroId)
+        }
+        _perimetrosVisuales.update { list ->
+            list.map {
+                it.copy(esFavorito = it.perimetroId == perimetroId && it.empresaId == empresaId)
+            }
+        }
+    }
+}
+
