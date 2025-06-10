@@ -21,8 +21,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
-import java.time.Instant
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 class RegistroVisitaViewModel(
     private val apiService: ApiService,
@@ -135,7 +137,10 @@ class RegistroVisitaViewModel(
                 val zonaId = obtenerDestinoFinal()?.perimetroId
                     ?: throw Exception("Zona destino no seleccionada")
 
-                val fechaIso8601 = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }
+                val fechaIso8601 = dateFormat.format(Date())
 
                 val json = org.json.JSONObject().apply {
                     put("nombre", nombre.value)
