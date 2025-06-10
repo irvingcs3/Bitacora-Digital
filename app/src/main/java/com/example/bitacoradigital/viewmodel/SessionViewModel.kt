@@ -68,6 +68,10 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         prefs.guardarSesion(token, user.id, gson.toJson(user))
     }
 
+    fun setTemporalToken(token: String) {
+        _token.value = token
+    }
+
     suspend fun cerrarSesion() {
         prefs.cerrarSesion()
         _token.value = null

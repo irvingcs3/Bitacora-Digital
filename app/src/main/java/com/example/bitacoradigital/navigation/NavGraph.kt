@@ -11,6 +11,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import com.example.bitacoradigital.ui.screens.auth.LoginScreen
+import com.example.bitacoradigital.ui.screens.auth.SignupScreen
+import com.example.bitacoradigital.ui.screens.auth.VerificationScreen
 import androidx.navigation.compose.composable
 import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.network.ApiService
@@ -18,6 +20,7 @@ import com.example.bitacoradigital.ui.screens.*
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
+import com.example.bitacoradigital.viewmodel.SignupViewModel
 
 
 @Composable
@@ -43,6 +46,8 @@ fun AppNavGraph(
     }
 
 
+    val signupViewModel: SignupViewModel = viewModel()
+
     NavHost(navController = navController, startDestination = startDestination) {
 
         composable("login") {
@@ -52,7 +57,27 @@ fun AppNavGraph(
                 homeViewModel = homeViewModel, // ⬅️ IMPORTANTE
                 onLoginSuccess = { navController.navigate("home") { popUpTo("login") { inclusive = true } } },
                 onLoginDenied = { navController.navigate("denegado") { popUpTo("login") { inclusive = true } } },
-                onRegisterClick = { /* pendiente */ }
+                onRegisterClick = { navController.navigate("register") }
+            )
+        }
+
+        composable("register") {
+            SignupScreen(
+                signupViewModel = signupViewModel,
+                sessionViewModel = sessionViewModel,
+                onAwaitCode = { navController.navigate("verify") },
+                onLoginClick = { navController.popBackStack() }
+            )
+        }
+
+        composable("verify") {
+            VerificationScreen(
+                signupViewModel = signupViewModel,
+                sessionViewModel = sessionViewModel,
+                homeViewModel = homeViewModel,
+                onVerified = {
+                    navController.navigate("home") { popUpTo("login") { inclusive = true } }
+                }
             )
         }
         composable("visitas") {
