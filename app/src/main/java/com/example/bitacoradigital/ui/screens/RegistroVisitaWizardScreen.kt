@@ -21,6 +21,7 @@ import com.example.bitacoradigital.ui.screens.registrovisita.PasoFotos
 import com.example.bitacoradigital.ui.screens.registrovisita.PasoTelefono
 import com.example.bitacoradigital.ui.screens.registrovisita.PasoVerificacion
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModelFactory
+import com.example.bitacoradigital.ui.components.Stepper
 
 
 @Composable
@@ -36,7 +37,7 @@ fun RegistroVisitaWizardScreen(perimetroId: Int) {
     val pasoActual by viewModel.pasoActual.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Stepper(pasoActual)
+        Stepper(pasoActual, totalPasos = 7)
         Spacer(Modifier.height(24.dp))
 
         when (pasoActual) {
@@ -47,22 +48,6 @@ fun RegistroVisitaWizardScreen(perimetroId: Int) {
             5 -> PasoFotos(viewModel)
             6 -> PasoConfirmacion(viewModel)
             7 -> PasoFinal(viewModel)
-        }
-    }
-}
-
-
-@Composable
-fun Stepper(paso: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        repeat(5) {
-            val color = if (it + 1 == paso) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(4.dp)
-                    .background(color)
-            )
         }
     }
 }
