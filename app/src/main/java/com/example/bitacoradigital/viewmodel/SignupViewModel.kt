@@ -10,6 +10,7 @@ import com.example.bitacoradigital.model.SignupResponse
 import com.example.bitacoradigital.model.VerifyEmailRequest
 import com.example.bitacoradigital.network.RetrofitInstance
 import com.google.gson.Gson
+
 import kotlinx.coroutines.launch
 
 class SignupViewModel : ViewModel() {
@@ -48,6 +49,7 @@ class SignupViewModel : ViewModel() {
                 } else {
                     signupState = "Error: ${response.code()}"
                 }
+
             } catch (e: Exception) {
                 signupState = "Error: ${e.localizedMessage}"
             }
