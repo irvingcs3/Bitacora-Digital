@@ -50,6 +50,10 @@ class RegistroVisitaViewModel(
 
     val destinoSeleccionado = MutableStateFlow<JerarquiaNodo?>(null)
 
+    // Ruta de navegación dentro de la jerarquía
+    private val _rutaDestino = MutableStateFlow<List<JerarquiaNodo>>(emptyList())
+    val rutaDestino: StateFlow<List<JerarquiaNodo>> = _rutaDestino
+
     var fotosOpcionales = MutableStateFlow<List<String>>(emptyList())
 
     fun avanzarPaso() {
@@ -75,6 +79,7 @@ class RegistroVisitaViewModel(
         apellidoPaterno.value = ""
         apellidoMaterno.value = ""
         destinoSeleccionado.value = null
+        _rutaDestino.value = emptyList()
         fotosOpcionales.value = emptyList()
     }
     val nivelesDestino = MutableStateFlow<List<NivelDestino>>(emptyList())
@@ -91,6 +96,25 @@ class RegistroVisitaViewModel(
     fun obtenerDestinoFinal(): OpcionDestino? {
         val ultimoNivel = nivelesDestino.value.maxOfOrNull { it.nivel } ?: return null
         return seleccionDestino.value[ultimoNivel]
+    }
+
+    fun iniciarRuta(nodo: JerarquiaNodo) {
+        _rutaDestino.value = listOf(nodo)
+        destinoSeleccionado.value = null
+    }
+
+    fun navegarHacia(nodo: JerarquiaNodo) {
+        _rutaDestino.update { it + nodo }
+        if (nodo.children.isEmpty()) {
+            destinoSeleccionado.value = nodo
+        } else {
+            destinoSeleccionado.value = null
+        }
+    }
+
+    fun retrocederNivel() {
+        _rutaDestino.update { path -> if (path.isNotEmpty()) path.dropLast(1) else path }
+        destinoSeleccionado.value = null
     }
     private val _jerarquia = MutableStateFlow<JerarquiaNodo?>(null)
     val jerarquia: StateFlow<JerarquiaNodo?> = _jerarquia
@@ -113,6 +137,7 @@ class RegistroVisitaViewModel(
                 val response = apiService.getJerarquiaPorNivel(perimetroId, token)
                 Log.d("RegistroVisita", "Llamando jerarquía con perimetroId=$perimetroId y token=$token")
                 _jerarquia.value = response
+                iniciarRuta(response)
             } catch (e: Exception) {
                 _errorDestino.value = "Error al cargar jerarquía: con perimetro $perimetroId ${e.localizedMessage}"
             } finally {

@@ -5,14 +5,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import com.example.bitacoradigital.model.JerarquiaNodo
-
 import androidx.compose.ui.unit.dp
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
 
 @Composable
 fun PasoDestino(viewModel: RegistroVisitaViewModel) {
     val jerarquia by viewModel.jerarquia.collectAsState()
+    val ruta by viewModel.rutaDestino.collectAsState()
     val seleccionActual by viewModel.destinoSeleccionado.collectAsState()
     val cargando by viewModel.cargandoDestino.collectAsState()
     val error by viewModel.errorDestino.collectAsState()
@@ -33,43 +34,62 @@ fun PasoDestino(viewModel: RegistroVisitaViewModel) {
         } else if (error != null) {
             Text("Error: $error", color = MaterialTheme.colorScheme.error)
         } else {
-            JerarquiaSelector(nodo = jerarquia, onSeleccionFinal = {
-                viewModel.destinoSeleccionado.value = it // ✔️ Correcto
-                viewModel.avanzarPaso()
-            })
+            NavegacionJerarquia(
+                ruta = ruta,
+                onSeleccion = { viewModel.navegarHacia(it) },
+                onConfirmar = {
+                    viewModel.destinoSeleccionado.value = it
+                    viewModel.avanzarPaso()
+                },
+                onRetroceder = { viewModel.retrocederNivel() }
+            )
         }
     }
 }
 
 @Composable
-fun JerarquiaSelector(nodo: JerarquiaNodo?, onSeleccionFinal: (JerarquiaNodo) -> Unit) {
-    if (nodo == null) return
-
-    var seleccionado by remember { mutableStateOf<JerarquiaNodo?>(null) }
+fun NavegacionJerarquia(
+    ruta: List<JerarquiaNodo>,
+    onSeleccion: (JerarquiaNodo) -> Unit,
+    onConfirmar: (JerarquiaNodo) -> Unit,
+    onRetroceder: () -> Unit
+) {
+    val nodoActual = ruta.lastOrNull() ?: return
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Selecciona en: ${nodo.nombre}", style = MaterialTheme.typography.bodyMedium)
-        nodo.children.forEach { child ->
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ruta.forEachIndexed { index, nodo ->
+                Text(nodo.nombre)
+                if (index < ruta.lastIndex) {
+                    Text(" > ")
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+
+        nodoActual.children.forEach { child ->
             Button(
-                onClick = { seleccionado = child },
+                onClick = { onSeleccion(child) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(child.nombre)
             }
         }
-        seleccionado?.let {
-            Spacer(modifier = Modifier.height(8.dp))
-            JerarquiaSelector(nodo = it, onSeleccionFinal = onSeleccionFinal)
-        } ?: if (nodo.children.isEmpty()) {
+
+        if (nodoActual.children.isEmpty()) {
             Button(
-                onClick = { onSeleccionFinal(nodo) },
+                onClick = { onConfirmar(nodoActual) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("Seleccionar ${nodo.nombre}")
+                Text("Seleccionar ${nodoActual.nombre}")
             }
-        } else {
+        }
 
+        if (ruta.size > 1) {
+            TextButton(onClick = onRetroceder) {
+                Text("← Regresar")
+            }
         }
     }
 }
