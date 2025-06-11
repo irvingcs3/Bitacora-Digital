@@ -13,6 +13,8 @@ import androidx.navigation.compose.NavHost
 import com.example.bitacoradigital.ui.screens.auth.LoginScreen
 import com.example.bitacoradigital.ui.screens.auth.SignupScreen
 import com.example.bitacoradigital.ui.screens.auth.VerificationScreen
+import com.example.bitacoradigital.ui.screens.auth.PasswordRequestScreen
+import com.example.bitacoradigital.ui.screens.auth.PasswordResetScreen
 import androidx.navigation.compose.composable
 import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.network.ApiService
@@ -21,6 +23,7 @@ import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
 import com.example.bitacoradigital.viewmodel.SignupViewModel
+import com.example.bitacoradigital.viewmodel.ForgotPasswordViewModel
 
 
 @Composable
@@ -28,7 +31,8 @@ fun AppNavGraph(
     navController: NavHostController,
     loginViewModel: LoginViewModel,
     sessionViewModel: SessionViewModel,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    forgotPasswordViewModel: ForgotPasswordViewModel
 ) {
     val usuario by sessionViewModel.usuario.collectAsState()
     LaunchedEffect(usuario) {
@@ -47,6 +51,7 @@ fun AppNavGraph(
 
 
     val signupViewModel: SignupViewModel = viewModel()
+    val forgotPasswordViewModel: ForgotPasswordViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = startDestination) {
 
@@ -58,7 +63,8 @@ fun AppNavGraph(
                 onLoginSuccess = { navController.navigate("home") { popUpTo("login") { inclusive = true } } },
                 onLoginDenied = { navController.navigate("denegado") { popUpTo("login") { inclusive = true } } },
                 onAwaitCode = { navController.navigate("verify") },
-                onRegisterClick = { navController.navigate("register") }
+                onRegisterClick = { navController.navigate("register") },
+                onForgotPasswordClick = { navController.navigate("forgot/email") }
             )
         }
 
@@ -78,6 +84,24 @@ fun AppNavGraph(
                 homeViewModel = homeViewModel,
                 onVerified = {
                     navController.navigate("home") { popUpTo("login") { inclusive = true } }
+                }
+            )
+        }
+
+        composable("forgot/email") {
+            PasswordRequestScreen(
+                viewModel = forgotPasswordViewModel,
+                sessionViewModel = sessionViewModel,
+                onAwaitCode = { navController.navigate("forgot/reset") }
+            )
+        }
+
+        composable("forgot/reset") {
+            PasswordResetScreen(
+                viewModel = forgotPasswordViewModel,
+                sessionViewModel = sessionViewModel,
+                onSuccess = {
+                    navController.navigate("login") { popUpTo("login") { inclusive = true } }
                 }
             )
         }

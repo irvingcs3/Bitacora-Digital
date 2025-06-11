@@ -11,6 +11,7 @@ import com.example.bitacoradigital.ui.theme.BitacoraDigitalTheme
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
+import com.example.bitacoradigital.viewmodel.ForgotPasswordViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,12 +26,14 @@ class MainActivity : ComponentActivity() {
                     val loginViewModel: LoginViewModel = viewModel()
                     val sessionViewModel: SessionViewModel = viewModel(factory = SessionViewModel.Factory(applicationContext))
                     val homeViewModel: HomeViewModel = viewModel()
+                    val forgotPasswordViewModel: ForgotPasswordViewModel = viewModel()
 
                     AppNavGraph(
                         navController = navController,
                         loginViewModel = loginViewModel,
                         sessionViewModel = sessionViewModel,
-                        homeViewModel = homeViewModel
+                        homeViewModel = homeViewModel,
+                        forgotPasswordViewModel = forgotPasswordViewModel
                     )
                 }
             }
