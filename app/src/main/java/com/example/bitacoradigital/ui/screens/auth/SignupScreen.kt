@@ -2,6 +2,7 @@ package com.example.bitacoradigital.ui.screens.auth
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PersonAdd
@@ -35,14 +36,16 @@ fun SignupScreen(
     var instancia by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     val state = signupViewModel.signupState
+    val loading = signupViewModel.loading
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    Box(Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
         Text("Registro", style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -136,5 +139,15 @@ fun SignupScreen(
             color = MaterialTheme.colorScheme.primary,
             fontSize = 14.sp
         )
+        }
+
+        if (loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator() }
+        }
     }
 }

@@ -4,6 +4,7 @@ package com.example.bitacoradigital.ui.screens.registrovisita
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -37,9 +38,12 @@ fun PasoConfirmacion(viewModel: RegistroVisitaViewModel) {
     val destino by viewModel.destinoSeleccionado.collectAsState()
     val fotos by viewModel.fotosAdicionales.collectAsState()
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp)) {
+    val cargando by viewModel.cargandoRegistro.collectAsState()
+
+    Box(Modifier.fillMaxSize()) {
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)) {
 
         Text("Paso 6: Confirma tu Registro", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(16.dp))
@@ -97,6 +101,16 @@ fun PasoConfirmacion(viewModel: RegistroVisitaViewModel) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Finalizar Registro")
+        }
+        }
+
+        if (cargando) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator() }
         }
     }
 }
