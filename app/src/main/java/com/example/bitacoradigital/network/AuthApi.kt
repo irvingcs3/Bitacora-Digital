@@ -9,6 +9,7 @@ import com.example.bitacoradigital.model.PasswordRequest
 import com.example.bitacoradigital.model.PasswordResetRequest
 import retrofit2.http.Header
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
 
 interface AuthApi {
@@ -35,5 +36,9 @@ interface AuthApi {
         @Body request: PasswordResetRequest
     ): retrofit2.Response<LoginResponse>
 
+    @GET("_allauth/app/v1/auth/session")
+    suspend fun getSession(
+        @Header("x-session-token") token: String
+    ): LoginResponse
 
 }
