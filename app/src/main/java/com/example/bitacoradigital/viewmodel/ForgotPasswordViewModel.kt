@@ -16,8 +16,12 @@ class ForgotPasswordViewModel : ViewModel() {
     var state by mutableStateOf<String?>(null)
         private set
 
+    var loading by mutableStateOf(false)
+        private set
+
     fun requestCode(email: String, sessionViewModel: SessionViewModel, onAwaitCode: () -> Unit) {
         viewModelScope.launch {
+            loading = true
             try {
                 val response = RetrofitInstance.authApi.passwordRequest(PasswordRequest(email))
                 val body = if (response.isSuccessful) {
@@ -36,12 +40,15 @@ class ForgotPasswordViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 state = "Error: ${e.localizedMessage}"
+            } finally {
+                loading = false
             }
         }
     }
 
     fun resetPassword(code: String, password: String, sessionViewModel: SessionViewModel, homeViewModel: HomeViewModel, onSuccess: () -> Unit) {
         viewModelScope.launch {
+            loading = true
             try {
                 val token = sessionViewModel.token.value ?: return@launch
                 val response = RetrofitInstance.authApi.passwordReset(token, PasswordResetRequest(code, password))
@@ -51,6 +58,8 @@ class ForgotPasswordViewModel : ViewModel() {
                 onSuccess()
             } catch (e: Exception) {
                 state = "Error: ${e.localizedMessage}"
+            } finally {
+                loading = false
             }
         }
     }

@@ -15,6 +15,9 @@ class LoginViewModel : ViewModel() {
     var loginState by mutableStateOf<String?>(null)
         private set
 
+    var loading by mutableStateOf(false)
+        private set
+
     fun login(
         email: String,
         password: String,
@@ -24,6 +27,7 @@ class LoginViewModel : ViewModel() {
         onAwaitCode: () -> Unit
     ) {
         viewModelScope.launch {
+            loading = true
             try {
                 val response = RetrofitInstance.authApi.login(LoginRequest(email, password))
                 val token = response.meta.session_token
@@ -55,6 +59,8 @@ class LoginViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 loginState = "Error: ${e.localizedMessage}"
+            } finally {
+                loading = false
             }
         }
     }

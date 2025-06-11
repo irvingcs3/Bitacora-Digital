@@ -17,12 +17,16 @@ class SignupViewModel : ViewModel() {
     var signupState by mutableStateOf<String?>(null)
         private set
 
+    var loading by mutableStateOf(false)
+        private set
+
     fun signup(
         request: SignupRequest,
         sessionViewModel: SessionViewModel,
         onAwaitCode: () -> Unit
     ) {
         viewModelScope.launch {
+            loading = true
             try {
                 val response = RetrofitInstance.authApi.signup(request)
                 if (response.code() == 401) {
@@ -52,6 +56,8 @@ class SignupViewModel : ViewModel() {
 
             } catch (e: Exception) {
                 signupState = "Error: ${e.localizedMessage}"
+            } finally {
+                loading = false
             }
         }
     }
@@ -63,6 +69,7 @@ class SignupViewModel : ViewModel() {
         onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
+            loading = true
             try {
                 val token = sessionViewModel.token.value ?: return@launch
                 val response = RetrofitInstance.authApi.verifyEmail(token, VerifyEmailRequest(code))
@@ -72,6 +79,8 @@ class SignupViewModel : ViewModel() {
                 onSuccess()
             } catch (e: Exception) {
                 signupState = "Error: ${e.localizedMessage}"
+            } finally {
+                loading = false
             }
         }
     }
