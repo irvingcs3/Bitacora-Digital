@@ -16,7 +16,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -125,6 +128,12 @@ class RegistroVisitaViewModel(
     private val _errorDestino = MutableStateFlow<String?>(null)
     val errorDestino: StateFlow<String?> = _errorDestino
 
+    // Estados para el reconocimiento de documentos
+    private val _cargandoReconocimiento = MutableStateFlow(false)
+    val cargandoReconocimiento: StateFlow<Boolean> = _cargandoReconocimiento
+    private val _errorReconocimiento = MutableStateFlow<String?>(null)
+    val errorReconocimiento: StateFlow<String?> = _errorReconocimiento
+
     private val _cargandoRegistro = MutableStateFlow(false)
     val cargandoRegistro: StateFlow<Boolean> = _cargandoRegistro
 
@@ -155,6 +164,49 @@ class RegistroVisitaViewModel(
 
     fun eliminarFoto(uri: Uri) {
         fotosAdicionales.value = fotosAdicionales.value - uri
+    }
+
+    fun reconocerDocumento(context: android.content.Context) {
+        val uri = documentoUri.value ?: return
+        viewModelScope.launch {
+            _cargandoReconocimiento.value = true
+            _errorReconocimiento.value = null
+            try {
+                val bytes = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                        ?: throw Exception("No se pudo leer el archivo")
+                }
+
+                val requestBody = bytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
+                val multipart = MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("file", "document.jpg", requestBody)
+                    .build()
+
+                val request = Request.Builder()
+                    .url("https://bitacora.cs3.mx/credential/recognition")
+                    .post(multipart)
+                    .addHeader("accept", "application/json")
+                    .build()
+
+                val client = OkHttpClient()
+                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+
+                if (response.isSuccessful) {
+                    val json = org.json.JSONObject(response.body?.string() ?: "{}")
+                    nombre.value = json.optString("nombre")
+                    apellidoPaterno.value = json.optString("paterno")
+                    apellidoMaterno.value = json.optString("materno")
+                } else {
+                    _errorReconocimiento.value = "Error ${'$'}{response.code}"
+                }
+            } catch (e: Exception) {
+                Log.e("RegistroVisita", "Error reconocimiento", e)
+                _errorReconocimiento.value = e.localizedMessage
+            } finally {
+                _cargandoReconocimiento.value = false
+            }
+        }
     }
 
     fun registrarVisita() {
