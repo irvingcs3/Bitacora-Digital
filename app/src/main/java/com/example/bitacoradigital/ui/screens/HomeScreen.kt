@@ -29,13 +29,16 @@ fun HomeScreen(
 ) {
     val perimetros by homeViewModel.perimetrosVisuales.collectAsState()
     val perimetroSeleccionado by homeViewModel.perimetroSeleccionado.collectAsState()
+    val empresaSeleccionada by homeViewModel.empresaSeleccionada.collectAsState()
 
     Scaffold(
         topBar = {
             TopBar(
                 perimetros = perimetros,
                 seleccionado = perimetroSeleccionado,
-                onSelect = { homeViewModel.seleccionarPerimetro(it) },
+                empresaSeleccionada = empresaSeleccionada,
+                onSelectEmpresa = { homeViewModel.seleccionarEmpresa(it) },
+                onSelectPerimetro = { homeViewModel.seleccionarPerimetro(it) },
                 onFavorito = { homeViewModel.marcarFavorito(it.perimetroId, it.empresaId, sessionViewModel) }
             )
         },
@@ -103,32 +106,36 @@ fun HomeScreen(
 fun TopBar(
     perimetros: List<PerimetroVisual>,
     seleccionado: PerimetroVisual?,
-    onSelect: (PerimetroVisual) -> Unit,
+    empresaSeleccionada: Int?,
+    onSelectEmpresa: (Int) -> Unit,
+    onSelectPerimetro: (PerimetroVisual) -> Unit,
     onFavorito: (PerimetroVisual) -> Unit
 ) {
     TopAppBar(
         title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                var expanded by remember { mutableStateOf(false) }
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                var expandedPerimetro by remember { mutableStateOf(false) }
+                var expandedEmpresa by remember { mutableStateOf(false) }
 
+                // Perímetro
                 Box {
-                    TextButton(onClick = { expanded = true }) {
-                        Text("${seleccionado?.empresaNombre ?: ""} > ${seleccionado?.perimetroNombre ?: ""}")
+                    TextButton(onClick = { expandedPerimetro = true }) {
+                        Text(seleccionado?.perimetroNombre ?: "")
                         Icon(Icons.Default.ArrowDropDown, contentDescription = null)
                     }
 
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        perimetros.forEach {
+                    DropdownMenu(expanded = expandedPerimetro, onDismissRequest = { expandedPerimetro = false }) {
+                        perimetros.filter { empresaSeleccionada == null || it.empresaId == empresaSeleccionada }.forEach { item ->
                             DropdownMenuItem(
-                                text = { Text("${it.empresaNombre} > ${it.perimetroNombre}") },
+                                text = { Text(item.perimetroNombre) },
                                 onClick = {
-                                    onSelect(it)
-                                    expanded = false
+                                    onSelectPerimetro(item)
+                                    expandedPerimetro = false
                                 },
                                 leadingIcon = {
-                                    IconButton(onClick = { onFavorito(it) }) {
+                                    IconButton(onClick = { onFavorito(item) }) {
                                         Icon(
-                                            imageVector = if (it.esFavorito) Icons.Default.Star else Icons.Default.StarBorder,
+                                            imageVector = if (item.esFavorito) Icons.Default.Star else Icons.Default.StarBorder,
                                             contentDescription = null
                                         )
                                     }
@@ -142,6 +149,29 @@ fun TopBar(
 
                 Text("Bitácora", style = MaterialTheme.typography.titleMedium)
                 Text("Digital", color = MaterialTheme.colorScheme.primary)
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                // Empresa
+                Box {
+                    TextButton(onClick = { expandedEmpresa = true }) {
+                        val empresaNombre = perimetros.firstOrNull { it.empresaId == empresaSeleccionada }?.empresaNombre ?: ""
+                        Text(empresaNombre)
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                    }
+
+                    DropdownMenu(expanded = expandedEmpresa, onDismissRequest = { expandedEmpresa = false }) {
+                        perimetros.map { it.empresaId to it.empresaNombre }.distinct().forEach { (id, nombre) ->
+                            DropdownMenuItem(
+                                text = { Text(nombre) },
+                                onClick = {
+                                    onSelectEmpresa(id)
+                                    expandedEmpresa = false
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     )
