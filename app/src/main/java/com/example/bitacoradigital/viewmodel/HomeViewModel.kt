@@ -14,6 +14,9 @@ class HomeViewModel : ViewModel() {
     private val _perimetrosVisuales = MutableStateFlow<List<PerimetroVisual>>(emptyList())
     val perimetrosVisuales: StateFlow<List<PerimetroVisual>> = _perimetrosVisuales
 
+    private val _empresaSeleccionada = MutableStateFlow<Int?>(null)
+    val empresaSeleccionada: StateFlow<Int?> = _empresaSeleccionada
+
     private val _perimetroSeleccionado = MutableStateFlow<PerimetroVisual?>(null)
     val perimetroSeleccionado: StateFlow<PerimetroVisual?> = _perimetroSeleccionado
 
@@ -45,12 +48,23 @@ class HomeViewModel : ViewModel() {
                 it.copy(esFavorito = it.empresaId == favEmpresaId && it.perimetroId == favPerimetroId)
             }
             _perimetrosVisuales.value = actualizados
-            _perimetroSeleccionado.value = actualizados.firstOrNull { it.esFavorito } ?: actualizados.firstOrNull()
+            val seleccionado = actualizados.firstOrNull { it.esFavorito } ?: actualizados.firstOrNull()
+            _perimetroSeleccionado.value = seleccionado
+            _empresaSeleccionada.value = seleccionado?.empresaId
         }
     }
 
     fun seleccionarPerimetro(perimetroVisual: PerimetroVisual) {
         _perimetroSeleccionado.value = perimetroVisual
+        _empresaSeleccionada.value = perimetroVisual.empresaId
+    }
+
+    fun seleccionarEmpresa(empresaId: Int) {
+        _empresaSeleccionada.value = empresaId
+        val firstPerimetro = _perimetrosVisuales.value.firstOrNull { it.empresaId == empresaId }
+        if (firstPerimetro != null) {
+            _perimetroSeleccionado.value = firstPerimetro
+        }
     }
 
     fun marcarFavorito(perimetroId: Int, empresaId: Int, sessionViewModel: SessionViewModel) {

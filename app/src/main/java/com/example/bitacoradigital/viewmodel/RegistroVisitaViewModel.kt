@@ -101,6 +101,9 @@ class RegistroVisitaViewModel(
     private val _errorDestino = MutableStateFlow<String?>(null)
     val errorDestino: StateFlow<String?> = _errorDestino
 
+    private val _cargandoRegistro = MutableStateFlow(false)
+    val cargandoRegistro: StateFlow<Boolean> = _cargandoRegistro
+
     fun cargarJerarquiaDestino() {
         viewModelScope.launch {
             _cargandoDestino.value = true
@@ -131,6 +134,7 @@ class RegistroVisitaViewModel(
 
     fun registrarVisita() {
         viewModelScope.launch {
+            _cargandoRegistro.value = true
             try {
                 val token = sessionPrefs.sessionToken.first() ?: throw Exception("Token vacío")
 
@@ -178,6 +182,8 @@ class RegistroVisitaViewModel(
             } catch (e: Exception) {
                 Log.e("RegistroVisita", "Excepción en el registro", e)
                 _errorDestino.value = "Error al registrar visita: ${e.localizedMessage}"
+            } finally {
+                _cargandoRegistro.value = false
             }
         }
     }

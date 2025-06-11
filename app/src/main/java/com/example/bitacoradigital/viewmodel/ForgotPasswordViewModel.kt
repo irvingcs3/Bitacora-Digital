@@ -18,6 +18,7 @@ class ForgotPasswordViewModel : ViewModel() {
 
     fun requestCode(email: String, sessionViewModel: SessionViewModel, onAwaitCode: () -> Unit) {
         viewModelScope.launch {
+
             try {
                 val response = RetrofitInstance.authApi.passwordRequest(PasswordRequest(email))
                 val body = if (response.isSuccessful) {
@@ -77,6 +78,7 @@ class ForgotPasswordViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 state = "Error: ${e.localizedMessage}"
+
             }
         }
     }

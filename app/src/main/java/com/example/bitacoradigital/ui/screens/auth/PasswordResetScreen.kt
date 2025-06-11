@@ -1,6 +1,7 @@
 package com.example.bitacoradigital.ui.screens.auth
 
 import androidx.compose.foundation.layout.*
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -14,12 +15,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.bitacoradigital.viewmodel.ForgotPasswordViewModel
+
 import com.example.bitacoradigital.viewmodel.SessionViewModel
 
 @Composable
 fun PasswordResetScreen(
     viewModel: ForgotPasswordViewModel,
     sessionViewModel: SessionViewModel,
+
     onSuccess: () -> Unit
 ) {
     var code by remember { mutableStateOf("") }
@@ -36,6 +39,7 @@ fun PasswordResetScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
         Text("Restablecer contraseña", style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -79,6 +83,7 @@ fun PasswordResetScreen(
             onClick = {
                 if (password == confirm) {
                     viewModel.resetPassword(code, password, sessionViewModel, onSuccess)
+
                 } else {
                     localError = "Las contraseñas no coinciden"
                 }
@@ -92,5 +97,6 @@ fun PasswordResetScreen(
             Spacer(modifier = Modifier.height(8.dp))
             Text(it, color = MaterialTheme.colorScheme.error)
         }
+
     }
 }

@@ -102,6 +102,7 @@ fun AppNavGraph(
                 sessionViewModel = sessionViewModel,
                 onSuccess = {
                     navController.navigate("login") { popUpTo("login") { inclusive = true } }
+
                 }
             )
         }
