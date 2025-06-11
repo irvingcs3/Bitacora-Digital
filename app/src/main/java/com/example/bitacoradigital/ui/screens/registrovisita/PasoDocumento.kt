@@ -15,9 +15,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 @Composable
 fun PasoDocumento(viewModel: RegistroVisitaViewModel) {
+    val context = LocalContext.current
     val uri = viewModel.documentoUri.value
+    val cargando by viewModel.cargandoReconocimiento.collectAsState()
+    val error by viewModel.errorReconocimiento.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -51,8 +57,26 @@ fun PasoDocumento(viewModel: RegistroVisitaViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { viewModel.avanzarPaso() }, enabled = uri != null) {
-            Text("Continuar")
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    viewModel.reconocerDocumento(context)
+                    viewModel.avanzarPaso()
+                }
+            },
+            enabled = uri != null && !cargando
+        ) {
+            Text(if (cargando) "Procesando..." else "Continuar")
+        }
+
+        error?.let {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(it, color = MaterialTheme.colorScheme.error)
+        }
+
+        if (cargando) {
+            Spacer(modifier = Modifier.height(16.dp))
+            CircularProgressIndicator()
         }
     }
 }
