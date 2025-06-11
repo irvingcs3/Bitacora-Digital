@@ -16,12 +16,9 @@ class ForgotPasswordViewModel : ViewModel() {
     var state by mutableStateOf<String?>(null)
         private set
 
-    var loading by mutableStateOf(false)
-        private set
-
     fun requestCode(email: String, sessionViewModel: SessionViewModel, onAwaitCode: () -> Unit) {
         viewModelScope.launch {
-            loading = true
+
             try {
                 val response = RetrofitInstance.authApi.passwordRequest(PasswordRequest(email))
                 val body = if (response.isSuccessful) {
@@ -40,26 +37,48 @@ class ForgotPasswordViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 state = "Error: ${e.localizedMessage}"
-            } finally {
-                loading = false
             }
         }
     }
 
-    fun resetPassword(code: String, password: String, sessionViewModel: SessionViewModel, homeViewModel: HomeViewModel, onSuccess: () -> Unit) {
+    fun resetPassword(
+        code: String,
+        password: String,
+        sessionViewModel: SessionViewModel,
+        onSuccess: () -> Unit
+    ) {
         viewModelScope.launch {
-            loading = true
             try {
                 val token = sessionViewModel.token.value ?: return@launch
-                val response = RetrofitInstance.authApi.passwordReset(token, PasswordResetRequest(code, password))
-                sessionViewModel.guardarSesion(response.meta.session_token, response.data.user)
-                homeViewModel.cargarDesdeLogin(response.data.user, sessionViewModel)
-                state = null
-                onSuccess()
+                val response = RetrofitInstance.authApi.passwordReset(
+                    token,
+                    PasswordResetRequest(code, password)
+                )
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body != null) {
+                        sessionViewModel.guardarSesion(body.meta.session_token, body.data.user)
+                        state = null
+                        onSuccess()
+                    } else {
+                        state = "Respuesta inesperada"
+                    }
+                } else if (response.code() == 401) {
+                    val json = response.errorBody()?.string()
+                    val body = json?.let { Gson().fromJson(it, SignupResponse::class.java) }
+                    val pending = body?.data?.flows?.find { it.id == "password_reset_by_code" }?.is_pending
+                    if (pending == false) {
+                        state = null
+                        onSuccess()
+                    } else {
+                        state = "Código incorrecto"
+                    }
+                } else {
+                    state = "Error: ${response.code()}"
+                }
             } catch (e: Exception) {
                 state = "Error: ${e.localizedMessage}"
-            } finally {
-                loading = false
+
             }
         }
     }

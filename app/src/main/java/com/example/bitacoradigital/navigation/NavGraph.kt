@@ -100,9 +100,9 @@ fun AppNavGraph(
             PasswordResetScreen(
                 viewModel = forgotPasswordViewModel,
                 sessionViewModel = sessionViewModel,
-                homeViewModel = homeViewModel,
                 onSuccess = {
-                    navController.navigate("home") { popUpTo("login") { inclusive = true } }
+                    navController.navigate("login") { popUpTo("login") { inclusive = true } }
+
                 }
             )
         }

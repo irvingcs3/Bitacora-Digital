@@ -33,6 +33,7 @@ interface AuthApi {
     suspend fun passwordReset(
         @Header("x-session-token") token: String,
         @Body request: PasswordResetRequest
-    ): LoginResponse
+    ): retrofit2.Response<LoginResponse>
+
 
 }
