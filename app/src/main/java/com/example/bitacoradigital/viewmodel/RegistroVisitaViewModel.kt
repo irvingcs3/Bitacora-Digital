@@ -208,7 +208,7 @@ class RegistroVisitaViewModel(
                     .build()
 
                 val request = Request.Builder()
-                    .url("https://bitacora.cs3.mx/credential/recognition")
+                    .url("https://bit.cs3.mx/credential/recognition")
                     .post(multipart)
                     .addHeader("accept", "application/json")
                     .build()
@@ -260,7 +260,7 @@ class RegistroVisitaViewModel(
                 val body = json.toString().toRequestBody(mediaType)
 
                 val request = Request.Builder()
-                    .url("https://bitacora.cs3.mx/api/v1/registro-visita/")
+                    .url("https://bit.cs3.mx/api/v1/registro-visita/")
                     .post(body)
                     .addHeader("x-session-token", token)
                     .addHeader("Content-Type", "application/json")
