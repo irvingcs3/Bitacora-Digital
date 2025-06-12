@@ -19,6 +19,7 @@ import androidx.navigation.compose.composable
 import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.network.ApiService
 import com.example.bitacoradigital.ui.screens.*
+import com.example.bitacoradigital.ui.screens.perimetro.PerimetrosScreen
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
@@ -121,6 +122,14 @@ fun AppNavGraph(
 
         composable("visitas/qr") {
             RegistroQRScreen()
+        }
+
+        composable("perimetros") {
+            val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
+            PerimetrosScreen(
+                perimetroId = perimetroId,
+                permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Perímetro") ?: emptyList()
+            )
         }
 
         composable("home") {
