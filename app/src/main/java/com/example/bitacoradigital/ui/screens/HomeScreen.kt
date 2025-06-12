@@ -75,7 +75,7 @@ fun HomeScreen(
                                 .clickable {
                                     when (modulo) {
                                         "Registros de Visitas" -> navController.navigate("visitas")
-                                        // puedes agregar más módulos aquí
+                                        "Perímetro" -> navController.navigate("perimetros")
                                         else -> { /* por ahora no navega a otro lado */ }
                                     }
                                 },
