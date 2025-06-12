@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.bitacoradigital.data.SessionPreferences
+import android.util.Log
 import com.example.bitacoradigital.model.User
 import com.example.bitacoradigital.network.RetrofitInstance
 import com.google.gson.Gson
@@ -42,21 +43,20 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     private fun recuperarSesion() {
         viewModelScope.launch {
             prefs.sessionToken.combine(prefs.jsonSession) { token, json ->
-                try {
-                    if (!token.isNullOrBlank() && !json.isNullOrBlank()) {
+                if (!token.isNullOrBlank() && !json.isNullOrBlank()) {
+                    try {
                         val user = gson.fromJson(json, User::class.java)
                         val acceso = user.empresas.any { it.B }
 
                         _token.value = token
                         _usuario.value = user
                         _tieneAccesoABitacora.value = acceso
-                    } else {
-                        // Si están vacíos o nulos
-                        _tieneAccesoABitacora.value = null
+                    } catch (e: Exception) {
+                        // No cerrar sesión si falla el parseo, solo informar
+                        Log.e("SessionViewModel", "Error al deserializar sesión", e)
                     }
-                } catch (e: Exception) {
-                    // Si hay error al deserializar, limpiamos sesión
-                    prefs.cerrarSesion()
+                } else {
+                    // Si están vacíos o nulos
                     _tieneAccesoABitacora.value = null
                 }
             }.collect()
