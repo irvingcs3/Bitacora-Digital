@@ -24,6 +24,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -43,6 +44,29 @@ class RegistroVisitaViewModel(
     // Datos recolectados
     var telefono = MutableStateFlow("")
     var numeroVerificado = MutableStateFlow(false)
+
+    suspend fun verificarNumeroWhatsApp(numero: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val json = JSONObject().apply { put("number", numero) }
+            val body = json.toString().toRequestBody("application/json".toMediaType())
+            val request = Request.Builder()
+                .url("https://bit.cs3.mx/v1/whatsapp/exist/number")
+                .post(body)
+                .addHeader("Content-Type", "application/json")
+                .build()
+            val client = OkHttpClient()
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val res = JSONObject(response.body?.string() ?: "{}")
+                res.optBoolean("exist", false)
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("RegistroVisita", "Error verificando numero", e)
+            false
+        }
+    }
 
     var tipoDocumento = MutableStateFlow<String?>(null)
     var fotoDocumentoUri = MutableStateFlow<String?>(null)
