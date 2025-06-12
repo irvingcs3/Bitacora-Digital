@@ -2,7 +2,10 @@ package com.example.bitacoradigital.ui.screens.registrovisita
 
 import android.content.Context
 import android.net.Uri
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.core.content.FileProvider
+import androidx.core.content.ContextCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -27,6 +30,21 @@ fun PasoDocumento(viewModel: RegistroVisitaViewModel) {
     val cargando by viewModel.cargandoReconocimiento.collectAsState()
     val error by viewModel.errorReconocimiento.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasCameraPermission = granted
+    }
 
     var tempUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -53,11 +71,23 @@ fun PasoDocumento(viewModel: RegistroVisitaViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            val uriTemp = createImageUri(context)
-            tempUri = uriTemp
-            launcher.launch(uriTemp)
+            if (hasCameraPermission) {
+                val uriTemp = createImageUri(context)
+                tempUri = uriTemp
+                launcher.launch(uriTemp)
+            } else {
+                permissionLauncher.launch(Manifest.permission.CAMERA)
+            }
         }) {
             Text("Tomar Foto")
+        }
+
+        if (!hasCameraPermission) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Se requiere permiso de cámara para tomar fotos",
+                color = MaterialTheme.colorScheme.error
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
