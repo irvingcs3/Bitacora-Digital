@@ -2,6 +2,8 @@ package com.example.bitacoradigital.ui.screens.registrovisita
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -33,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
 import android.content.Context
 import androidx.core.content.FileProvider
+import androidx.core.content.ContextCompat
 import java.io.File
 import android.net.Uri
 import kotlinx.coroutines.launch
@@ -40,6 +43,21 @@ import kotlinx.coroutines.launch
 fun PasoFotos(viewModel: RegistroVisitaViewModel) {
     val fotos by viewModel.fotosAdicionales.collectAsState()
     val context = LocalContext.current
+
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasCameraPermission = granted
+    }
 
     var tempUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -85,11 +103,23 @@ fun PasoFotos(viewModel: RegistroVisitaViewModel) {
         if (fotos.size < 3) {
             Spacer(Modifier.height(16.dp))
             Button(onClick = {
-                val uriTemp = createImageUri(context)
-                tempUri = uriTemp
-                launcher.launch(uriTemp)
+                if (hasCameraPermission) {
+                    val uriTemp = createImageUri(context)
+                    tempUri = uriTemp
+                    launcher.launch(uriTemp)
+                } else {
+                    permissionLauncher.launch(Manifest.permission.CAMERA)
+                }
             }) {
                 Text("Agregar Foto (${3 - fotos.size} restantes)")
+            }
+
+            if (!hasCameraPermission) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Se requiere permiso de cámara para tomar fotos",
+                    color = MaterialTheme.colorScheme.error
+                )
             }
         }
 
