@@ -190,46 +190,44 @@ class RegistroVisitaViewModel(
         fotosAdicionales.value = fotosAdicionales.value - uri
     }
 
-    fun reconocerDocumento(context: android.content.Context) {
+    suspend fun reconocerDocumento(context: android.content.Context) {
         val uri = documentoUri.value ?: return
-        viewModelScope.launch {
-            _cargandoReconocimiento.value = true
-            _errorReconocimiento.value = null
-            try {
-                val bytes = withContext(Dispatchers.IO) {
-                    context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                        ?: throw Exception("No se pudo leer el archivo")
-                }
-
-                val requestBody = bytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
-                val multipart = MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart("file", "document.jpg", requestBody)
-                    .build()
-
-                val request = Request.Builder()
-                    .url("https://bit.cs3.mx/credential/recognition")
-                    .post(multipart)
-                    .addHeader("accept", "application/json")
-                    .build()
-
-                val client = OkHttpClient()
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-
-                if (response.isSuccessful) {
-                    val json = org.json.JSONObject(response.body?.string() ?: "{}")
-                    nombre.value = json.optString("nombre")
-                    apellidoPaterno.value = json.optString("paterno")
-                    apellidoMaterno.value = json.optString("materno")
-                } else {
-                    _errorReconocimiento.value = "Error ${'$'}{response.code}"
-                }
-            } catch (e: Exception) {
-                Log.e("RegistroVisita", "Error reconocimiento", e)
-                _errorReconocimiento.value = e.localizedMessage
-            } finally {
-                _cargandoReconocimiento.value = false
+        _cargandoReconocimiento.value = true
+        _errorReconocimiento.value = null
+        try {
+            val bytes = withContext(Dispatchers.IO) {
+                context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    ?: throw Exception("No se pudo leer el archivo")
             }
+
+            val requestBody = bytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
+            val multipart = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("file", "document.jpg", requestBody)
+                .build()
+
+            val request = Request.Builder()
+                .url("https://bit.cs3.mx/credential/recognition")
+                .post(multipart)
+                .addHeader("accept", "application/json")
+                .build()
+
+            val client = OkHttpClient()
+            val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+
+            if (response.isSuccessful) {
+                val json = org.json.JSONObject(response.body?.string() ?: "{}")
+                nombre.value = json.optString("nombre")
+                apellidoPaterno.value = json.optString("paterno")
+                apellidoMaterno.value = json.optString("materno")
+            } else {
+                _errorReconocimiento.value = "Error ${'$'}{response.code}"
+            }
+        } catch (e: Exception) {
+            Log.e("RegistroVisita", "Error reconocimiento", e)
+            _errorReconocimiento.value = e.localizedMessage
+        } finally {
+            _cargandoReconocimiento.value = false
         }
     }
 
