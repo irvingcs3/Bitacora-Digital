@@ -33,6 +33,11 @@ class LoginViewModel : ViewModel() {
                 val token = response.meta.session_token
                 val user = response.data.user
 
+                if (token == null) {
+                    loginState = "Respuesta inesperada"
+                    return@launch
+                }
+
                 if (user.empresas.any { it.B }) {
                     sessionViewModel.guardarSesion(token, user)
                     loginState = "Login exitoso"

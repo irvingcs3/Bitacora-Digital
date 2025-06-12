@@ -17,5 +17,5 @@ data class SignupFlow(
 
 data class SignupMeta(
     val is_authenticated: Boolean,
-    val session_token: String
+    val session_token: String? = null
 )

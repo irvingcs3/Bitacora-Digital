@@ -57,7 +57,8 @@ class ForgotPasswordViewModel : ViewModel() {
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body != null) {
-                        sessionViewModel.guardarSesion(body.meta.session_token, body.data.user)
+                        val newToken = body.meta.session_token ?: token
+                        sessionViewModel.guardarSesion(newToken, body.data.user)
                         state = null
                         onSuccess()
                     } else {
