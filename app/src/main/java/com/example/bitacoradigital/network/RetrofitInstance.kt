@@ -7,7 +7,7 @@ object RetrofitInstance {
 
     private val retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("https://bitacora.cs3.mx/") // o la IP/URL de tu backend
+            .baseUrl("https://bit.cs3.mx/") // o la IP/URL de tu backend
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
