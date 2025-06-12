@@ -32,6 +32,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     val favoritoEmpresaId = prefs.favoritoEmpresaId
     val favoritoPerimetroId = prefs.favoritoPerimetroId
 
+    // Check for updates periodically without replacing the current token
     private val REFRESH_INTERVAL_MS = 5 * 60 * 1000L // 5 minutes
 
 
@@ -70,7 +71,8 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
                 if (!token.isNullOrBlank()) {
                     try {
                         val response = RetrofitInstance.authApi.getSession(token)
-                        guardarSesion(response.meta.session_token, response.data.user)
+                        val newToken = response.meta.session_token ?: token
+                        guardarSesion(newToken, response.data.user)
                     } catch (_: Exception) {
                         // Ignorar errores de refresco
                     }

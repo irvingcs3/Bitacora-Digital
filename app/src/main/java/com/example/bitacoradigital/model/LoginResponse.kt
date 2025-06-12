@@ -55,5 +55,5 @@ data class AuthMethod(
 
 data class Meta(
     val is_authenticated: Boolean,
-    val session_token: String
+    val session_token: String? = null
 )

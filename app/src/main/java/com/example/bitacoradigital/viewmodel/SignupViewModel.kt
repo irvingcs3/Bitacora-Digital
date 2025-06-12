@@ -73,7 +73,8 @@ class SignupViewModel : ViewModel() {
             try {
                 val token = sessionViewModel.token.value ?: return@launch
                 val response = RetrofitInstance.authApi.verifyEmail(token, VerifyEmailRequest(code))
-                sessionViewModel.guardarSesion(response.meta.session_token, response.data.user)
+                val newToken = response.meta.session_token ?: token
+                sessionViewModel.guardarSesion(newToken, response.data.user)
                 homeViewModel.cargarDesdeLogin(response.data.user, sessionViewModel)
                 signupState = null
                 onSuccess()
