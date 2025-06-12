@@ -35,6 +35,8 @@ fun PerimetrosScreen(perimetroId: Int, permisos: List<String>) {
 
     var nuevoNombre by remember { mutableStateOf("") }
     val puedeCrear = "Crear Perímetro" in permisos
+    val puedeEditar = "Editar Perímetro" in permisos
+    val puedeEliminar = "Eliminar Perímetro" in permisos
     var editarNodo by remember { mutableStateOf<JerarquiaNodo?>(null) }
     var nombreEditar by remember { mutableStateOf("") }
     var nodoCrearSub by remember { mutableStateOf<JerarquiaNodo?>(null) }
@@ -54,7 +56,10 @@ fun PerimetrosScreen(perimetroId: Int, permisos: List<String>) {
                 onRetroceder = { viewModel.retroceder() },
                 onEliminar = { viewModel.eliminarPerimetro(it.perimetro_id) },
                 onEditar = { editarNodo = it; nombreEditar = it.nombre },
-                onCrearSubzona = { nodoCrearSub = it }
+                onCrearSubzona = { nodoCrearSub = it },
+                puedeCrear = puedeCrear,
+                puedeEditar = puedeEditar,
+                puedeEliminar = puedeEliminar
             )
         }
 
@@ -139,7 +144,10 @@ fun JerarquiaConAcciones(
     onRetroceder: () -> Unit,
     onEliminar: (JerarquiaNodo) -> Unit,
     onEditar: (JerarquiaNodo) -> Unit,
-    onCrearSubzona: (JerarquiaNodo) -> Unit
+    onCrearSubzona: (JerarquiaNodo) -> Unit,
+    puedeCrear: Boolean,
+    puedeEditar: Boolean,
+    puedeEliminar: Boolean
 ) {
     val nodoActual = ruta.lastOrNull() ?: return
 
@@ -166,14 +174,20 @@ fun JerarquiaConAcciones(
                     IconButton(onClick = { onSeleccion(child) }) {
                         Icon(Icons.Default.ArrowForward, contentDescription = null)
                     }
-                    IconButton(onClick = { onCrearSubzona(child) }) {
-                        Icon(Icons.Default.Add, contentDescription = null)
+                    if (puedeCrear) {
+                        IconButton(onClick = { onCrearSubzona(child) }) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                        }
                     }
-                    IconButton(onClick = { onEditar(child) }) {
-                        Icon(Icons.Default.Edit, contentDescription = null)
+                    if (puedeEditar) {
+                        IconButton(onClick = { onEditar(child) }) {
+                            Icon(Icons.Default.Edit, contentDescription = null)
+                        }
                     }
-                    IconButton(onClick = { onEliminar(child) }) {
-                        Icon(Icons.Default.Delete, contentDescription = null)
+                    if (puedeEliminar) {
+                        IconButton(onClick = { onEliminar(child) }) {
+                            Icon(Icons.Default.Delete, contentDescription = null)
+                        }
                     }
                 }
             }

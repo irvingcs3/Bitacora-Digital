@@ -46,9 +46,11 @@ fun HomeScreen(
             BottomNavigationBar(onConfiguracionClick = onConfiguracionClick)
         }
     ) { innerPadding ->
+        val scrollState = rememberScrollState()
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(scrollState)
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
         ) {
