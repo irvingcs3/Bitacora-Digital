@@ -1,6 +1,8 @@
 package com.example.bitacoradigital.ui.screens.registrovisita
 
+import android.content.Context
 import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -14,6 +16,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import java.io.File
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
@@ -25,11 +28,19 @@ fun PasoDocumento(viewModel: RegistroVisitaViewModel) {
     val error by viewModel.errorReconocimiento.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
+    var tempUri by remember { mutableStateOf<Uri?>(null) }
+
+    fun createImageUri(context: Context): Uri {
+        val imagesDir = File(context.cacheDir, "images").apply { mkdirs() }
+        val image = File.createTempFile("document_", ".jpg", imagesDir)
+        return FileProvider.getUriForFile(context, "${'$'}{context.packageName}.fileprovider", image)
+    }
+
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { result: Uri? ->
-        result?.let {
-            viewModel.documentoUri.value = it
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            tempUri?.let { viewModel.documentoUri.value = it }
         }
     }
 
@@ -37,8 +48,11 @@ fun PasoDocumento(viewModel: RegistroVisitaViewModel) {
         Text("Paso 2: Escanea tu documento", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { launcher.launch("image/*") }) {
-            Text("Tomar Foto o Seleccionar Imagen")
+        Button(onClick = {
+            tempUri = createImageUri(context)
+            launcher.launch(tempUri)
+        }) {
+            Text("Tomar Foto")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
