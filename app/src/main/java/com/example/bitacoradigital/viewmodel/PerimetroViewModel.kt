@@ -101,4 +101,55 @@ class PerimetroViewModel(
             }
         }
     }
+
+    fun eliminarPerimetro(id: Int) {
+        viewModelScope.launch {
+            try {
+                val token = sessionPrefs.sessionToken.first() ?: return@launch
+                val request = Request.Builder()
+                    .url("https://bitacora.cs3.mx/api/v1/perimetro/${'$'}id/")
+                    .delete()
+                    .addHeader("x-session-token", token)
+                    .build()
+                val client = OkHttpClient()
+                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                if (response.isSuccessful) {
+                    cargarJerarquia()
+                } else {
+                    _error.value = "Error ${'$'}{response.code}"
+                }
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage
+            }
+        }
+    }
+
+    fun editarPerimetro(id: Int, nombre: String) {
+        viewModelScope.launch {
+            try {
+                val token = sessionPrefs.sessionToken.first() ?: return@launch
+                val json = JSONObject().apply { put("nombre", nombre) }
+                val body = json.toString().toRequestBody("application/json".toMediaType())
+                val request = Request.Builder()
+                    .url("https://bitacora.cs3.mx/api/v1/perimetro/${'$'}id/")
+                    .patch(body)
+                    .addHeader("x-session-token", token)
+                    .addHeader("Content-Type", "application/json")
+                    .build()
+                val client = OkHttpClient()
+                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                if (response.isSuccessful) {
+                    cargarJerarquia()
+                } else {
+                    _error.value = "Error ${'$'}{response.code}"
+                }
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage
+            }
+        }
+    }
+
+    fun crearSubzona(nombre: String, padre: JerarquiaNodo) {
+        crear(nombre, padre.nivel + 1, padre.perimetro_id)
+    }
 }
