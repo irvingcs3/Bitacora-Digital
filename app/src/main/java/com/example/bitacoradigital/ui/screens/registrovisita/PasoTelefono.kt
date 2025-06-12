@@ -45,9 +45,9 @@ fun PasoTelefono(viewModel: RegistroVisitaViewModel) {
                     mensajeError = null
 
                     coroutineScope.launch {
-                        kotlinx.coroutines.delay(1500) // Simula llamada a API
+                        val existe = viewModel.verificarNumeroWhatsApp(telefono)
                         cargando = false
-                        if (telefono.length >= 10) {
+                        if (existe) {
                             viewModel.numeroVerificado.value = true
                             viewModel.avanzarPaso()
                         } else {
