@@ -5,6 +5,7 @@ import android.net.Uri
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.core.content.FileProvider
+import com.example.bitacoradigital.util.Constants
 import androidx.core.content.ContextCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -53,7 +54,7 @@ fun PasoDocumento(viewModel: RegistroVisitaViewModel) {
         val image = File.createTempFile("document_", ".jpg", imagesDir)
         return FileProvider.getUriForFile(
             context,
-            "${context.packageName}.fileprovider",
+            Constants.FILE_PROVIDER_AUTHORITY,
             image
         )
     }

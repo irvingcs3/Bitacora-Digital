@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
 import android.content.Context
 import androidx.core.content.FileProvider
+import com.example.bitacoradigital.util.Constants
 import androidx.core.content.ContextCompat
 import java.io.File
 import android.net.Uri
@@ -66,7 +67,7 @@ fun PasoFotos(viewModel: RegistroVisitaViewModel) {
         val image = File.createTempFile("extra_", ".jpg", imagesDir)
         return FileProvider.getUriForFile(
             context,
-            "${context.packageName}.fileprovider",
+            Constants.FILE_PROVIDER_AUTHORITY,
             image
         )
     }
