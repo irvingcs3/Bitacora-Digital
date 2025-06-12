@@ -81,8 +81,9 @@ fun PasoFotos(viewModel: RegistroVisitaViewModel) {
         if (fotos.size < 3) {
             Spacer(Modifier.height(16.dp))
             Button(onClick = {
-                tempUri = createImageUri(context)
-                launcher.launch(tempUri)
+                val uriTemp = createImageUri(context)
+                tempUri = uriTemp
+                launcher.launch(uriTemp)
             }) {
                 Text("Agregar Foto (${3 - fotos.size} restantes)")
             }

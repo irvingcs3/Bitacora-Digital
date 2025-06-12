@@ -236,7 +236,7 @@ class RegistroVisitaViewModel(
                 val body = json.toString().toRequestBody(mediaType)
 
                 val request = Request.Builder()
-                    .url("http://bitacora.cs3.mx:8001/api/v1/registro-visita/")
+                    .url("https://bitacora.cs3.mx/api/v1/registro-visita/")
                     .post(body)
                     .addHeader("x-session-token", token)
                     .addHeader("Content-Type", "application/json")
