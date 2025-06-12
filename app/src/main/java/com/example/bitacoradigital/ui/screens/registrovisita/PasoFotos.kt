@@ -31,14 +31,27 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
+import android.content.Context
+import androidx.core.content.FileProvider
+import java.io.File
+import android.net.Uri
 import kotlinx.coroutines.launch
 @Composable
 fun PasoFotos(viewModel: RegistroVisitaViewModel) {
     val fotos by viewModel.fotosAdicionales.collectAsState()
     val context = LocalContext.current
+
+    var tempUri by remember { mutableStateOf<Uri?>(null) }
+
+    fun createImageUri(context: Context): Uri {
+        val imagesDir = File(context.cacheDir, "images").apply { mkdirs() }
+        val image = File.createTempFile("extra_", ".jpg", imagesDir)
+        return FileProvider.getUriForFile(context, "${'$'}{context.packageName}.fileprovider", image)
+    }
+
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { uri -> uri?.let { viewModel.agregarFoto(it) } }
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success -> if (success) tempUri?.let { viewModel.agregarFoto(it) } }
     )
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
@@ -67,7 +80,10 @@ fun PasoFotos(viewModel: RegistroVisitaViewModel) {
 
         if (fotos.size < 3) {
             Spacer(Modifier.height(16.dp))
-            Button(onClick = { launcher.launch("image/*") }) {
+            Button(onClick = {
+                tempUri = createImageUri(context)
+                launcher.launch(tempUri)
+            }) {
                 Text("Agregar Foto (${3 - fotos.size} restantes)")
             }
         }
