@@ -46,7 +46,11 @@ fun PasoFotos(viewModel: RegistroVisitaViewModel) {
     fun createImageUri(context: Context): Uri {
         val imagesDir = File(context.cacheDir, "images").apply { mkdirs() }
         val image = File.createTempFile("extra_", ".jpg", imagesDir)
-        return FileProvider.getUriForFile(context, "${'$'}{context.packageName}.fileprovider", image)
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            image
+        )
     }
 
     val launcher = rememberLauncherForActivityResult(
