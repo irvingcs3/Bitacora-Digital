@@ -49,8 +49,9 @@ fun PasoDocumento(viewModel: RegistroVisitaViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            tempUri = createImageUri(context)
-            launcher.launch(tempUri)
+            val uriTemp = createImageUri(context)
+            tempUri = uriTemp
+            launcher.launch(uriTemp)
         }) {
             Text("Tomar Foto")
         }
