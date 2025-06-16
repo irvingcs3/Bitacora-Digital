@@ -24,6 +24,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
+import java.util.concurrent.TimeUnit
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -212,7 +213,15 @@ class RegistroVisitaViewModel(
                 .addHeader("accept", "application/json")
                 .build()
 
-            val client = OkHttpClient()
+            // The backend may take considerable time to process the image.
+            // Remove timeouts on the HTTP client so the request isn't aborted
+            // before the server responds.
+            val client = OkHttpClient.Builder()
+                .connectTimeout(0, TimeUnit.MILLISECONDS)
+                .readTimeout(0, TimeUnit.MILLISECONDS)
+                .writeTimeout(0, TimeUnit.MILLISECONDS)
+                .callTimeout(0, TimeUnit.MILLISECONDS)
+                .build()
             val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
 
             if (response.isSuccessful) {
