@@ -210,6 +210,7 @@ class RegistroVisitaViewModel(
             val request = Request.Builder()
                 .url("https://bit.cs3.mx/credential/recognition")
                 .post(multipart)
+                .addHeader("Authorization", "Bearer MHIxMG4hQ2gxbjAjTHUxJF9LQHQwLUYzci5WMWMwKkNAJF8zbTF4SkAxbTMrMCRjQHJfMXJ2MW45DQoNCg")
                 .addHeader("accept", "application/json")
                 .build()
 
