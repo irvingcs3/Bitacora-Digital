@@ -50,7 +50,7 @@ class GenerarCodigoQRViewModel(private val prefs: SessionPreferences) : ViewMode
                     "Error ${'$'}{response.code}"
                 }
             } catch (e: Exception) {
-                _mensaje.value = "Error al enviar invitación: ${'$'}{e.message ?: e.toString()}"
+                _mensaje.value = "Error al enviar invitación: ${e.message ?: e.toString()}"
             } finally {
                 _cargando.value = false
             }
