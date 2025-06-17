@@ -142,7 +142,8 @@ fun AppNavGraph(
             val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
             PerimetrosScreen(
                 perimetroId = perimetroId,
-                permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Perímetro") ?: emptyList()
+                permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Perímetro") ?: emptyList(),
+                navController = navController
             )
         }
 

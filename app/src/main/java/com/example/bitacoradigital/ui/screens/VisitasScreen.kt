@@ -70,6 +70,7 @@ fun VisitasScreen(
     }
 }
 
+}
 
 @Composable
 fun PermisoCard(
