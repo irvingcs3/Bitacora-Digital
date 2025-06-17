@@ -29,7 +29,9 @@ class GenerarCodigoQRViewModel(private val prefs: SessionPreferences) : ViewMode
             _cargando.value = true
             _mensaje.value = null
             try {
-                val id = prefs.userId.firstOrNull() ?: throw Exception("ID de usuario no disponible")
+                val id = withContext(Dispatchers.IO) {
+                    prefs.userId.firstOrNull()
+                } ?: throw Exception("ID de usuario no disponible")
                 val cadDias = caducidad.value.toIntOrNull() ?: 0
                 val json = JSONObject().apply {
                     put("id_invitante", id)

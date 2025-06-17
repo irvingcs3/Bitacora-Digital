@@ -175,8 +175,12 @@ class RegistroVisitaViewModel(
             _cargandoDestino.value = true
             _errorDestino.value = null
             try {
-                val token = sessionPrefs.sessionToken.first() ?: throw Exception("Token vacío")
-                val response = apiService.getJerarquiaPorNivel(perimetroId, token)
+                val token = withContext(Dispatchers.IO) {
+                    sessionPrefs.sessionToken.first()
+                } ?: throw Exception("Token vacío")
+                val response = withContext(Dispatchers.IO) {
+                    apiService.getJerarquiaPorNivel(perimetroId, token)
+                }
                 Log.d("RegistroVisita", "Llamando jerarquía con perimetroId=$perimetroId y token=$token")
                 _jerarquia.value = response
                 iniciarRuta(response)
@@ -253,7 +257,9 @@ class RegistroVisitaViewModel(
         viewModelScope.launch {
             _cargandoRegistro.value = true
             try {
-                val token = sessionPrefs.sessionToken.first() ?: throw Exception("Token vacío")
+                val token = withContext(Dispatchers.IO) {
+                    sessionPrefs.sessionToken.first()
+                } ?: throw Exception("Token vacío")
 
                 val zonaId = destinoSeleccionado.value?.perimetro_id
                     ?: throw Exception("Zona destino no seleccionada")

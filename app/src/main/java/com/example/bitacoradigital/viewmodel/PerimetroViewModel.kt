@@ -46,7 +46,9 @@ class PerimetroViewModel(
             _cargando.value = true
             _error.value = null
             try {
-                val token = sessionPrefs.sessionToken.first() ?: throw Exception("Token vacío")
+                val token = withContext(Dispatchers.IO) {
+                    sessionPrefs.sessionToken.first()
+                } ?: throw Exception("Token vacío")
                 val response = withContext(Dispatchers.IO) {
                     apiService.getJerarquiaPorNivel(perimetroId, token)
                 }
@@ -82,7 +84,9 @@ class PerimetroViewModel(
     private fun crear(nombre: String, nivel: Int, padreId: Int?) {
         viewModelScope.launch {
             try {
-                val token = sessionPrefs.sessionToken.first() ?: return@launch
+                val token = withContext(Dispatchers.IO) {
+                    sessionPrefs.sessionToken.first()
+                } ?: return@launch
                 val json = JSONObject().apply {
                     put("nombre", nombre)
                     put("nivel", nivel)
@@ -111,7 +115,9 @@ class PerimetroViewModel(
     fun eliminarPerimetro(id: Int) {
         viewModelScope.launch {
             try {
-                val token = sessionPrefs.sessionToken.first() ?: return@launch
+                val token = withContext(Dispatchers.IO) {
+                    sessionPrefs.sessionToken.first()
+                } ?: return@launch
                 val request = Request.Builder()
                     .url("https://bit.cs3.mx/api/v1/perimetro/${'$'}id/")
                     .delete()
@@ -133,7 +139,9 @@ class PerimetroViewModel(
     fun editarPerimetro(id: Int, nombre: String) {
         viewModelScope.launch {
             try {
-                val token = sessionPrefs.sessionToken.first() ?: return@launch
+                val token = withContext(Dispatchers.IO) {
+                    sessionPrefs.sessionToken.first()
+                } ?: return@launch
                 val json = JSONObject().apply { put("nombre", nombre) }
                 val body = json.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder()
