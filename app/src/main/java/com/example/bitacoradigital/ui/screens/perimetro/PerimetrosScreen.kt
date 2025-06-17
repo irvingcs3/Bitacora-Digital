@@ -155,6 +155,7 @@ fun PerimetrosScreen(perimetroId: Int, permisos: List<String>, navController: Na
         }
     }
 }
+}
 
 @Composable
 fun JerarquiaConAcciones(
