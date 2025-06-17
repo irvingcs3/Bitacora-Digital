@@ -53,7 +53,7 @@ fun VisitasScreen(
                 icon = Icons.Default.PersonAdd,
                 titulo = "Registrar Visitas",
                 descripcion = "Captura datos completos de visitantes, proveedores o delivery.",
-                color = Color(0xFF2979FF),
+                color = MaterialTheme.colorScheme.primary,
                 onClick = { navController.navigate("visitas/manual") }
             )
         }
@@ -63,7 +63,7 @@ fun VisitasScreen(
                 icon = Icons.Default.QrCodeScanner,
                 titulo = "Registro por QR",
                 descripcion = "Escanea códigos QR de acceso rápido con verificación automática.",
-                color = Color(0xFF00C853),
+                color = MaterialTheme.colorScheme.primary,
                 onClick = { navController.navigate("visitas/qr") }
             )
         }
@@ -100,17 +100,17 @@ fun PermisoCard(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .background(Color.White.copy(alpha = 0.2f), shape = RoundedCornerShape(50)),
+                        .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f), shape = RoundedCornerShape(50)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(icon, contentDescription = null, tint = Color.White)
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
                     text = "ACTIVO",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
                 )
@@ -119,7 +119,7 @@ fun PermisoCard(
             Column {
                 Text(
                     titulo,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -128,7 +128,7 @@ fun PermisoCard(
 
                 Text(
                     descripcion,
-                    color = Color.White.copy(alpha = 0.9f),
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                     fontSize = 13.sp
                 )
 
@@ -136,7 +136,7 @@ fun PermisoCard(
 
                 Text(
                     "\u2022  Toca para acceder",
-                    color = Color.White.copy(alpha = 0.8f),
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                     fontSize = 11.sp
                 )
             }

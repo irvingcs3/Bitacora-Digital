@@ -65,7 +65,7 @@ private fun PermisoCard(titulo: String, descripcion: String, onClick: () -> Unit
             .height(170.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF2979FF)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Column(
@@ -74,8 +74,8 @@ private fun PermisoCard(titulo: String, descripcion: String, onClick: () -> Unit
                 .padding(20.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(titulo, color = Color.White, style = MaterialTheme.typography.titleLarge)
-            Text(descripcion, color = Color.White.copy(alpha = 0.9f))
+            Text(titulo, color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.titleLarge)
+            Text(descripcion, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f))
         }
     }
 }
