@@ -19,6 +19,8 @@ import com.example.bitacoradigital.model.PerimetroVisual
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
 import com.example.bitacoradigital.ui.components.HomeConfigNavBar
+import com.example.bitacoradigital.ui.components.menu.ModuleButton
+import com.example.bitacoradigital.ui.components.menu.moduloIcon
 
 @Composable
 fun HomeScreen(
@@ -75,33 +77,17 @@ fun HomeScreen(
 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     activo.modulos.keys.forEach { modulo ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp)
-                                .clickable {
-                                    when (modulo) {
-                                        "Registros de Visitas" -> navController.navigate("visitas")
-                                        "Perímetro" -> navController.navigate("perimetros")
-                                        "Códigos QR" -> navController.navigate("qr")
-                                        else -> { /* por ahora no navega a otro lado */ }
-                                    }
-                                },
-                            shape = RoundedCornerShape(12.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
-                        ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                Text(modulo, style = MaterialTheme.typography.titleMedium)
+                        val icon = moduloIcon(modulo)
+                        ModuleButton(title = modulo, icon = icon) {
+                            when (modulo) {
+                                "Registros de Visitas" -> navController.navigate("visitas")
+                                "Perímetro" -> navController.navigate("perimetros")
+                                "Códigos QR" -> navController.navigate("qr")
+                                "Dashboard" -> navController.navigate("dashboard")
+                                else -> { }
                             }
                         }
                     }
-
                 }
             }
         }
