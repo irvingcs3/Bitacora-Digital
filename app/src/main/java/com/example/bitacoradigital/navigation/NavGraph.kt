@@ -20,6 +20,8 @@ import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.network.ApiService
 import com.example.bitacoradigital.ui.screens.*
 import com.example.bitacoradigital.ui.screens.perimetro.PerimetrosScreen
+import com.example.bitacoradigital.ui.screens.qr.CodigosQRScreen
+import com.example.bitacoradigital.ui.screens.qr.GenerarCodigoQRScreen
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
@@ -122,6 +124,17 @@ fun AppNavGraph(
 
         composable("visitas/qr") {
             RegistroQRScreen()
+        }
+
+        composable("qr") {
+            CodigosQRScreen(
+                permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Códigos QR") ?: emptyList(),
+                navController = navController
+            )
+        }
+
+        composable("qr/generar") {
+            GenerarCodigoQRScreen()
         }
 
         composable("perimetros") {
