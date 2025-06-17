@@ -12,6 +12,8 @@ import com.example.bitacoradigital.network.RetrofitInstance
 import com.google.gson.Gson
 
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class SignupViewModel : ViewModel() {
     var signupState by mutableStateOf<String?>(null)
@@ -28,7 +30,9 @@ class SignupViewModel : ViewModel() {
         viewModelScope.launch {
             loading = true
             try {
-                val response = RetrofitInstance.authApi.signup(request)
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitInstance.authApi.signup(request)
+                }
                 if (response.code() == 401) {
                     val json = response.errorBody()?.string()
                     val body = json?.let { Gson().fromJson(it, SignupResponse::class.java) }
@@ -72,7 +76,9 @@ class SignupViewModel : ViewModel() {
             loading = true
             try {
                 val token = sessionViewModel.token.value ?: return@launch
-                val response = RetrofitInstance.authApi.verifyEmail(token, VerifyEmailRequest(code))
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitInstance.authApi.verifyEmail(token, VerifyEmailRequest(code))
+                }
                 val newToken = response.meta.session_token ?: token
                 sessionViewModel.guardarSesion(newToken, response.data.user)
                 homeViewModel.cargarDesdeLogin(response.data.user, sessionViewModel)

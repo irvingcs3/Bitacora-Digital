@@ -47,7 +47,9 @@ class PerimetroViewModel(
             _error.value = null
             try {
                 val token = sessionPrefs.sessionToken.first() ?: throw Exception("Token vacío")
-                val response = apiService.getJerarquiaPorNivel(perimetroId, token)
+                val response = withContext(Dispatchers.IO) {
+                    apiService.getJerarquiaPorNivel(perimetroId, token)
+                }
                 _jerarquia.value = response
                 _ruta.value = listOf(response)
             } catch (e: Exception) {
