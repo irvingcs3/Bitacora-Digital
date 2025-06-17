@@ -231,7 +231,7 @@ class RegistroVisitaViewModel(
                 apellidoPaterno.value = json.optString("paterno")
                 apellidoMaterno.value = json.optString("materno")
             } else {
-                _errorReconocimiento.value = "Error ${'$'}{response.code}"
+                _errorReconocimiento.value = "Error ${response.code}"
             }
         } catch (e: Exception) {
             Log.e("RegistroVisita", "Error reconocimiento", e)

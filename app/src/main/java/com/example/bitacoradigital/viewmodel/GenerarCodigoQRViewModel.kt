@@ -47,7 +47,7 @@ class GenerarCodigoQRViewModel(private val prefs: SessionPreferences) : ViewMode
                 _mensaje.value = if (response.isSuccessful) {
                     "Invitación enviada"
                 } else {
-                    "Error ${'$'}{response.code}"
+                    "Error ${response.code}"
                 }
             } catch (e: Exception) {
                 _mensaje.value = "Error al enviar invitación: ${e.message ?: e.toString()}"
