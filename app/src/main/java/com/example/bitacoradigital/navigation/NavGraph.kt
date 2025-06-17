@@ -119,7 +119,7 @@ fun AppNavGraph(
         composable("visitas/manual") {
             val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
 
-            RegistroVisitaWizardScreen(perimetroId = perimetroId) // ← ya no pases nada aquí
+            RegistroVisitaWizardScreen(perimetroId = perimetroId, navController = navController)
         }
 
         composable("visitas/qr") {
@@ -134,7 +134,7 @@ fun AppNavGraph(
         }
 
         composable("qr/generar") {
-            GenerarCodigoQRScreen()
+            GenerarCodigoQRScreen(navController)
         }
 
         composable("perimetros") {

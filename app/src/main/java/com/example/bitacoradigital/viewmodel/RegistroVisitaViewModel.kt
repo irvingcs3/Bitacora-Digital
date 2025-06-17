@@ -159,6 +159,14 @@ class RegistroVisitaViewModel(
     private val _errorReconocimiento = MutableStateFlow<String?>(null)
     val errorReconocimiento: StateFlow<String?> = _errorReconocimiento
 
+    fun clearDestinoError() {
+        _errorDestino.value = null
+    }
+
+    fun clearReconocimientoError() {
+        _errorReconocimiento.value = null
+    }
+
     private val _cargandoRegistro = MutableStateFlow(false)
     val cargandoRegistro: StateFlow<Boolean> = _cargandoRegistro
 

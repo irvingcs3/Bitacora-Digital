@@ -9,6 +9,8 @@ import androidx.compose.ui.Alignment
 import com.example.bitacoradigital.model.JerarquiaNodo
 import androidx.compose.ui.unit.dp
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 
 @Composable
 fun PasoDestino(viewModel: RegistroVisitaViewModel) {
@@ -17,22 +19,29 @@ fun PasoDestino(viewModel: RegistroVisitaViewModel) {
     val seleccionActual by viewModel.destinoSeleccionado.collectAsState()
     val cargando by viewModel.cargandoDestino.collectAsState()
     val error by viewModel.errorDestino.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.cargarJerarquiaDestino()
 
     }
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp)) {
+    Box(Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         Text("Paso 4: Selección de Destino", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(16.dp))
 
         if (cargando) {
             CircularProgressIndicator()
         } else if (error != null) {
-            Text("Error: $error", color = MaterialTheme.colorScheme.error)
+            LaunchedEffect(error) {
+                snackbarHostState.showSnackbar(error ?: "")
+                viewModel.clearDestinoError()
+            }
         } else {
             NavegacionJerarquia(
                 ruta = ruta,
@@ -44,6 +53,8 @@ fun PasoDestino(viewModel: RegistroVisitaViewModel) {
                 onRetroceder = { viewModel.retrocederNivel() }
             )
         }
+    }
+    SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 

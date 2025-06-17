@@ -7,16 +7,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bitacoradigital.ui.components.HomeConfigNavBar
+import androidx.navigation.NavHostController
 
 @Composable
 fun DashboardScreen(
-    viewModel: DashboardViewModel = viewModel()
+    viewModel: DashboardViewModel = viewModel(),
+    navController: NavHostController
 ) {
     val state = viewModel.uiState.collectAsState().value
 
+    Scaffold(
+        bottomBar = {
+            HomeConfigNavBar(
+                current = "",
+                onHomeClick = { navController.navigate("home") },
+                onConfigClick = { navController.navigate("configuracion") }
+            )
+        }
+    ) { innerPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(innerPadding)
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -48,5 +61,6 @@ fun DashboardScreen(
                 Text("Último escaneo: ${state.ultimoEvento}")
             }
         }
+    }
     }
 }

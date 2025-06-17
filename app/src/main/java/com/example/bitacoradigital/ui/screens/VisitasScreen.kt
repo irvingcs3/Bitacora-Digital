@@ -19,16 +19,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import com.example.bitacoradigital.ui.components.HomeConfigNavBar
 
 @Composable
 fun VisitasScreen(
     permisos: List<String>,
     navController: NavHostController
 ) {
+    Scaffold(
+        bottomBar = {
+            HomeConfigNavBar(
+                current = "",
+                onHomeClick = { navController.navigate("home") },
+                onConfigClick = { navController.navigate("configuracion") }
+            )
+        }
+    ) { innerPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(innerPadding)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {

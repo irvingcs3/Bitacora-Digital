@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.sp
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 
 @Composable
 fun LoginScreen(
@@ -36,6 +38,7 @@ fun LoginScreen(
     var showPassword by remember { mutableStateOf(false) }
     val loginState = loginViewModel.loginState
     val loading = loginViewModel.loading
+    val snackbarHostState = remember { SnackbarHostState() }
 
     Box(Modifier.fillMaxSize()) {
         Column(
@@ -110,8 +113,11 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        loginState?.let {
-            Text(it, color = if (it.contains("Error")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+        loginState?.let { msg ->
+            LaunchedEffect(msg) {
+                snackbarHostState.showSnackbar(msg)
+                loginViewModel.clearState()
+            }
         }
 
         Text(
@@ -132,6 +138,8 @@ fun LoginScreen(
             fontSize = 14.sp
         )
         }
+
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
 
         if (loading) {
             Box(
