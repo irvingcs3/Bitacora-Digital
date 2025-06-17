@@ -94,7 +94,7 @@ class PerimetroViewModel(
                 if (response.isSuccessful) {
                     cargarJerarquia()
                 } else {
-                    _error.value = "Error ${'$'}{response.code}"
+                    _error.value = "Error ${response.code}"
                 }
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
@@ -116,7 +116,7 @@ class PerimetroViewModel(
                 if (response.isSuccessful) {
                     cargarJerarquia()
                 } else {
-                    _error.value = "Error ${'$'}{response.code}"
+                    _error.value = "Error ${response.code}"
                 }
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
@@ -141,7 +141,7 @@ class PerimetroViewModel(
                 if (response.isSuccessful) {
                     cargarJerarquia()
                 } else {
-                    _error.value = "Error ${'$'}{response.code}"
+                    _error.value = "Error ${response.code}"
                 }
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
