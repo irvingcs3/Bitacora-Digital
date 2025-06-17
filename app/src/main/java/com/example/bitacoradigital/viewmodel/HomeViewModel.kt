@@ -7,6 +7,8 @@ import com.example.bitacoradigital.model.PerimetroVisual
 import com.example.bitacoradigital.model.User
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.example.bitacoradigital.viewmodel.SessionViewModel
 
 class HomeViewModel : ViewModel() {
@@ -41,8 +43,12 @@ class HomeViewModel : ViewModel() {
         }
 
         viewModelScope.launch {
-            val favEmpresaId = sessionViewModel.favoritoEmpresaId.firstOrNull()
-            val favPerimetroId = sessionViewModel.favoritoPerimetroId.firstOrNull()
+            val favEmpresaId = withContext(Dispatchers.IO) {
+                sessionViewModel.favoritoEmpresaId.firstOrNull()
+            }
+            val favPerimetroId = withContext(Dispatchers.IO) {
+                sessionViewModel.favoritoPerimetroId.firstOrNull()
+            }
 
             val actualizados = lista.map {
                 it.copy(esFavorito = it.empresaId == favEmpresaId && it.perimetroId == favPerimetroId)

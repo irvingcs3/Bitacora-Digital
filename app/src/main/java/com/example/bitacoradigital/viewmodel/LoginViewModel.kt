@@ -8,6 +8,8 @@ import com.example.bitacoradigital.model.SignupResponse
 import com.google.gson.Gson
 import retrofit2.HttpException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.*
 
 class LoginViewModel : ViewModel() {
@@ -33,7 +35,9 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             loading = true
             try {
-                val response = RetrofitInstance.authApi.login(LoginRequest(email, password))
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitInstance.authApi.login(LoginRequest(email, password))
+                }
                 val token = response.meta.session_token
                 val user = response.data.user
 

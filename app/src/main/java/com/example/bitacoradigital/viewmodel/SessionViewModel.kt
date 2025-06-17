@@ -14,6 +14,8 @@ import com.google.gson.Gson
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class SessionViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -70,7 +72,9 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
                 val token = _token.value
                 if (!token.isNullOrBlank()) {
                     try {
-                        val response = RetrofitInstance.authApi.getSession(token)
+                        val response = withContext(Dispatchers.IO) {
+                            RetrofitInstance.authApi.getSession(token)
+                        }
                         val newToken = response.meta.session_token ?: token
                         guardarSesion(newToken, response.data.user)
                     } catch (_: Exception) {

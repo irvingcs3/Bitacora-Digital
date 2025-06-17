@@ -11,6 +11,8 @@ import com.example.bitacoradigital.model.SignupResponse
 import com.example.bitacoradigital.network.RetrofitInstance
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class ForgotPasswordViewModel : ViewModel() {
     var state by mutableStateOf<String?>(null)
@@ -20,7 +22,9 @@ class ForgotPasswordViewModel : ViewModel() {
         viewModelScope.launch {
 
             try {
-                val response = RetrofitInstance.authApi.passwordRequest(PasswordRequest(email))
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitInstance.authApi.passwordRequest(PasswordRequest(email))
+                }
                 val body = if (response.isSuccessful) {
                     response.body()
                 } else {
@@ -50,10 +54,12 @@ class ForgotPasswordViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val token = sessionViewModel.token.value ?: return@launch
-                val response = RetrofitInstance.authApi.passwordReset(
-                    token,
-                    PasswordResetRequest(code, password)
-                )
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitInstance.authApi.passwordReset(
+                        token,
+                        PasswordResetRequest(code, password)
+                    )
+                }
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body != null) {

@@ -7,6 +7,8 @@ import com.example.bitacoradigital.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class PerfilViewModel(private val repository: UserRepository): ViewModel() {
 
@@ -15,7 +17,9 @@ class PerfilViewModel(private val repository: UserRepository): ViewModel() {
 
     fun cargarPerfiles(token: String) {
         viewModelScope.launch {
-            _perfiles.value = listOf(repository.fetchPerfiles(token))
+            _perfiles.value = listOf(
+                withContext(Dispatchers.IO) { repository.fetchPerfiles(token) }
+            )
         }
     }
 }
