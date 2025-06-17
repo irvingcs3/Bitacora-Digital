@@ -6,5 +6,6 @@ data class SignupRequest(
     val nombre: String,
     val apellidoPaterno: String,
     val apellidoMaterno: String,
-    val nombreInstancia: String
+    val nombreInstancia: String,
+    val telefono: String
 )

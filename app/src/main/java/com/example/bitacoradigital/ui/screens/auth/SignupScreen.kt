@@ -30,6 +30,7 @@ fun SignupScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var telefono by remember { mutableStateOf("") }
     var nombre by remember { mutableStateOf("") }
     var apellidoPaterno by remember { mutableStateOf("") }
     var apellidoMaterno by remember { mutableStateOf("") }
@@ -70,6 +71,15 @@ fun SignupScreen(
                 }
             },
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = telefono,
+            onValueChange = { telefono = it },
+            label = { Text("Número de teléfono") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -115,7 +125,8 @@ fun SignupScreen(
                     nombre = nombre,
                     apellidoPaterno = apellidoPaterno,
                     apellidoMaterno = apellidoMaterno,
-                    nombreInstancia = instancia
+                    nombreInstancia = instancia,
+                    telefono = telefono
                 )
                 signupViewModel.signup(req, sessionViewModel, onAwaitCode)
             },
