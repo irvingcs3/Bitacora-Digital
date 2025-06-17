@@ -78,6 +78,7 @@ fun HomeScreen(
                                     when (modulo) {
                                         "Registros de Visitas" -> navController.navigate("visitas")
                                         "Perímetro" -> navController.navigate("perimetros")
+                                        "Códigos QR" -> navController.navigate("qr")
                                         else -> { /* por ahora no navega a otro lado */ }
                                     }
                                 },
