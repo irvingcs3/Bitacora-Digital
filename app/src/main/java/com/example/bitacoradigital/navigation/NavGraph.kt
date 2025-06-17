@@ -23,6 +23,7 @@ import com.example.bitacoradigital.ui.screens.RegistroQRScreen
 import com.example.bitacoradigital.ui.screens.perimetro.PerimetrosScreen
 import com.example.bitacoradigital.ui.screens.qr.CodigosQRScreen
 import com.example.bitacoradigital.ui.screens.qr.GenerarCodigoQRScreen
+import com.example.bitacoradigital.ui.screens.dashboard.DashboardScreen
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
@@ -154,6 +155,10 @@ fun AppNavGraph(
                 onConfiguracionClick = { navController.navigate("configuracion") },
                 navController = navController
             )
+        }
+
+        composable("dashboard") {
+            DashboardScreen(navController = navController)
         }
 
 
