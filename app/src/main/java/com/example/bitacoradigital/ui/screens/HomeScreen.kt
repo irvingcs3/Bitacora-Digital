@@ -18,6 +18,7 @@ import androidx.navigation.NavHostController
 import com.example.bitacoradigital.model.PerimetroVisual
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
+import com.example.bitacoradigital.ui.components.HomeConfigNavBar
 
 @Composable
 fun HomeScreen(
@@ -43,7 +44,11 @@ fun HomeScreen(
             )
         },
         bottomBar = {
-            BottomNavigationBar(onConfiguracionClick = onConfiguracionClick)
+            HomeConfigNavBar(
+                current = "home",
+                onHomeClick = {},
+                onConfigClick = onConfiguracionClick
+            )
         }
     ) { innerPadding ->
         val scrollState = rememberScrollState()
@@ -178,22 +183,4 @@ fun TopBar(
             }
         }
     )
-}
-
-@Composable
-fun BottomNavigationBar(onConfiguracionClick: () -> Unit) {
-    NavigationBar {
-        NavigationBarItem(
-            selected = true,
-            onClick = { /* Ya estás en Home */ },
-            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-            label = { Text("Home") }
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = onConfiguracionClick,
-            icon = { Icon(Icons.Default.Settings, contentDescription = "Configuración") },
-            label = { Text("Configuración") }
-        )
-    }
 }

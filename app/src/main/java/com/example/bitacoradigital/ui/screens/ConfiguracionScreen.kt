@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.example.bitacoradigital.model.User
 import com.example.bitacoradigital.viewmodel.SessionViewModel
 import kotlinx.coroutines.launch
+import com.example.bitacoradigital.ui.components.HomeConfigNavBar
 
 @Composable
 fun ConfiguracionScreen(
@@ -25,20 +26,11 @@ fun ConfiguracionScreen(
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onHomeClick,
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                    label = { Text("Home") }
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = { /* Ya estás en Configuración */ },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Configuración") },
-                    label = { Text("Configuración") }
-                )
-            }
+            HomeConfigNavBar(
+                current = "config",
+                onHomeClick = onHomeClick,
+                onConfigClick = {}
+            )
         }
     ) { innerPadding ->
         Column(

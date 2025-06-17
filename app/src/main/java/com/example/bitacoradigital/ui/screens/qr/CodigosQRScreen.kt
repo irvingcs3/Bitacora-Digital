@@ -20,12 +20,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.example.bitacoradigital.ui.components.HomeConfigNavBar
 
 @Composable
 fun CodigosQRScreen(permisos: List<String>, navController: NavHostController) {
+    Scaffold(
+        bottomBar = {
+            HomeConfigNavBar(
+                current = "",
+                onHomeClick = { navController.navigate("home") },
+                onConfigClick = { navController.navigate("configuracion") }
+            )
+        }
+    ) { innerPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(innerPadding)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -42,6 +53,7 @@ fun CodigosQRScreen(permisos: List<String>, navController: NavHostController) {
                 onClick = { navController.navigate("qr/generar") }
             )
         }
+    }
     }
 }
 

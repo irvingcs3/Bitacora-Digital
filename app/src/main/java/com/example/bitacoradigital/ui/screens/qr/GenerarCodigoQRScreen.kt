@@ -15,9 +15,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.viewmodel.GenerarCodigoQRViewModel
 import com.example.bitacoradigital.viewmodel.GenerarCodigoQRViewModelFactory
+import com.example.bitacoradigital.ui.components.HomeConfigNavBar
+import androidx.navigation.NavHostController
 
 @Composable
-fun GenerarCodigoQRScreen() {
+fun GenerarCodigoQRScreen(navController: NavHostController) {
     val context = LocalContext.current
     val prefs = remember { SessionPreferences(context) }
     val viewModel: GenerarCodigoQRViewModel = viewModel(factory = GenerarCodigoQRViewModelFactory(prefs))
@@ -27,9 +29,19 @@ fun GenerarCodigoQRScreen() {
     val mensaje by viewModel.mensaje.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
 
+    Scaffold(
+        bottomBar = {
+            HomeConfigNavBar(
+                current = "",
+                onHomeClick = { navController.navigate("home") },
+                onConfigClick = { navController.navigate("configuracion") }
+            )
+        }
+    ) { innerPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(innerPadding)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -56,5 +68,6 @@ fun GenerarCodigoQRScreen() {
         }
 
         mensaje?.let { Text(it) }
+    }
     }
 }

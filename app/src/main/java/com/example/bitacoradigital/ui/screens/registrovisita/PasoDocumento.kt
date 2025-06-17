@@ -24,12 +24,15 @@ import java.io.File
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 @Composable
 fun PasoDocumento(viewModel: RegistroVisitaViewModel) {
     val context = LocalContext.current
     val uri = viewModel.documentoUri.value
     val cargando by viewModel.cargandoReconocimiento.collectAsState()
     val error by viewModel.errorReconocimiento.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
     var hasCameraPermission by remember {
@@ -67,6 +70,7 @@ fun PasoDocumento(viewModel: RegistroVisitaViewModel) {
         }
     }
 
+    Box(Modifier.fillMaxSize()) {
     Column(modifier = Modifier.padding(16.dp)) {
         Text("Paso 2: Escanea tu documento", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(16.dp))
@@ -119,14 +123,18 @@ fun PasoDocumento(viewModel: RegistroVisitaViewModel) {
             Text(if (cargando) "Procesando..." else "Continuar")
         }
 
-        error?.let {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(it, color = MaterialTheme.colorScheme.error)
+        error?.let { msg ->
+            LaunchedEffect(msg) {
+                snackbarHostState.showSnackbar(msg)
+                viewModel.clearReconocimientoError()
+            }
         }
 
         if (cargando) {
             Spacer(modifier = Modifier.height(16.dp))
             CircularProgressIndicator()
         }
+    }
+    SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }

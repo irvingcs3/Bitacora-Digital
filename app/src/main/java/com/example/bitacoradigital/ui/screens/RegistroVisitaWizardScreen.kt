@@ -22,10 +22,12 @@ import com.example.bitacoradigital.ui.screens.registrovisita.PasoTelefono
 import com.example.bitacoradigital.ui.screens.registrovisita.PasoVerificacion
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModelFactory
 import com.example.bitacoradigital.ui.components.Stepper
+import com.example.bitacoradigital.ui.components.HomeConfigNavBar
+import androidx.navigation.NavHostController
 
 
 @Composable
-fun RegistroVisitaWizardScreen(perimetroId: Int) {
+fun RegistroVisitaWizardScreen(perimetroId: Int, navController: NavHostController) {
     val context = LocalContext.current
     val apiService = remember { ApiService.create() }
     val sessionPrefs = remember { SessionPreferences(context) }
@@ -36,7 +38,16 @@ fun RegistroVisitaWizardScreen(perimetroId: Int) {
 
     val pasoActual by viewModel.pasoActual.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Scaffold(
+        bottomBar = {
+            HomeConfigNavBar(
+                current = "",
+                onHomeClick = { navController.navigate("home") },
+                onConfigClick = { navController.navigate("configuracion") }
+            )
+        }
+    ) { innerPadding ->
+    Column(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp)) {
         Stepper(pasoActual, totalPasos = 7)
         Spacer(Modifier.height(24.dp))
 
@@ -49,5 +60,6 @@ fun RegistroVisitaWizardScreen(perimetroId: Int) {
             6 -> PasoConfirmacion(viewModel)
             7 -> PasoFinal(viewModel)
         }
+    }
     }
 }

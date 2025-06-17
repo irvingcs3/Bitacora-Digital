@@ -18,9 +18,11 @@ import com.example.bitacoradigital.network.ApiService
 import com.example.bitacoradigital.viewmodel.PerimetroViewModel
 import com.example.bitacoradigital.viewmodel.PerimetroViewModelFactory
 import com.example.bitacoradigital.model.JerarquiaNodo
+import com.example.bitacoradigital.ui.components.HomeConfigNavBar
+import androidx.navigation.NavHostController
 
 @Composable
-fun PerimetrosScreen(perimetroId: Int, permisos: List<String>) {
+fun PerimetrosScreen(perimetroId: Int, permisos: List<String>, navController: NavHostController) {
     val context = LocalContext.current
     val apiService = remember { ApiService.create() }
     val prefs = remember { SessionPreferences(context) }
@@ -43,8 +45,25 @@ fun PerimetrosScreen(perimetroId: Int, permisos: List<String>) {
     var nombreSubzona by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) { viewModel.cargarJerarquia() }
+    val snackbarHostState = remember { SnackbarHostState() }
+    error?.let { msg ->
+        LaunchedEffect(msg) {
+            snackbarHostState.showSnackbar(msg)
+            viewModel.clearError()
+        }
+    }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Scaffold(
+        bottomBar = {
+            HomeConfigNavBar(
+                current = "",
+                onHomeClick = { navController.navigate("home") },
+                onConfigClick = { navController.navigate("configuracion") }
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { innerPadding ->
+    Column(Modifier.fillMaxSize().padding(innerPadding).padding(16.dp)) {
         if (cargando) {
             CircularProgressIndicator()
         } else if (error != null) {

@@ -37,6 +37,10 @@ class PerimetroViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    fun clearError() {
+        _error.value = null
+    }
+
     fun cargarJerarquia() {
         viewModelScope.launch {
             _cargando.value = true

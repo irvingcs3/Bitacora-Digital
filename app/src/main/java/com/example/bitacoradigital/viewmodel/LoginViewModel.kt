@@ -18,6 +18,10 @@ class LoginViewModel : ViewModel() {
     var loading by mutableStateOf(false)
         private set
 
+    fun clearState() {
+        loginState = null
+    }
+
     fun login(
         email: String,
         password: String,
