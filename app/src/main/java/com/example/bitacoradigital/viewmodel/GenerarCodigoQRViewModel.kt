@@ -17,7 +17,7 @@ import org.json.JSONObject
 
 class GenerarCodigoQRViewModel(private val prefs: SessionPreferences) : ViewModel() {
     val telefono = MutableStateFlow("")
-    val caducidad = MutableStateFlow(1)
+    val caducidad = MutableStateFlow("")
     private val _mensaje = MutableStateFlow<String?>(null)
     val mensaje: StateFlow<String?> = _mensaje
     private val _cargando = MutableStateFlow(false)
@@ -29,10 +29,11 @@ class GenerarCodigoQRViewModel(private val prefs: SessionPreferences) : ViewMode
             _mensaje.value = null
             try {
                 val id = prefs.userId.firstOrNull() ?: throw Exception("ID de usuario no disponible")
+                val cadDias = caducidad.value.toIntOrNull() ?: 0
                 val json = JSONObject().apply {
                     put("id_invitante", id)
                     put("telefono_invitado", telefono.value)
-                    put("cad", caducidad.value)
+                    put("cad", cadDias)
                 }
                 val body = json.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder()
@@ -48,7 +49,7 @@ class GenerarCodigoQRViewModel(private val prefs: SessionPreferences) : ViewMode
                     "Error ${'$'}{response.code}"
                 }
             } catch (e: Exception) {
-                _mensaje.value = "Error: ${'$'}{e.localizedMessage}"
+                _mensaje.value = "Error al enviar invitación: ${'$'}{e.message ?: e.toString()}"
             } finally {
                 _cargando.value = false
             }

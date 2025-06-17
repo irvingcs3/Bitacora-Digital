@@ -1,14 +1,12 @@
 package com.example.bitacoradigital.ui.screens.qr
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
@@ -29,9 +27,13 @@ fun GenerarCodigoQRScreen() {
     val mensaje by viewModel.mensaje.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
 
-    var expanded by remember { mutableStateOf(false) }
-
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         OutlinedTextField(
             value = telefono,
             onValueChange = { viewModel.telefono.value = it },
@@ -40,25 +42,14 @@ fun GenerarCodigoQRScreen() {
             modifier = Modifier.fillMaxWidth()
         )
 
-        Box {
-            OutlinedTextField(
-                value = caducidad.toString(),
-                onValueChange = {},
-                label = { Text("Caducidad") },
-                readOnly = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = true }
-            )
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                (1..3).forEach {
-                    DropdownMenuItem(text = { Text(it.toString()) }, onClick = {
-                        viewModel.caducidad.value = it
-                        expanded = false
-                    })
-                }
-            }
-        }
+        OutlinedTextField(
+            value = caducidad,
+            onValueChange = { viewModel.caducidad.value = it },
+            label = { Text("Caducidad (días)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Text("Número de días que será válido el código")
 
         Button(onClick = { viewModel.enviarInvitacion() }, enabled = !cargando, modifier = Modifier.fillMaxWidth()) {
             Text(if (cargando) "Enviando..." else "Generar")
