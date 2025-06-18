@@ -98,12 +98,6 @@ fun PerimetrosScreen(perimetroId: Int, permisos: List<String>, navController: Na
                 }) {
                     Text("Agregar Subzona")
                 }
-                Button(onClick = {
-                    viewModel.crearHermano(nuevoNombre)
-                    nuevoNombre = ""
-                }) {
-                    Text("Agregar Zona")
-                }
             }
         }
 
