@@ -13,12 +13,14 @@ data class LoginData(
 
 data class User(
     val id: Int,
+    val persona_id: Int,
     val username: String,
     val email: String,
     val display: String,
     val nombre: String?,
     val apellido_paterno: String?,
     val apellido_materno: String?,
+    val telefono: String?,
     val has_usable_password: Boolean,
     val empresas: List<Empresa>
 )

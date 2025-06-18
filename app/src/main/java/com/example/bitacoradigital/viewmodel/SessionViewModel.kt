@@ -92,7 +92,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         _usuario.value = user
         val tieneAcceso = user.empresas.any { it.B }
         _tieneAccesoABitacora.value = tieneAcceso
-        prefs.guardarSesion(token, user.id, gson.toJson(user))
+        prefs.guardarSesion(token, user.id, user.persona_id, gson.toJson(user))
     }
 
     fun setTemporalToken(token: String) {
