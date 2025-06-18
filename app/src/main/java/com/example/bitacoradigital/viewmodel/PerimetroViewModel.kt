@@ -70,12 +70,6 @@ class PerimetroViewModel(
         _ruta.update { if (it.isNotEmpty()) it.dropLast(1) else it }
     }
 
-    fun crearHermano(nombre: String) {
-        val padreId = _ruta.value.dropLast(1).lastOrNull()?.perimetro_id
-        val nivel = _ruta.value.lastOrNull()?.nivel ?: return
-        crear(nombre, nivel, padreId)
-    }
-
     fun crearHijo(nombre: String) {
         val actual = _ruta.value.lastOrNull() ?: return
         crear(nombre, actual.nivel + 1, actual.perimetro_id)
@@ -146,7 +140,7 @@ class PerimetroViewModel(
                 val body = json.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder()
                     .url("https://bit.cs3.mx/api/v1/perimetro/${'$'}id/")
-                    .patch(body)
+                    .put(body)
                     .addHeader("x-session-token", token)
                     .addHeader("Content-Type", "application/json")
                     .build()
