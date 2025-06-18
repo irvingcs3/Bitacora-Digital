@@ -18,11 +18,14 @@ import androidx.navigation.NavHostController
 import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.viewmodel.CheckpointsViewModel
 import com.example.bitacoradigital.viewmodel.CheckpointsViewModelFactory
+import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.model.Checkpoint
 import com.example.bitacoradigital.ui.components.HomeConfigNavBar
 
 @Composable
-fun AccesosScreen(perimetroId: Int, permisos: List<String>, navController: NavHostController) {
+fun AccesosScreen(homeViewModel: HomeViewModel, permisos: List<String>, navController: NavHostController) {
+    val perimetroSeleccionado by homeViewModel.perimetroSeleccionado.collectAsState()
+    val perimetroId = perimetroSeleccionado?.perimetroId ?: return
     val context = LocalContext.current
     val prefs = remember { SessionPreferences(context) }
     val viewModel: CheckpointsViewModel = viewModel(factory = CheckpointsViewModelFactory(prefs, perimetroId))

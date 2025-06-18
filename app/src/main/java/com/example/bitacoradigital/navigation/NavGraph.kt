@@ -150,9 +150,8 @@ fun AppNavGraph(
         }
 
         composable("accesos") {
-            val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
             AccesosScreen(
-                perimetroId = perimetroId,
+                homeViewModel = homeViewModel,
                 permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Accesos") ?: emptyList(),
                 navController = navController
             )
