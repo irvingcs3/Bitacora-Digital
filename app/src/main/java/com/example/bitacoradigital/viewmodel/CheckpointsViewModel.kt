@@ -89,7 +89,7 @@ class CheckpointsViewModel(
             try {
                 val token = withContext(Dispatchers.IO) { prefs.sessionToken.first() } ?: return@launch
                 val request = Request.Builder()
-                    .url("http://192.168.100.8:8001/api/v1/checkpoints/${'$'}id/")
+                    .url("https://bit.cs3.mx/api/v1/checkpoints/${id}/")
                     .delete()
                     .addHeader("x-session-token", token)
                     .build()
@@ -123,16 +123,16 @@ class CheckpointsViewModel(
                 .addHeader("x-session-token", token)
                 .addHeader("Content-Type", "application/json")
             val request = if (id == null) {
-                builder.url("https://bit.cs3.mx/api/v1/checkpoints").post(body).build()
+                builder.url("https://bit.cs3.mx/api/v1/checkpoints/").post(body).build()
             } else {
-                builder.url("https://bit.cs3.mx/api/v1/checkpoints/${'$'}id/").put(body).build()
+                builder.url("https://bit.cs3.mx/api/v1/checkpoints/${id}/").put(body).build()
             }
             val client = OkHttpClient()
             val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
             if (response.isSuccessful) {
                 cargarCheckpoints()
             } else {
-                _error.value = "Error ${'$'}{response.code}"
+                _error.value = "Error ${response.code}"
             }
         } catch (e: Exception) {
             _error.value = e.localizedMessage

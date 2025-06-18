@@ -113,7 +113,7 @@ class PerimetroViewModel(
                     sessionPrefs.sessionToken.first()
                 } ?: return@launch
                 val request = Request.Builder()
-                    .url("https://bit.cs3.mx/api/v1/perimetro/${'$'}id/")
+                    .url("https://bit.cs3.mx/api/v1/perimetro/${id}/")
                     .delete()
                     .addHeader("x-session-token", token)
                     .build()
@@ -139,7 +139,7 @@ class PerimetroViewModel(
                 val json = JSONObject().apply { put("nombre", nombre) }
                 val body = json.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder()
-                    .url("https://bit.cs3.mx/api/v1/perimetro/${'$'}id/")
+                    .url("https://bit.cs3.mx/api/v1/perimetro/${id}/")
                     .put(body)
                     .addHeader("x-session-token", token)
                     .addHeader("Content-Type", "application/json")
