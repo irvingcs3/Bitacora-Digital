@@ -84,6 +84,7 @@ fun HomeScreen(
                                 "Perímetro" -> navController.navigate("perimetros")
                                 "Códigos QR" -> navController.navigate("qr")
                                 "Dashboard" -> navController.navigate("dashboard")
+                                "Accesos" -> navController.navigate("accesos")
                                 else -> { }
                             }
                         }

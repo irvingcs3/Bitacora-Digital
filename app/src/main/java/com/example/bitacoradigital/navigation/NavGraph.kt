@@ -24,6 +24,7 @@ import com.example.bitacoradigital.ui.screens.perimetro.PerimetrosScreen
 import com.example.bitacoradigital.ui.screens.qr.CodigosQRScreen
 import com.example.bitacoradigital.ui.screens.qr.GenerarCodigoQRScreen
 import com.example.bitacoradigital.ui.screens.dashboard.DashboardScreen
+import com.example.bitacoradigital.ui.screens.accesos.AccesosScreen
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
@@ -144,6 +145,15 @@ fun AppNavGraph(
             PerimetrosScreen(
                 perimetroId = perimetroId,
                 permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Perímetro") ?: emptyList(),
+                navController = navController
+            )
+        }
+
+        composable("accesos") {
+            val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
+            AccesosScreen(
+                perimetroId = perimetroId,
+                permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Accesos") ?: emptyList(),
                 navController = navController
             )
         }
