@@ -88,6 +88,7 @@ class RegistroVisitaViewModel(
         _pasoActual.value += 1
     }
     val registroCompleto = MutableStateFlow<Boolean>(false)
+    val respuestaRegistro = MutableStateFlow<String?>(null)
 
     fun retrocederPaso() {
         if (_pasoActual.value > 1) _pasoActual.value -= 1
@@ -109,6 +110,7 @@ class RegistroVisitaViewModel(
         destinoSeleccionado.value = null
         _rutaDestino.value = emptyList()
         fotosOpcionales.value = emptyList()
+        respuestaRegistro.value = null
     }
     val nivelesDestino = MutableStateFlow<List<NivelDestino>>(emptyList())
     val seleccionDestino = MutableStateFlow<Map<Int, OpcionDestino>>(emptyMap())
@@ -294,7 +296,9 @@ class RegistroVisitaViewModel(
                 }
 
                 if (response.isSuccessful) {
-                    Log.d("RegistroVisita", "Registro exitoso: ${response.body?.string()}")
+                    val bodyStr = response.body?.string()
+                    Log.d("RegistroVisita", "Registro exitoso: $bodyStr")
+                    respuestaRegistro.value = bodyStr
                     registroCompleto.value = true
                 } else {
                     val errorBody = response.body?.string()

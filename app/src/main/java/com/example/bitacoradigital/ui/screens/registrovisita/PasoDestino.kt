@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.foundation.clickable
 
 @Composable
 fun PasoDestino(viewModel: RegistroVisitaViewModel) {
@@ -79,19 +80,20 @@ fun NavegacionJerarquia(
         Spacer(modifier = Modifier.height(8.dp))
 
         nodoActual.children.forEach { child ->
-            Button(
-                onClick = { onSeleccion(child) },
-                modifier = Modifier.fillMaxWidth()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onSeleccion(child) },
+                elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                Text(child.nombre)
+                Text(child.nombre, modifier = Modifier.padding(16.dp))
             }
         }
 
         if (nodoActual.children.isEmpty()) {
-            Button(
+            ElevatedButton(
                 onClick = { onConfirmar(nodoActual) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Seleccionar ${nodoActual.nombre}")
             }

@@ -3,7 +3,7 @@ package com.example.bitacoradigital.ui.screens.registrovisita
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -12,6 +12,7 @@ import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
 
 @Composable
 fun PasoFinal(viewModel: RegistroVisitaViewModel) {
+    val respuesta by viewModel.respuestaRegistro.collectAsState()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -31,8 +32,9 @@ fun PasoFinal(viewModel: RegistroVisitaViewModel) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Aquí puedes poner un ID de registro generado por el backend si lo tuvieras
-        Text("ID de Registro: #VIS-${(100000..999999).random()}", fontSize = 20.sp)
+        respuesta?.let {
+            Text(it, fontSize = 20.sp)
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
