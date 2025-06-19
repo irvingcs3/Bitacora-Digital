@@ -60,7 +60,7 @@ class CheckpointsViewModel(
                     }
                     _checkpoints.value = list
                 } else {
-                    _error.value = "Error ${'$'}{response.code}"
+                    _error.value = "Error ${response.code}"
                 }
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
@@ -98,7 +98,7 @@ class CheckpointsViewModel(
                 if (response.isSuccessful) {
                     cargarCheckpoints()
                 } else {
-                    _error.value = "Error ${'$'}{response.code}"
+                    _error.value = "Error ${response.code}"
                 }
             } catch (e: Exception) {
                 _error.value = e.localizedMessage

@@ -1,10 +1,11 @@
 package com.example.bitacoradigital.ui.screens.perimetro
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.animateContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.rotate
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -72,7 +73,7 @@ fun PerimetrosScreen(perimetroId: Int, permisos: List<String>, navController: Na
         if (cargando) {
             CircularProgressIndicator()
         } else if (error != null) {
-            Text("Error: ${'$'}error", color = MaterialTheme.colorScheme.error)
+            Text("Error: $error", color = MaterialTheme.colorScheme.error)
         } else {
             JerarquiaConAcciones(
                 ruta = ruta,
@@ -142,7 +143,7 @@ fun PerimetrosScreen(perimetroId: Int, permisos: List<String>, navController: Na
                 dismissButton = {
                     TextButton(onClick = { nodoCrearSub = null }) { Text("Cancelar") }
                 },
-                title = { Text("Nueva subzona en ${'$'}{padre.nombre}") },
+                title = { Text("Nueva subzona en ${padre.nombre}") },
                 text = {
                     OutlinedTextField(
                         value = nombreSubzona,
@@ -170,8 +171,6 @@ fun JerarquiaConAcciones(
 ) {
     val nodoActual = ruta.lastOrNull() ?: return
 
-    var tarjetaExpandidaId by remember { mutableStateOf<Int?>(null) }
-
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             ruta.forEachIndexed { index, nodo ->
@@ -184,84 +183,103 @@ fun JerarquiaConAcciones(
         Spacer(modifier = Modifier.height(8.dp))
 
         nodoActual.children.forEach { child ->
-            val expandida = tarjetaExpandidaId == child.perimetro_id
-            val alturaAnimada by animateDpAsState(
-                targetValue = if (expandida) 200.dp else 64.dp,
-                label = "alturaAnimada"
+            NodoCard(
+                nodo = child,
+                onEliminar = onEliminar,
+                onEditar = onEditar,
+                onCrearSubzona = onCrearSubzona,
+                puedeCrear = puedeCrear,
+                puedeEditar = puedeEditar,
+                puedeEliminar = puedeEliminar
             )
-            val rotacionFlecha by animateFloatAsState(
-                targetValue = if (expandida) 90f else 0f,
-                label = "rotacionFlecha"
-            )
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(alturaAnimada)
-                    .padding(vertical = 4.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (expandida) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(8.dp),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(child.nombre, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-
-                        IconButton(onClick = {
-                            tarjetaExpandidaId = if (expandida) null else child.perimetro_id
-                        }, colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary)) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowForward,
-                                contentDescription = null,
-                                modifier = Modifier.rotate(rotacionFlecha)
-                            )
-                        }
-
-                        if (puedeCrear) {
-                            IconButton(onClick = { onCrearSubzona(child) }, colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary)) {
-                                Icon(Icons.Default.Add, contentDescription = "Subzona")
-                            }
-                        }
-                        if (puedeEditar) {
-                            IconButton(onClick = { onEditar(child) }, colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary)) {
-                                Icon(Icons.Default.Edit, contentDescription = "Editar")
-                            }
-                        }
-                        if (puedeEliminar) {
-                            IconButton(onClick = { onEliminar(child) }, colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary)) {
-                                Icon(Icons.Default.Delete, contentDescription = "Eliminar")
-                            }
-                        }
-                    }
-
-                    AnimatedVisibility(visible = expandida) {
-                        Column(modifier = Modifier.padding(top = 8.dp)) {
-                            if (child.children.isEmpty()) {
-                                Text("Sin subzonas", style = MaterialTheme.typography.bodySmall)
-                            } else {
-                                child.children.forEach { subChild ->
-                                    Text("• ${'$'}{subChild.nombre}", style = MaterialTheme.typography.bodySmall)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         if (ruta.size > 1) {
             TextButton(onClick = onRetroceder) {
                 Text("← Regresar")
+            }
+        }
+    }
+}
+
+@Composable
+fun NodoCard(
+    nodo: JerarquiaNodo,
+    onEliminar: (JerarquiaNodo) -> Unit,
+    onEditar: (JerarquiaNodo) -> Unit,
+    onCrearSubzona: (JerarquiaNodo) -> Unit,
+    puedeCrear: Boolean,
+    puedeEditar: Boolean,
+    puedeEliminar: Boolean
+) {
+    var expandida by remember { mutableStateOf(false) }
+    val rotacionFlecha by animateFloatAsState(if (expandida) 90f else 0f, label = "rotacionFlecha")
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .animateContentSize(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (expandida) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(nodo.nombre, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+
+                IconButton(
+                    onClick = { expandida = !expandida },
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.rotate(rotacionFlecha)
+                    )
+                }
+
+                if (puedeCrear) {
+                    IconButton(onClick = { onCrearSubzona(nodo) }, colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary)) {
+                        Icon(Icons.Default.Add, contentDescription = "Subzona")
+                    }
+                }
+                if (puedeEditar) {
+                    IconButton(onClick = { onEditar(nodo) }, colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary)) {
+                        Icon(Icons.Default.Edit, contentDescription = "Editar")
+                    }
+                }
+                if (puedeEliminar) {
+                    IconButton(onClick = { onEliminar(nodo) }, colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary)) {
+                        Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                    }
+                }
+            }
+
+            AnimatedVisibility(visible = expandida) {
+                Column(modifier = Modifier.padding(top = 8.dp)) {
+                    if (nodo.children.isEmpty()) {
+                        Text("Sin subzonas", style = MaterialTheme.typography.bodySmall)
+                    } else {
+                        nodo.children.forEach { subChild ->
+                            NodoCard(
+                                nodo = subChild,
+                                onEliminar = onEliminar,
+                                onEditar = onEditar,
+                                onCrearSubzona = onCrearSubzona,
+                                puedeCrear = puedeCrear,
+                                puedeEditar = puedeEditar,
+                                puedeEliminar = puedeEliminar
+                            )
+                        }
+                    }
+                }
             }
         }
     }
