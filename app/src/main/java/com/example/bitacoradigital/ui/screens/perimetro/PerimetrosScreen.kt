@@ -41,7 +41,6 @@ fun PerimetrosScreen(perimetroId: Int, permisos: List<String>, navController: Na
     val cargando by viewModel.cargando.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    var nuevoNombre by remember { mutableStateOf("") }
     val puedeCrear = "Crear Perímetro" in permisos
     val puedeEditar = "Editar Perímetro" in permisos
     val puedeEliminar = "Eliminar Perímetro" in permisos
@@ -69,7 +68,13 @@ fun PerimetrosScreen(perimetroId: Int, permisos: List<String>, navController: Na
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-    Column(Modifier.fillMaxSize().padding(innerPadding).padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         if (cargando) {
             CircularProgressIndicator()
         } else if (error != null) {
@@ -88,24 +93,7 @@ fun PerimetrosScreen(perimetroId: Int, permisos: List<String>, navController: Na
             )
         }
 
-        if (puedeCrear) {
-            Spacer(Modifier.height(16.dp))
-            OutlinedTextField(
-                value = nuevoNombre,
-                onValueChange = { nuevoNombre = it },
-                label = { Text("Nombre del perímetro") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = {
-                    viewModel.crearHijo(nuevoNombre)
-                    nuevoNombre = ""
-                }) {
-                    Text("Agregar Subzona")
-                }
-            }
-        }
+
 
         editarNodo?.let { nodo ->
             AlertDialog(
@@ -174,7 +162,12 @@ fun JerarquiaConAcciones(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             ruta.forEachIndexed { index, nodo ->
-                Text(nodo.nombre)
+                val esActual = index == ruta.lastIndex
+                Text(
+                    text = nodo.nombre,
+                    color = if (esActual) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                    style = if (esActual) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium
+                )
                 if (index < ruta.lastIndex) {
                     Text(" > ")
                 }
