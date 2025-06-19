@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -16,7 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavHostController
+import com.example.bitacoradigital.R
 import com.example.bitacoradigital.model.PerimetroVisual
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
@@ -144,8 +147,11 @@ fun TopBar(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                Text("Bitácora", style = MaterialTheme.typography.titleMedium)
-                Text("Digital", color = MaterialTheme.colorScheme.primary)
+                Image(
+                    painter = painterResource(id = R.drawable.logo_topbar),
+                    contentDescription = "Logo",
+                    modifier = Modifier.size(32.dp)
+                )
 
                 Spacer(modifier = Modifier.width(16.dp))
 

@@ -3,6 +3,7 @@ package com.example.bitacoradigital.ui.screens.auth
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Login
@@ -20,6 +21,8 @@ import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.res.painterResource
+import com.example.bitacoradigital.R
 
 @Composable
 fun LoginScreen(
@@ -49,6 +52,12 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
         // Logo
+        Image(
+            painter = painterResource(id = R.drawable.logo_login),
+            contentDescription = "Logo",
+            modifier = Modifier.size(120.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
         Text("Bitácora Digital", style = MaterialTheme.typography.headlineSmall)
         Text("Gestión de comunidades residenciales", fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
 
