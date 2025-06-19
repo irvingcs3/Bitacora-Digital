@@ -166,7 +166,7 @@ fun JerarquiaConAcciones(
                 Text(
                     text = nodo.nombre,
                     color = if (esActual) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-                    style = if (esActual) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium
+                    style = if (esActual) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyMedium
                 )
                 if (index < ruta.lastIndex) {
                     Text(" > ")
@@ -175,17 +175,17 @@ fun JerarquiaConAcciones(
         }
         Spacer(modifier = Modifier.height(8.dp))
 
-        nodoActual.children.forEach { child ->
-            NodoCard(
-                nodo = child,
-                onEliminar = onEliminar,
-                onEditar = onEditar,
-                onCrearSubzona = onCrearSubzona,
-                puedeCrear = puedeCrear,
-                puedeEditar = puedeEditar,
-                puedeEliminar = puedeEliminar
-            )
-        }
+        NodoCard(
+            nodo = nodoActual,
+            onEliminar = onEliminar,
+            onEditar = onEditar,
+            onCrearSubzona = onCrearSubzona,
+            puedeCrear = puedeCrear,
+            puedeEditar = puedeEditar,
+            puedeEliminar = puedeEliminar,
+            initiallyExpanded = true,
+            showArrow = false
+        )
 
         if (ruta.size > 1) {
             TextButton(onClick = onRetroceder) {
@@ -203,9 +203,11 @@ fun NodoCard(
     onCrearSubzona: (JerarquiaNodo) -> Unit,
     puedeCrear: Boolean,
     puedeEditar: Boolean,
-    puedeEliminar: Boolean
+    puedeEliminar: Boolean,
+    initiallyExpanded: Boolean = false,
+    showArrow: Boolean = true
 ) {
-    var expandida by remember { mutableStateOf(false) }
+    var expandida by remember { mutableStateOf(initiallyExpanded) }
     val rotacionFlecha by animateFloatAsState(if (expandida) 90f else 0f, label = "rotacionFlecha")
 
     Card(
@@ -225,17 +227,19 @@ fun NodoCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(nodo.nombre, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                Text(nodo.nombre, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
 
-                IconButton(
-                    onClick = { expandida = !expandida },
-                    colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowForward,
-                        contentDescription = null,
-                        modifier = Modifier.rotate(rotacionFlecha)
-                    )
+                if (showArrow) {
+                    IconButton(
+                        onClick = { expandida = !expandida },
+                        colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowForward,
+                            contentDescription = null,
+                            modifier = Modifier.rotate(rotacionFlecha)
+                        )
+                    }
                 }
 
                 if (puedeCrear) {
