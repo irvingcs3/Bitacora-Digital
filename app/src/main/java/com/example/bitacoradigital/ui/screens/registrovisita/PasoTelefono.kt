@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
@@ -24,11 +24,13 @@ fun PasoTelefono(viewModel: RegistroVisitaViewModel) {
     val coroutineScope = rememberCoroutineScope()
 
     Box(Modifier.fillMaxSize()) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
         Text("Paso 1: Verificación de teléfono", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(16.dp))
@@ -61,7 +63,9 @@ fun PasoTelefono(viewModel: RegistroVisitaViewModel) {
                     }
                 },
                 enabled = !cargando,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(4.dp, shape = MaterialTheme.shapes.medium)
             ) {
                 Text(if (cargando) "Verificando..." else "Verificar número")
             }
@@ -70,7 +74,9 @@ fun PasoTelefono(viewModel: RegistroVisitaViewModel) {
             Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = { viewModel.avanzarPaso() },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(4.dp, shape = MaterialTheme.shapes.medium)
             ) {
                 Text("Siguiente")
             }
