@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -24,7 +25,13 @@ fun PasoVerificacion(viewModel: RegistroVisitaViewModel) {
     var nuevoApellidoPat by remember { mutableStateOf(apellidoPaterno) }
     var nuevoApellidoMat by remember { mutableStateOf(apellidoMaterno) }
 
-    Column(modifier = Modifier.padding(16.dp)) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Paso 3: Verifica tus Datos", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(16.dp))
 
@@ -54,7 +61,7 @@ fun PasoVerificacion(viewModel: RegistroVisitaViewModel) {
             )
             Spacer(Modifier.height(16.dp))
 
-            Button(
+            ElevatedButton(
                 onClick = {
                     viewModel.actualizarDatos(
                         nombre = nuevoNombre,
@@ -68,19 +75,23 @@ fun PasoVerificacion(viewModel: RegistroVisitaViewModel) {
                 Text("Guardar y Continuar")
             }
         } else {
-            Text("Nombre(s): $nombre")
-            Text("Apellido Paterno: $apellidoPaterno")
-            Text("Apellido Materno: $apellidoMaterno")
+            Card {
+                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Nombre(s): $nombre")
+                    Text("Apellido Paterno: $apellidoPaterno")
+                    Text("Apellido Materno: $apellidoMaterno")
+                }
+            }
 
             Spacer(Modifier.height(16.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { editando = true }, modifier = Modifier.weight(1f)) {
+                ElevatedButton(onClick = { editando = true }, modifier = Modifier.weight(1f)) {
                     Icon(Icons.Default.Edit, contentDescription = null)
                     Spacer(Modifier.width(4.dp))
                     Text("Editar")
                 }
-                Button(onClick = { viewModel.avanzarPaso() }, modifier = Modifier.weight(1f)) {
+                ElevatedButton(onClick = { viewModel.avanzarPaso() }, modifier = Modifier.weight(1f)) {
                     Text("Siguiente")
                 }
             }

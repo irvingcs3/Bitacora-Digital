@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -103,7 +104,7 @@ fun PasoFotos(viewModel: RegistroVisitaViewModel) {
 
         if (fotos.size < 3) {
             Spacer(Modifier.height(16.dp))
-            Button(onClick = {
+            ElevatedButton(onClick = {
                 if (hasCameraPermission) {
                     val uriTemp = createImageUri(context)
                     tempUri = uriTemp
@@ -112,6 +113,8 @@ fun PasoFotos(viewModel: RegistroVisitaViewModel) {
                     permissionLauncher.launch(Manifest.permission.CAMERA)
                 }
             }) {
+                Icon(Icons.Default.CameraAlt, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
                 Text("Agregar Foto (${3 - fotos.size} restantes)")
             }
 
@@ -125,7 +128,7 @@ fun PasoFotos(viewModel: RegistroVisitaViewModel) {
         }
 
         Spacer(Modifier.height(16.dp))
-        Button(onClick = { viewModel.avanzarPaso() }, modifier = Modifier.fillMaxWidth()) {
+        ElevatedButton(onClick = { viewModel.avanzarPaso() }, modifier = Modifier.fillMaxWidth()) {
             Text("Continuar")
         }
     }
