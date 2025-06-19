@@ -113,50 +113,52 @@ fun TopBar(
 ) {
     TopAppBar(
         title = {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Box(modifier = Modifier.fillMaxWidth()) {
                 var expandedPerimetro by remember { mutableStateOf(false) }
                 var expandedEmpresa by remember { mutableStateOf(false) }
 
-                // Perímetro
-                Box {
-                    TextButton(onClick = { expandedPerimetro = true }) {
-                        Text(seleccionado?.perimetroNombre ?: "")
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
+                    // Perímetro
+                    Box {
+                        TextButton(onClick = { expandedPerimetro = true }) {
+                            Text(seleccionado?.perimetroNombre ?: "")
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        }
 
-                    DropdownMenu(expanded = expandedPerimetro, onDismissRequest = { expandedPerimetro = false }) {
-                        perimetros.filter { empresaSeleccionada == null || it.empresaId == empresaSeleccionada }.forEach { item ->
-                            DropdownMenuItem(
-                                text = { Text(item.perimetroNombre) },
-                                onClick = {
-                                    onSelectPerimetro(item)
-                                    expandedPerimetro = false
-                                },
-                                leadingIcon = {
-                                    IconButton(onClick = { onFavorito(item) }) {
-                                        Icon(
-                                            imageVector = if (item.esFavorito) Icons.Default.Star else Icons.Default.StarBorder,
-                                            contentDescription = null
-                                        )
+                        DropdownMenu(expanded = expandedPerimetro, onDismissRequest = { expandedPerimetro = false }) {
+                            perimetros.filter { empresaSeleccionada == null || it.empresaId == empresaSeleccionada }.forEach { item ->
+                                DropdownMenuItem(
+                                    text = { Text(item.perimetroNombre) },
+                                    onClick = {
+                                        onSelectPerimetro(item)
+                                        expandedPerimetro = false
+                                    },
+                                    leadingIcon = {
+                                        IconButton(onClick = { onFavorito(item) }) {
+                                            Icon(
+                                                imageVector = if (item.esFavorito) Icons.Default.Star else Icons.Default.StarBorder,
+                                                contentDescription = null
+                                            )
+                                        }
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
-
                 Image(
                     painter = painterResource(id = R.drawable.logo_topbar),
                     contentDescription = "Logo",
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier
+                        .size(48.dp)
+                        .align(Alignment.Center)
                 )
 
-                Spacer(modifier = Modifier.width(16.dp))
-
-                // Empresa
-                Box {
+                Box(modifier = Modifier.align(Alignment.CenterEnd)) {
                     TextButton(onClick = { expandedEmpresa = true }) {
                         val empresaNombre = perimetros.firstOrNull { it.empresaId == empresaSeleccionada }?.empresaNombre ?: ""
                         Text(empresaNombre)
