@@ -55,9 +55,9 @@ fun LoginScreen(
         Image(
             painter = painterResource(id = R.drawable.logo_login),
             contentDescription = "Logo",
-            modifier = Modifier.size(160.dp)
+            modifier = Modifier.size(290.dp)
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(1.dp))
         Text("Bitácora Digital", style = MaterialTheme.typography.headlineSmall)
         Text("Gestión de comunidades residenciales", fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
 

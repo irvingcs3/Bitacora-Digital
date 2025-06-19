@@ -38,7 +38,7 @@ class CheckpointsViewModel(
             try {
                 val token = withContext(Dispatchers.IO) { prefs.sessionToken.first() } ?: return@launch
                 val request = Request.Builder()
-                    .url("https://bit.cs3.mx/api/v1/checkpoints/?perimetro_id=$perimetroId")
+                    .url("https://bit.cs3.mx/api/v1/checkpoints/?perimetro=$perimetroId")
                     .get()
                     .addHeader("x-session-token", token)
                     .build()
