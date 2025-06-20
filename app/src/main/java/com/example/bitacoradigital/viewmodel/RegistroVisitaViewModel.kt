@@ -3,6 +3,9 @@ package com.example.bitacoradigital.viewmodel
 
 import android.net.Uri
 import android.util.Log
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -89,6 +92,7 @@ class RegistroVisitaViewModel(
     }
     val registroCompleto = MutableStateFlow<Boolean>(false)
     val respuestaRegistro = MutableStateFlow<String?>(null)
+    val qrBitmap = MutableStateFlow<android.graphics.Bitmap?>(null)
 
     fun retrocederPaso() {
         if (_pasoActual.value > 1) _pasoActual.value -= 1
@@ -255,7 +259,7 @@ class RegistroVisitaViewModel(
         }
     }
 
-    fun registrarVisita() {
+    fun registrarVisita(context: android.content.Context) {
         viewModelScope.launch {
             _cargandoRegistro.value = true
             try {
@@ -298,7 +302,48 @@ class RegistroVisitaViewModel(
                 if (response.isSuccessful) {
                     val bodyStr = response.body?.string()
                     Log.d("RegistroVisita", "Registro exitoso: $bodyStr")
-                    respuestaRegistro.value = bodyStr
+
+                    // Enviar QR y whatsapp
+                    val personaId = withContext(Dispatchers.IO) { sessionPrefs.personaId.first() } ?: 0
+                    val ineUri = documentoUri.value
+                    var qrMsg: String? = null
+                    var qrImg: Bitmap? = null
+                    if (ineUri != null) {
+                        try {
+                            val bytes = withContext(Dispatchers.IO) {
+                                context.contentResolver.openInputStream(ineUri)?.use { it.readBytes() }
+                            }
+                            if (bytes != null) {
+                                val req = MultipartBody.Builder().setType(MultipartBody.FORM)
+                                    .addFormDataPart("id_invitante", personaId.toString())
+                                    .addFormDataPart("telefono_invitado", telefono.value)
+                                    .addFormDataPart("dias_activacion", "1")
+                                    .addFormDataPart(
+                                        "imagen",
+                                        "ine.jpg",
+                                        bytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
+                                    ).build()
+                                val qrRequest = Request.Builder()
+                                    .url("http://qr.cs3.mx/bite/enviar-qr-id-ws/")
+                                    .post(req)
+                                    .build()
+                                val qrResp = withContext(Dispatchers.IO) { client.newCall(qrRequest).execute() }
+                                if (qrResp.isSuccessful) {
+                                    val qStr = qrResp.body?.string()
+                                    val qJson = JSONObject(qStr ?: "{}")
+                                    qrMsg = qJson.optString("mensaje")
+                                    val imgBase = qJson.optString("imagen_binaria")
+                                    val data = Base64.decode(imgBase, Base64.DEFAULT)
+                                    qrImg = BitmapFactory.decodeByteArray(data, 0, data.size)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e("RegistroVisita", "Error QR", e)
+                        }
+                    }
+
+                    respuestaRegistro.value = qrMsg ?: bodyStr
+                    qrBitmap.value = qrImg
                     registroCompleto.value = true
                 } else {
                     val errorBody = response.body?.string()

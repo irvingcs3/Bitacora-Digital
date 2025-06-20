@@ -22,6 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import androidx.compose.ui.platform.LocalContext
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -93,9 +94,10 @@ fun PasoConfirmacion(viewModel: RegistroVisitaViewModel) {
 
         Spacer(Modifier.height(24.dp))
 
+        val context = LocalContext.current
         Button(
             onClick = {
-                viewModel.registrarVisita()
+                viewModel.registrarVisita(context)
                 viewModel.avanzarPaso()
             },
             modifier = Modifier.fillMaxWidth()

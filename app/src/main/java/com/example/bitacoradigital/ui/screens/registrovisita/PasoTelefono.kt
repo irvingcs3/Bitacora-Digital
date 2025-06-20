@@ -19,6 +19,7 @@ fun PasoTelefono(viewModel: RegistroVisitaViewModel) {
 
     var cargando by remember { mutableStateOf(false) }
     var mensajeError by remember { mutableStateOf<String?>(null) }
+    var verificacionFallida by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     val coroutineScope = rememberCoroutineScope()
@@ -52,6 +53,7 @@ fun PasoTelefono(viewModel: RegistroVisitaViewModel) {
                     mensajeError = null
 
                     coroutineScope.launch {
+                        verificacionFallida = false
                         val existe = viewModel.verificarNumeroWhatsApp(telefono)
                         cargando = false
                         if (existe) {
@@ -59,6 +61,7 @@ fun PasoTelefono(viewModel: RegistroVisitaViewModel) {
                             viewModel.avanzarPaso()
                         } else {
                             mensajeError = "Número inválido o no verificado en WhatsApp"
+                            verificacionFallida = true
                         }
                     }
                 },
@@ -66,8 +69,17 @@ fun PasoTelefono(viewModel: RegistroVisitaViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(4.dp, shape = MaterialTheme.shapes.medium)
-            ) {
+            ) { 
                 Text(if (cargando) "Verificando..." else "Verificar número")
+            }
+            if (verificacionFallida) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { viewModel.avanzarPaso() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(4.dp, shape = MaterialTheme.shapes.medium)
+                ) { Text("Continuar de todos modos") }
             }
         } else {
             Text("✅ Número verificado", color = MaterialTheme.colorScheme.primary)
