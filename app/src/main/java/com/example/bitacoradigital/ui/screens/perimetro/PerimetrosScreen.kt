@@ -3,7 +3,8 @@ package com.example.bitacoradigital.ui.screens.perimetro
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.rotate
@@ -159,7 +160,11 @@ fun JerarquiaConAcciones(
 ) {
     val nodoActual = ruta.lastOrNull() ?: return
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    val scrollState = rememberScrollState()
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.verticalScroll(scrollState)
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             ruta.forEachIndexed { index, nodo ->
                 val esActual = index == ruta.lastIndex
