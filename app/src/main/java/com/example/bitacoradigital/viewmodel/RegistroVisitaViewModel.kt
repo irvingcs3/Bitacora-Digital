@@ -294,14 +294,7 @@ class RegistroVisitaViewModel(
                     .addHeader("Content-Type", "application/json")
                     .build()
 
-                // The QR generation service can take a long time to respond so we
-                // disable all timeouts on the client used for this request.
-                val client = OkHttpClient.Builder()
-                    .connectTimeout(0, TimeUnit.MILLISECONDS)
-                    .readTimeout(0, TimeUnit.MILLISECONDS)
-                    .writeTimeout(0, TimeUnit.MILLISECONDS)
-                    .callTimeout(0, TimeUnit.MILLISECONDS)
-                    .build()
+                val client = OkHttpClient()
                 val response = withContext(Dispatchers.IO) {
                     client.newCall(request).execute()
                 }
@@ -334,7 +327,13 @@ class RegistroVisitaViewModel(
                                     .url("http://qr.cs3.mx/bite/enviar-qr-id-ws/")
                                     .post(req)
                                     .build()
-                                val qrResp = withContext(Dispatchers.IO) { client.newCall(qrRequest).execute() }
+                                val qrClient = OkHttpClient.Builder()
+                                    .connectTimeout(0, TimeUnit.MILLISECONDS)
+                                    .readTimeout(0, TimeUnit.MILLISECONDS)
+                                    .writeTimeout(0, TimeUnit.MILLISECONDS)
+                                    .callTimeout(0, TimeUnit.MILLISECONDS)
+                                    .build()
+                                val qrResp = withContext(Dispatchers.IO) { qrClient.newCall(qrRequest).execute() }
                                 if (qrResp.isSuccessful) {
                                     val qStr = qrResp.body?.string()
                                     val qJson = JSONObject(qStr ?: "{}")
