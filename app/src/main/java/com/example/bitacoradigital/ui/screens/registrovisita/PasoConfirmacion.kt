@@ -40,6 +40,13 @@ fun PasoConfirmacion(viewModel: RegistroVisitaViewModel) {
     val fotos by viewModel.fotosAdicionales.collectAsState()
 
     val cargando by viewModel.cargandoRegistro.collectAsState()
+    val registroCompleto by viewModel.registroCompleto.collectAsState()
+
+    LaunchedEffect(registroCompleto) {
+        if (registroCompleto) {
+            viewModel.avanzarPaso()
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         Column(modifier = Modifier
@@ -98,7 +105,6 @@ fun PasoConfirmacion(viewModel: RegistroVisitaViewModel) {
         Button(
             onClick = {
                 viewModel.registrarVisita(context)
-                viewModel.avanzarPaso()
             },
             modifier = Modifier.fillMaxWidth()
         ) {
