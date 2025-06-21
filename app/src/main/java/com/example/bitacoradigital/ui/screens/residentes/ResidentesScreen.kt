@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.lazy.animateItemPlacement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -148,7 +147,6 @@ fun ResidentesScreen(
                                 ElevatedCard(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .animateItemPlacement(),
                                     shape = RoundedCornerShape(16.dp),
                                     colors = CardDefaults.elevatedCardColors(
                                         containerColor = MaterialTheme.colorScheme.surfaceVariant
