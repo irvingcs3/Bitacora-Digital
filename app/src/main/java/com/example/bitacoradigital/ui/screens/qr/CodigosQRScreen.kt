@@ -47,36 +47,7 @@ fun CodigosQRScreen(permisos: List<String>, navController: NavHostController) {
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        if ("Generar Código QR" in permisos) {
-            PermisoCard(
-                titulo = "Generar Código QR",
-                descripcion = "Crea una invitación para acceso por QR",
-                onClick = { navController.navigate("qr/generar") }
-            )
-        }
+        // Este módulo ya no contiene submódulos activos
     }
-    }
-}
-
-@Composable
-private fun PermisoCard(titulo: String, descripcion: String, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(170.dp)
-            .clickable { onClick() },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(titulo, color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.titleLarge)
-            Text(descripcion, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f))
-        }
     }
 }
