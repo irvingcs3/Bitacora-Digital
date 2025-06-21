@@ -111,6 +111,7 @@ class RegistroVisitaViewModel(
         numeroVerificado.value = false
         tipoDocumento.value = null
         fotoDocumentoUri.value = null
+        documentoUri.value = null
         nombre.value = ""
         apellidoPaterno.value = ""
         apellidoMaterno.value = ""
