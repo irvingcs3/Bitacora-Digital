@@ -46,7 +46,8 @@ class CheckpointsViewModel(
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
                 response.use { resp ->
                     if (resp.isSuccessful) {
-                        val jsonArr = org.json.JSONArray(resp.body?.string() ?: "[]")
+                        val jsonStr = withContext(Dispatchers.IO) { resp.body?.string() }
+                        val jsonArr = org.json.JSONArray(jsonStr ?: "[]")
                         val list = mutableListOf<Checkpoint>()
                         for (i in 0 until jsonArr.length()) {
                             val obj = jsonArr.getJSONObject(i)

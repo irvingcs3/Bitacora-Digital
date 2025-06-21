@@ -246,7 +246,8 @@ class RegistroVisitaViewModel(
             val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
             response.use { resp ->
                 if (resp.isSuccessful) {
-                    val json = org.json.JSONObject(resp.body?.string() ?: "{}")
+                    val jsonStr = withContext(Dispatchers.IO) { resp.body?.string() }
+                    val json = org.json.JSONObject(jsonStr ?: "{}")
                     nombre.value = json.optString("nombre")
                     apellidoPaterno.value = json.optString("paterno")
                     apellidoMaterno.value = json.optString("materno")
@@ -304,7 +305,7 @@ class RegistroVisitaViewModel(
 
                 response.use { resp ->
                     if (resp.isSuccessful) {
-                        val bodyStr = resp.body?.string()
+                        val bodyStr = withContext(Dispatchers.IO) { resp.body?.string() }
                         Log.d("RegistroVisita", "Registro exitoso: $bodyStr")
 
                         // Enviar QR y whatsapp
@@ -340,7 +341,7 @@ class RegistroVisitaViewModel(
                                     val qrResp = withContext(Dispatchers.IO) { qrClient.newCall(qrRequest).execute() }
                                     qrResp.use { qrR ->
                                         if (qrR.isSuccessful) {
-                                            val qStr = qrR.body?.string()
+                                            val qStr = withContext(Dispatchers.IO) { qrR.body?.string() }
                                             val qJson = JSONObject(qStr ?: "{}")
                                             qrMsg = qJson.optString("mensaje")
                                             val imgBase = qJson.optString("imagen_binaria")
@@ -358,7 +359,7 @@ class RegistroVisitaViewModel(
                         qrBitmap.value = qrImg
                         registroCompleto.value = true
                     } else {
-                        val errorBody = resp.body?.string()
+                        val errorBody = withContext(Dispatchers.IO) { resp.body?.string() }
                         Log.e("RegistroVisita", "Error en el registro: $errorBody")
                         _errorDestino.value = "Registro fallido: ${resp.code}"
                     }
