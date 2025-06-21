@@ -161,11 +161,3 @@ fun RegistrarVisitaManualScreen() {
         Text("Pantalla: Registrar Visita Manual")
     }
 }
-
-@Composable
-fun RegistroQRScreen() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Pantalla: Registro por QR")
-    }
-}
-
