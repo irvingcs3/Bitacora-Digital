@@ -1,7 +1,10 @@
 package com.example.bitacoradigital.ui.screens
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -52,6 +55,20 @@ fun RegistroQRScreen(perimetroId: Int, navController: NavHostController) {
     val anim = remember { Animatable(0f) }
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasCameraPermission = granted
+    }
+
     LaunchedEffect(Unit) { viewModel.cargarCheckpoints() }
     LaunchedEffect(checkpoints) {
         if (checkpoints.size == 1) viewModel.seleccionado.value = checkpoints.first()
@@ -80,7 +97,20 @@ fun RegistroQRScreen(perimetroId: Int, navController: NavHostController) {
                 }
             }
             else -> {
-                CameraPreview(onCodeScanned = { codigo -> viewModel.procesarCodigo(codigo) })
+                if (hasCameraPermission) {
+                    CameraPreview(onCodeScanned = { codigo -> viewModel.procesarCodigo(codigo) })
+                } else {
+                    Column(
+                        Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Se requiere permiso de cámara para escanear")
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) }) {
+                            Text("Conceder permiso")
+                        }
+                    }
+                }
             }
         }
 
