@@ -59,13 +59,15 @@ class RegistroVisitaViewModel(
                 .addHeader("Content-Type", "application/json")
                 .build()
             val client = OkHttpClient()
-            val response = client.newCall(request).execute()
-            if (response.isSuccessful) {
-                val res = JSONObject(response.body?.string() ?: "{}")
-                res.optBoolean("exist", false)
-            } else {
-                false
+            val result = client.newCall(request).execute().use { resp ->
+                if (resp.isSuccessful) {
+                    val res = JSONObject(resp.body?.string() ?: "{}")
+                    res.optBoolean("exist", false)
+                } else {
+                    false
+                }
             }
+            result
         } catch (e: Exception) {
             Log.e("RegistroVisita", "Error verificando numero", e)
             false
@@ -242,14 +244,15 @@ class RegistroVisitaViewModel(
                 .callTimeout(0, TimeUnit.MILLISECONDS)
                 .build()
             val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-
-            if (response.isSuccessful) {
-                val json = org.json.JSONObject(response.body?.string() ?: "{}")
-                nombre.value = json.optString("nombre")
-                apellidoPaterno.value = json.optString("paterno")
-                apellidoMaterno.value = json.optString("materno")
-            } else {
-                _errorReconocimiento.value = "Error ${response.code}"
+            response.use { resp ->
+                if (resp.isSuccessful) {
+                    val json = org.json.JSONObject(resp.body?.string() ?: "{}")
+                    nombre.value = json.optString("nombre")
+                    apellidoPaterno.value = json.optString("paterno")
+                    apellidoMaterno.value = json.optString("materno")
+                } else {
+                    _errorReconocimiento.value = "Error ${resp.code}"
+                }
             }
         } catch (e: Exception) {
             Log.e("RegistroVisita", "Error reconocimiento", e)
@@ -299,62 +302,66 @@ class RegistroVisitaViewModel(
                     client.newCall(request).execute()
                 }
 
-                if (response.isSuccessful) {
-                    val bodyStr = response.body?.string()
-                    Log.d("RegistroVisita", "Registro exitoso: $bodyStr")
+                response.use { resp ->
+                    if (resp.isSuccessful) {
+                        val bodyStr = resp.body?.string()
+                        Log.d("RegistroVisita", "Registro exitoso: $bodyStr")
 
-                    // Enviar QR y whatsapp
-                    val personaId = withContext(Dispatchers.IO) { sessionPrefs.personaId.first() } ?: 0
-                    val ineUri = documentoUri.value
-                    var qrMsg: String? = null
-                    var qrImg: Bitmap? = null
-                    if (ineUri != null) {
-                        try {
-                            val bytes = withContext(Dispatchers.IO) {
-                                context.contentResolver.openInputStream(ineUri)?.use { it.readBytes() }
-                            }
-                            if (bytes != null) {
-                                val req = MultipartBody.Builder().setType(MultipartBody.FORM)
-                                    .addFormDataPart("id_invitante", personaId.toString())
-                                    .addFormDataPart("telefono_invitado", telefono.value)
-                                    .addFormDataPart("dias_activacion", "1")
-                                    .addFormDataPart(
-                                        "imagen",
-                                        "ine.jpg",
-                                        bytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
-                                    ).build()
-                                val qrRequest = Request.Builder()
-                                    .url("http://qr.cs3.mx/bite/enviar-qr-id-ws/")
-                                    .post(req)
-                                    .build()
-                                val qrClient = OkHttpClient.Builder()
-                                    .connectTimeout(0, TimeUnit.MILLISECONDS)
-                                    .readTimeout(0, TimeUnit.MILLISECONDS)
-                                    .writeTimeout(0, TimeUnit.MILLISECONDS)
-                                    .callTimeout(0, TimeUnit.MILLISECONDS)
-                                    .build()
-                                val qrResp = withContext(Dispatchers.IO) { qrClient.newCall(qrRequest).execute() }
-                                if (qrResp.isSuccessful) {
-                                    val qStr = qrResp.body?.string()
-                                    val qJson = JSONObject(qStr ?: "{}")
-                                    qrMsg = qJson.optString("mensaje")
-                                    val imgBase = qJson.optString("imagen_binaria")
-                                    val data = Base64.decode(imgBase, Base64.DEFAULT)
-                                    qrImg = BitmapFactory.decodeByteArray(data, 0, data.size)
+                        // Enviar QR y whatsapp
+                        val personaId = withContext(Dispatchers.IO) { sessionPrefs.personaId.first() } ?: 0
+                        val ineUri = documentoUri.value
+                        var qrMsg: String? = null
+                        var qrImg: Bitmap? = null
+                        if (ineUri != null) {
+                            try {
+                                val bytes = withContext(Dispatchers.IO) {
+                                    context.contentResolver.openInputStream(ineUri)?.use { it.readBytes() }
                                 }
+                                if (bytes != null) {
+                                    val req = MultipartBody.Builder().setType(MultipartBody.FORM)
+                                        .addFormDataPart("id_invitante", personaId.toString())
+                                        .addFormDataPart("telefono_invitado", telefono.value)
+                                        .addFormDataPart("dias_activacion", "1")
+                                        .addFormDataPart(
+                                            "imagen",
+                                            "ine.jpg",
+                                            bytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
+                                        ).build()
+                                    val qrRequest = Request.Builder()
+                                        .url("http://qr.cs3.mx/bite/enviar-qr-id-ws/")
+                                        .post(req)
+                                        .build()
+                                    val qrClient = OkHttpClient.Builder()
+                                        .connectTimeout(0, TimeUnit.MILLISECONDS)
+                                        .readTimeout(0, TimeUnit.MILLISECONDS)
+                                        .writeTimeout(0, TimeUnit.MILLISECONDS)
+                                        .callTimeout(0, TimeUnit.MILLISECONDS)
+                                        .build()
+                                    val qrResp = withContext(Dispatchers.IO) { qrClient.newCall(qrRequest).execute() }
+                                    qrResp.use { qrR ->
+                                        if (qrR.isSuccessful) {
+                                            val qStr = qrR.body?.string()
+                                            val qJson = JSONObject(qStr ?: "{}")
+                                            qrMsg = qJson.optString("mensaje")
+                                            val imgBase = qJson.optString("imagen_binaria")
+                                            val data = Base64.decode(imgBase, Base64.DEFAULT)
+                                            qrImg = BitmapFactory.decodeByteArray(data, 0, data.size)
+                                        }
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.e("RegistroVisita", "Error QR", e)
                             }
-                        } catch (e: Exception) {
-                            Log.e("RegistroVisita", "Error QR", e)
                         }
-                    }
 
-                    respuestaRegistro.value = qrMsg ?: bodyStr
-                    qrBitmap.value = qrImg
-                    registroCompleto.value = true
-                } else {
-                    val errorBody = response.body?.string()
-                    Log.e("RegistroVisita", "Error en el registro: $errorBody")
-                    _errorDestino.value = "Registro fallido: ${response.code}"
+                        respuestaRegistro.value = qrMsg ?: bodyStr
+                        qrBitmap.value = qrImg
+                        registroCompleto.value = true
+                    } else {
+                        val errorBody = resp.body?.string()
+                        Log.e("RegistroVisita", "Error en el registro: $errorBody")
+                        _errorDestino.value = "Registro fallido: ${resp.code}"
+                    }
                 }
 
             } catch (e: Exception) {

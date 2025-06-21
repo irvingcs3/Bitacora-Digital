@@ -95,10 +95,12 @@ class PerimetroViewModel(
                     .build()
                 val client = OkHttpClient()
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                if (response.isSuccessful) {
-                    cargarJerarquia()
-                } else {
-                    _error.value = "Error ${response.code}"
+                response.use { resp ->
+                    if (resp.isSuccessful) {
+                        cargarJerarquia()
+                    } else {
+                        _error.value = "Error ${resp.code}"
+                    }
                 }
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
@@ -119,10 +121,12 @@ class PerimetroViewModel(
                     .build()
                 val client = OkHttpClient()
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                if (response.isSuccessful) {
-                    cargarJerarquia()
-                } else {
-                    _error.value = "Error ${response.code}"
+                response.use { resp ->
+                    if (resp.isSuccessful) {
+                        cargarJerarquia()
+                    } else {
+                        _error.value = "Error ${resp.code}"
+                    }
                 }
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
@@ -146,10 +150,12 @@ class PerimetroViewModel(
                     .build()
                 val client = OkHttpClient()
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                if (response.isSuccessful) {
-                    cargarJerarquia()
-                } else {
-                    _error.value = "Error ${response.code}"
+                response.use { resp ->
+                    if (resp.isSuccessful) {
+                        cargarJerarquia()
+                    } else {
+                        _error.value = "Error ${resp.code}"
+                    }
                 }
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
