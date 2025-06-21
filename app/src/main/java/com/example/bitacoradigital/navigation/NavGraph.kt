@@ -183,7 +183,8 @@ fun AppNavGraph(
                     navController.navigate("home") {
                         popUpTo("configuracion") { inclusive = true }
                     }
-                }
+                },
+                onResetPassword = { navController.navigate("forgot/email") }
             )
         }
 

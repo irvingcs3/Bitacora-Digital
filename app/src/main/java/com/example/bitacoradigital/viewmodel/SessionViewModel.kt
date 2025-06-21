@@ -11,6 +11,11 @@ import android.util.Log
 import com.example.bitacoradigital.model.User
 import com.example.bitacoradigital.network.RetrofitInstance
 import com.google.gson.Gson
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.MediaType.Companion.toMediaType
+import org.json.JSONObject
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -104,6 +109,55 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         _token.value = null
         _usuario.value = null
         _tieneAccesoABitacora.value = null // ← esto es CRUCIAL
+    }
+
+    fun actualizarPerfil(
+        nombre: String,
+        apellidoPat: String,
+        apellidoMat: String,
+        telefono: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            val token = _token.value ?: return@launch
+            val actual = _usuario.value ?: return@launch
+            try {
+                val json = org.json.JSONObject().apply {
+                    put("nombre", nombre)
+                    put("apellido_pat", apellidoPat)
+                    put("apellido_mat", apellidoMat)
+                    put("telefono", telefono)
+                }
+                val body = json.toString()
+                    .toRequestBody("application/json".toMediaType())
+                val request = okhttp3.Request.Builder()
+                    .url("https://bit.cs3.mx/api/v1/perfil")
+                    .patch(body)
+                    .addHeader("x-session-token", token)
+                    .addHeader("Content-Type", "application/json")
+                    .build()
+                val client = okhttp3.OkHttpClient()
+                val response = withContext(Dispatchers.IO) {
+                    client.newCall(request).execute()
+                }
+                response.use { resp ->
+                    if (resp.isSuccessful) {
+                        val updated = actual.copy(
+                            nombre = nombre,
+                            apellido_paterno = apellidoPat,
+                            apellido_materno = apellidoMat,
+                            telefono = telefono
+                        )
+                        guardarSesion(token, updated)
+                        onResult(true)
+                    } else {
+                        onResult(false)
+                    }
+                }
+            } catch (_: Exception) {
+                onResult(false)
+            }
+        }
     }
 
     companion object {
