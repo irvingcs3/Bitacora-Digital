@@ -3,6 +3,7 @@ package com.example.bitacoradigital.viewmodel
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -26,6 +27,10 @@ class RegistroQRViewModel(
     private val perimetroId: Int
 ) : ViewModel() {
 
+    companion object {
+        private const val TAG = "RegistroQR"
+    }
+
     private val _checkpoints = MutableStateFlow<List<Checkpoint>>(emptyList())
     val checkpoints: StateFlow<List<Checkpoint>> = _checkpoints.asStateFlow()
 
@@ -47,6 +52,7 @@ class RegistroQRViewModel(
             _error.value = null
             try {
                 val token = withContext(Dispatchers.IO) { prefs.sessionToken.first() } ?: return@launch
+                Log.d(TAG, "Cargando checkpoints con token=$token y perimetro=$perimetroId")
                 val request = Request.Builder()
                     .url("https://bit.cs3.mx/api/v1/checkpoints/?perimetro=$perimetroId")
                     .get()
@@ -57,6 +63,7 @@ class RegistroQRViewModel(
                 response.use { resp ->
                     if (resp.isSuccessful) {
                         val jsonStr = withContext(Dispatchers.IO) { resp.body?.string() }
+                        Log.d(TAG, "Checkpoints respuesta: $jsonStr")
                         val arr = JSONArray(jsonStr ?: "[]")
                         val list = mutableListOf<Checkpoint>()
                         for (i in 0 until arr.length()) {
@@ -72,10 +79,13 @@ class RegistroQRViewModel(
                         }
                         _checkpoints.value = list
                     } else {
+                        val err = withContext(Dispatchers.IO) { resp.body?.string() }
+                        Log.e(TAG, "Error ${resp.code} al cargar checkpoints: $err")
                         _error.value = "Error ${resp.code}"
                     }
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Excepcion cargando checkpoints", e)
                 _error.value = e.localizedMessage
             } finally {
                 _cargando.value = false
@@ -93,6 +103,8 @@ class RegistroQRViewModel(
                     put("codigo", codigo)
                     put("checkpoint", checkpoint.checkpoint_id)
                 }
+                Log.d(TAG, "Enviando codigo $codigo al checkpoint ${checkpoint.checkpoint_id}")
+                Log.d(TAG, "Request body: $json")
                 val body = json.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder()
                     .url("http://qr.cs3.mx/bite/leer-qr")
@@ -104,6 +116,7 @@ class RegistroQRViewModel(
                 response.use { resp ->
                     if (resp.isSuccessful) {
                         val resStr = withContext(Dispatchers.IO) { resp.body?.string() }
+                        Log.d(TAG, "Respuesta exitosa: $resStr")
                         val obj = JSONObject(resStr ?: "{}")
                         resultado.value = obj.optString("estado")
                         obj.optString("crop")?.takeIf { it.isNotBlank() }?.let { base ->
@@ -111,10 +124,13 @@ class RegistroQRViewModel(
                             imagenCrop.value = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                         }
                     } else {
+                        val errorBody = withContext(Dispatchers.IO) { resp.body?.string() }
+                        Log.e(TAG, "Error ${resp.code}: $errorBody")
                         resultado.value = "error"
                     }
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Excepcion procesando codigo", e)
                 _error.value = e.localizedMessage
                 resultado.value = "error"
             } finally {
