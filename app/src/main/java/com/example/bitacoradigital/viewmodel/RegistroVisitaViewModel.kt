@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.model.JerarquiaNodo
+import com.example.bitacoradigital.model.Residente
 import com.example.bitacoradigital.network.ApiService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -117,6 +118,8 @@ class RegistroVisitaViewModel(
         _rutaDestino.value = emptyList()
         fotosOpcionales.value = emptyList()
         respuestaRegistro.value = null
+        residentesDestino.value = emptyList()
+        invitanteId.value = null
     }
     val nivelesDestino = MutableStateFlow<List<NivelDestino>>(emptyList())
     val seleccionDestino = MutableStateFlow<Map<Int, OpcionDestino>>(emptyMap())
@@ -201,6 +204,11 @@ class RegistroVisitaViewModel(
     }
     val fotosAdicionales = MutableStateFlow<List<Uri>>(emptyList())
 
+    val residentesDestino = MutableStateFlow<List<Residente>>(emptyList())
+    val cargandoResidentes = MutableStateFlow(false)
+    val errorResidentes = MutableStateFlow<String?>(null)
+    val invitanteId = MutableStateFlow<Int?>(null)
+
     fun agregarFoto(uri: Uri) {
         if (fotosAdicionales.value.size < 3) {
             fotosAdicionales.value = fotosAdicionales.value + uri
@@ -209,6 +217,51 @@ class RegistroVisitaViewModel(
 
     fun eliminarFoto(uri: Uri) {
         fotosAdicionales.value = fotosAdicionales.value - uri
+    }
+
+    fun cargarResidentesDestino(perimetroHojaId: Int) {
+        viewModelScope.launch {
+            cargandoResidentes.value = true
+            errorResidentes.value = null
+            try {
+                val token = withContext(Dispatchers.IO) { sessionPrefs.sessionToken.first() } ?: return@launch
+                val request = Request.Builder()
+                    .url("https://bit.cs3.mx/api/v1/perimetro/${perimetroHojaId}/residentes")
+                    .get()
+                    .addHeader("x-session-token", token)
+                    .build()
+                val client = OkHttpClient()
+                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                response.use { resp ->
+                    if (resp.isSuccessful) {
+                        val jsonStr = withContext(Dispatchers.IO) { resp.body?.string() }
+                        val arr = org.json.JSONArray(jsonStr ?: "[]")
+                        val list = mutableListOf<Residente>()
+                        for (i in 0 until arr.length()) {
+                            val obj = arr.getJSONObject(i)
+                            list.add(
+                                Residente(
+                                    id = obj.optInt("id"),
+                                    name = obj.optString("name"),
+                                    idPersona = obj.optInt("id_persona"),
+                                    email = obj.optString("email"),
+                                    registrationDate = obj.optString("registrationDate"),
+                                    perimeterName = obj.optString("perimeterName"),
+                                    perimeterId = obj.optInt("perimeterId")
+                                )
+                            )
+                        }
+                        residentesDestino.value = list
+                    } else {
+                        errorResidentes.value = "Error ${resp.code}"
+                    }
+                }
+            } catch (e: Exception) {
+                errorResidentes.value = e.localizedMessage
+            } finally {
+                cargandoResidentes.value = false
+            }
+        }
     }
 
     suspend fun reconocerDocumento(context: android.content.Context) {
@@ -309,7 +362,7 @@ class RegistroVisitaViewModel(
                         Log.d("RegistroVisita", "Registro exitoso: $bodyStr")
 
                         // Enviar QR y whatsapp
-                        val personaId = withContext(Dispatchers.IO) { sessionPrefs.personaId.first() } ?: 0
+                        val personaId = invitanteId.value ?: 0
                         val ineUri = documentoUri.value
                         var qrMsg: String? = null
                         var qrImg: Bitmap? = null

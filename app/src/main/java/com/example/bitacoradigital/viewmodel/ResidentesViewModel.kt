@@ -63,6 +63,7 @@ class ResidentesViewModel(
                                 Residente(
                                     id = obj.optInt("id"),
                                     name = obj.optString("name"),
+                                    idPersona = obj.optInt("id_persona"),
                                     email = obj.optString("email"),
                                     registrationDate = obj.optString("registrationDate"),
                                     perimeterName = obj.optString("perimeterName"),
