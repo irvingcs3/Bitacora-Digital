@@ -38,13 +38,15 @@ class SignupViewModel : ViewModel() {
                 .addHeader("Content-Type", "application/json")
                 .build()
             val client = OkHttpClient()
-            val response = client.newCall(request).execute()
-            if (response.isSuccessful) {
-                val res = JSONObject(response.body?.string() ?: "{}")
-                res.optBoolean("exist", false)
-            } else {
-                false
+            val result = client.newCall(request).execute().use { resp ->
+                if (resp.isSuccessful) {
+                    val res = JSONObject(resp.body?.string() ?: "{}")
+                    res.optBoolean("exist", false)
+                } else {
+                    false
+                }
             }
+            result
         } catch (e: Exception) {
             Log.e("Signup", "Error verificando numero", e)
             false

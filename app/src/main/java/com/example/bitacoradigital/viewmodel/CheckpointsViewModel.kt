@@ -44,23 +44,25 @@ class CheckpointsViewModel(
                     .build()
                 val client = OkHttpClient()
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                if (response.isSuccessful) {
-                    val jsonArr = org.json.JSONArray(response.body?.string() ?: "[]")
-                    val list = mutableListOf<Checkpoint>()
-                    for (i in 0 until jsonArr.length()) {
-                        val obj = jsonArr.getJSONObject(i)
-                        list.add(
-                            Checkpoint(
-                                checkpoint_id = obj.optInt("checkpoint_id"),
-                                nombre = obj.optString("nombre"),
-                                tipo = obj.optString("tipo"),
-                                perimetro = obj.optInt("perimetro")
+                response.use { resp ->
+                    if (resp.isSuccessful) {
+                        val jsonArr = org.json.JSONArray(resp.body?.string() ?: "[]")
+                        val list = mutableListOf<Checkpoint>()
+                        for (i in 0 until jsonArr.length()) {
+                            val obj = jsonArr.getJSONObject(i)
+                            list.add(
+                                Checkpoint(
+                                    checkpoint_id = obj.optInt("checkpoint_id"),
+                                    nombre = obj.optString("nombre"),
+                                    tipo = obj.optString("tipo"),
+                                    perimetro = obj.optInt("perimetro")
+                                )
                             )
-                        )
+                        }
+                        _checkpoints.value = list
+                    } else {
+                        _error.value = "Error ${resp.code}"
                     }
-                    _checkpoints.value = list
-                } else {
-                    _error.value = "Error ${response.code}"
                 }
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
@@ -95,10 +97,12 @@ class CheckpointsViewModel(
                     .build()
                 val client = OkHttpClient()
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                if (response.isSuccessful) {
-                    cargarCheckpoints()
-                } else {
-                    _error.value = "Error ${response.code}"
+                response.use { resp ->
+                    if (resp.isSuccessful) {
+                        cargarCheckpoints()
+                    } else {
+                        _error.value = "Error ${resp.code}"
+                    }
                 }
             } catch (e: Exception) {
                 _error.value = e.localizedMessage
@@ -129,10 +133,12 @@ class CheckpointsViewModel(
             }
             val client = OkHttpClient()
             val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-            if (response.isSuccessful) {
-                cargarCheckpoints()
-            } else {
-                _error.value = "Error ${response.code}"
+            response.use { resp ->
+                if (resp.isSuccessful) {
+                    cargarCheckpoints()
+                } else {
+                    _error.value = "Error ${resp.code}"
+                }
             }
         } catch (e: Exception) {
             _error.value = e.localizedMessage

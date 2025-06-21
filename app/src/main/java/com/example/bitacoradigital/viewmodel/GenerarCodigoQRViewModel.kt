@@ -47,10 +47,12 @@ class GenerarCodigoQRViewModel(private val prefs: SessionPreferences) : ViewMode
                     .build()
                 val client = OkHttpClient()
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                _mensaje.value = if (response.isSuccessful) {
-                    "Invitación enviada"
-                } else {
-                    "Error ${response.code}"
+                response.use { resp ->
+                    _mensaje.value = if (resp.isSuccessful) {
+                        "Invitación enviada"
+                    } else {
+                        "Error ${resp.code}"
+                    }
                 }
             } catch (e: Exception) {
                 _mensaje.value = "Error al enviar invitación: ${e.message ?: e.toString()}"
