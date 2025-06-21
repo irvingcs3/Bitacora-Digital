@@ -25,6 +25,7 @@ import com.example.bitacoradigital.ui.screens.qr.CodigosQRScreen
 import com.example.bitacoradigital.ui.screens.qr.GenerarCodigoQRScreen
 import com.example.bitacoradigital.ui.screens.dashboard.DashboardScreen
 import com.example.bitacoradigital.ui.screens.accesos.AccesosScreen
+import com.example.bitacoradigital.ui.screens.residentes.ResidentesScreen
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
@@ -153,6 +154,14 @@ fun AppNavGraph(
             AccesosScreen(
                 homeViewModel = homeViewModel,
                 permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Accesos") ?: emptyList(),
+                navController = navController
+            )
+        }
+
+        composable("residentes") {
+            ResidentesScreen(
+                homeViewModel = homeViewModel,
+                permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Residentes") ?: emptyList(),
                 navController = navController
             )
         }
