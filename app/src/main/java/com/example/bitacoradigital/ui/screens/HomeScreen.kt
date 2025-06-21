@@ -90,6 +90,7 @@ fun HomeScreen(
                                 "Códigos QR" -> navController.navigate("qr")
                                 "Dashboard" -> navController.navigate("dashboard")
                                 "Accesos" -> navController.navigate("accesos")
+                                "Residentes" -> navController.navigate("residentes")
                                 else -> { }
                             }
                         }
