@@ -17,6 +17,7 @@ import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.network.ApiService
 
 import com.example.bitacoradigital.ui.screens.registrovisita.PasoFinal
+import com.example.bitacoradigital.ui.screens.registrovisita.PasoAutorizacion
 import com.example.bitacoradigital.ui.screens.registrovisita.PasoFotos
 import com.example.bitacoradigital.ui.screens.registrovisita.PasoTelefono
 import com.example.bitacoradigital.ui.screens.registrovisita.PasoVerificacion
@@ -48,7 +49,7 @@ fun RegistroVisitaWizardScreen(perimetroId: Int, navController: NavHostControlle
         }
     ) { innerPadding ->
     Column(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp)) {
-        Stepper(pasoActual, totalPasos = 7)
+        Stepper(pasoActual, totalPasos = 8)
         Spacer(Modifier.height(24.dp))
 
         when (pasoActual) {
@@ -58,7 +59,8 @@ fun RegistroVisitaWizardScreen(perimetroId: Int, navController: NavHostControlle
             4 -> PasoDestino(viewModel)
             5 -> PasoFotos(viewModel)
             6 -> PasoConfirmacion(viewModel)
-            7 -> PasoFinal(viewModel)
+            7 -> PasoAutorizacion(viewModel)
+            8 -> PasoFinal(viewModel)
         }
     }
     }

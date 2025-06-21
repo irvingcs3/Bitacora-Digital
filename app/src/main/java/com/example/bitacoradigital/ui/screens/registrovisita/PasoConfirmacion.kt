@@ -2,29 +2,18 @@
 package com.example.bitacoradigital.ui.screens.registrovisita
 
 import android.net.Uri
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.Image
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import androidx.compose.ui.platform.LocalContext
-
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
@@ -39,14 +28,7 @@ fun PasoConfirmacion(viewModel: RegistroVisitaViewModel) {
     val destino by viewModel.destinoSeleccionado.collectAsState()
     val fotos by viewModel.fotosAdicionales.collectAsState()
 
-    val cargando by viewModel.cargandoRegistro.collectAsState()
-    val registroCompleto by viewModel.registroCompleto.collectAsState()
 
-    LaunchedEffect(registroCompleto) {
-        if (registroCompleto) {
-            viewModel.avanzarPaso()
-        }
-    }
 
     Box(Modifier.fillMaxSize()) {
         Column(modifier = Modifier
@@ -101,24 +83,12 @@ fun PasoConfirmacion(viewModel: RegistroVisitaViewModel) {
 
         Spacer(Modifier.height(24.dp))
 
-        val context = LocalContext.current
         Button(
-            onClick = {
-                viewModel.registrarVisita(context)
-            },
+            onClick = { viewModel.avanzarPaso() },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Finalizar Registro")
+            Text("Siguiente")
         }
-        }
-
-        if (cargando) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center
-            ) { CircularProgressIndicator() }
         }
     }
 }
