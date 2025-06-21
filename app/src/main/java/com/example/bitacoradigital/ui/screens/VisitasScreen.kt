@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.*
 import androidx.compose.animation.animateContentSize
 import androidx.compose.runtime.Composable
@@ -65,6 +66,16 @@ fun VisitasScreen(
                 descripcion = "Escanea códigos QR de acceso rápido con verificación automática.",
                 color = MaterialTheme.colorScheme.primary,
                 onClick = { navController.navigate("visitas/qr") }
+            )
+        }
+
+        if ("Generar Código QR" in permisos) {
+            PermisoCard(
+                icon = Icons.Default.QrCode,
+                titulo = "Generar Código QR",
+                descripcion = "Crea una invitación para acceso por QR",
+                color = MaterialTheme.colorScheme.primary,
+                onClick = { navController.navigate("qr/generar") }
             )
         }
     }
