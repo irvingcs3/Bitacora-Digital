@@ -5,6 +5,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.draw.rotate
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -98,59 +102,19 @@ fun CodigosQRScreen(
                 } else {
                     LazyColumn(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         items(codigos, key = { it.id_invitacion }) { qr ->
-                            var expandida by remember { mutableStateOf(false) }
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .animateContentSize()
-                            ) {
-                                Column(Modifier.fillMaxWidth().padding(8.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Column(Modifier.weight(1f)) {
-                                            Text(qr.nombre_invitado)
-                                            Text(qr.destino, style = MaterialTheme.typography.bodySmall)
-                                            Text(
-                                                qr.estado.uppercase(),
-                                                color = if (qr.estado == "expirado") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                                                style = MaterialTheme.typography.bodySmall
-                                            )
-                                        }
-                                        IconButton(onClick = { expandida = !expandida }) {
-                                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                                        }
-                                    }
-                                    AnimatedVisibility(expandida) {
-                                        Column(modifier = Modifier.fillMaxWidth()) {
-                                            Text(qr.periodo_activo, style = MaterialTheme.typography.bodySmall)
-                                            Row(
-                                                Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                TextButton(onClick = { navController.navigate("qr/seguimiento/${qr.id_invitacion}") }) { Text("Seguimiento") }
-                                                Row {
-                                                    if (puedeModificar) {
-                                                        IconButton(onClick = { modificar = qr; diasExtra = "" }) {
-                                                            Icon(Icons.Default.Edit, contentDescription = null)
-                                                        }
-                                                    }
-                                                    if (puedeEliminar) {
-                                                        IconButton(onClick = { viewModel.borrarCodigo(qr.id_invitacion) }) {
-                                                            Icon(Icons.Default.Delete, contentDescription = null)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            QRCard(
+                                qr = qr,
+                                puedeModificar = puedeModificar,
+                                puedeEliminar = puedeEliminar,
+                                onSeguimiento = {
+                                    navController.navigate("qr/seguimiento/${qr.id_invitacion}")
+                                },
+                                onModificar = { modificar = qr; diasExtra = "" },
+                                onEliminar = { viewModel.borrarCodigo(qr.id_invitacion) }
+                            )
                         }
                     }
                 }
@@ -183,5 +147,89 @@ fun CodigosQRScreen(
                 )
             }
         )
+    }
+}
+
+@Composable
+private fun QRCard(
+    qr: CodigoQR,
+    puedeModificar: Boolean,
+    puedeEliminar: Boolean,
+    onSeguimiento: () -> Unit,
+    onModificar: () -> Unit,
+    onEliminar: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val rotation by animateFloatAsState(if (expanded) 180f else 0f)
+    val estadoColor = if (qr.estado.lowercase() == "activo") Color(0xFFC8F7C5) else Color(0xFFF7C5C5)
+
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize()
+    ) {
+        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(qr.nombre_invitado, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        qr.destino,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                    Surface(
+                        color = estadoColor,
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(
+                            qr.estado,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        Icons.Default.ArrowDropDown,
+                        contentDescription = null,
+                        modifier = Modifier.rotate(rotation)
+                    )
+                }
+            }
+
+            AnimatedVisibility(expanded) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text("Periodo activo: ${qr.periodo_activo}", style = MaterialTheme.typography.bodySmall)
+                    Button(onClick = onSeguimiento, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                        Icon(Icons.Default.Visibility, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Ver Seguimiento")
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        if (puedeModificar) {
+                            IconButton(onClick = onModificar) {
+                                Icon(Icons.Default.Edit, contentDescription = null)
+                            }
+                        }
+                        if (puedeEliminar) {
+                            IconButton(onClick = onEliminar) {
+                                Icon(Icons.Default.Delete, contentDescription = null)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
