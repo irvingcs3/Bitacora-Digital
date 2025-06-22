@@ -23,6 +23,7 @@ import com.example.bitacoradigital.ui.screens.RegistroQRScreen
 import com.example.bitacoradigital.ui.screens.perimetro.PerimetrosScreen
 import com.example.bitacoradigital.ui.screens.qr.CodigosQRScreen
 import com.example.bitacoradigital.ui.screens.qr.GenerarCodigoQRScreen
+import com.example.bitacoradigital.ui.screens.qr.SeguimientoQRScreen
 import com.example.bitacoradigital.ui.screens.dashboard.DashboardScreen
 import com.example.bitacoradigital.ui.screens.accesos.AccesosScreen
 import com.example.bitacoradigital.ui.screens.residentes.ResidentesScreen
@@ -132,7 +133,18 @@ fun AppNavGraph(
         }
 
         composable("qr") {
+            val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
             CodigosQRScreen(
+                perimetroId = perimetroId,
+                permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Códigos QR") ?: emptyList(),
+                navController = navController
+            )
+        }
+
+        composable("qr/seguimiento/{id}") { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: return@composable
+            SeguimientoQRScreen(
+                idInvitacion = id,
                 permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Códigos QR") ?: emptyList(),
                 navController = navController
             )
