@@ -19,7 +19,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 
-class CodigosQRViewModel(private val prefs: SessionPreferences) : ViewModel() {
+class CodigosQRViewModel(
+    private val prefs: SessionPreferences,
+    private val perimetroId: Int
+) : ViewModel() {
 
     private val _codigos = MutableStateFlow<List<CodigoQR>>(emptyList())
     val codigos: StateFlow<List<CodigoQR>> = _codigos.asStateFlow()
@@ -35,11 +38,11 @@ class CodigosQRViewModel(private val prefs: SessionPreferences) : ViewModel() {
             _cargando.value = true
             _error.value = null
             try {
-                val id = withContext(Dispatchers.IO) { prefs.personaId.firstOrNull() } ?: return@launch
+                val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
                 val request = Request.Builder()
-                    .url("http://qr.cs3.mx/bite/consultar-qr/$id")
+                    .url("https://bit.cs3.mx/api/v1/invitaciones-detalle/?perimetro=$perimetroId")
                     .get()
-                    .addHeader("Authorization", "Bearer mfmssmcl")
+                    .addHeader("x-session-token", token)
                     .build()
                 val client = OkHttpClient()
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
@@ -48,19 +51,18 @@ class CodigosQRViewModel(private val prefs: SessionPreferences) : ViewModel() {
                         val jsonStr = withContext(Dispatchers.IO) { resp.body?.string() }
                         val list = mutableListOf<CodigoQR>()
                         if (!jsonStr.isNullOrBlank()) {
-                            val arr = JSONObject(jsonStr).optJSONArray("invitaciones") ?: JSONArray()
+                            val arr = JSONArray(jsonStr)
                             for (i in 0 until arr.length()) {
                                 val obj = arr.getJSONObject(i)
                                 list.add(
                                     CodigoQR(
                                         id_invitacion = obj.optInt("id_invitacion"),
-                                        id_telefono = obj.optInt("id_telefono"),
-                                        telefono = obj.optString("telefono"),
-                                        lada = if (obj.isNull("lada")) null else obj.optString("lada"),
-                                        id_cad_invitacion = obj.optInt("id_cad_invitacion"),
-                                        id_cad_qr = obj.optInt("id_cad_qr"),
-                                        timestamp_inicio = obj.optString("timestamp_inicio").toLongOrNull() ?: 0L,
-                                        timestamp_final = obj.optString("timestamp_final").toLongOrNull() ?: 0L
+                                        nombre_invitado = obj.optString("nombre_invitado"),
+                                        nombre_invitante = obj.optString("nombre_invitante"),
+                                        destino = obj.optString("destino"),
+                                        caducidad_dias = obj.optDouble("caducidad_dias"),
+                                        estado = obj.optString("estado"),
+                                        periodo_activo = obj.optString("periodo_activo")
                                     )
                                 )
                             }
@@ -142,11 +144,14 @@ class CodigosQRViewModel(private val prefs: SessionPreferences) : ViewModel() {
     }
 }
 
-class CodigosQRViewModelFactory(private val prefs: SessionPreferences) : ViewModelProvider.Factory {
+class CodigosQRViewModelFactory(
+    private val prefs: SessionPreferences,
+    private val perimetroId: Int
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CodigosQRViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return CodigosQRViewModel(prefs) as T
+            return CodigosQRViewModel(prefs, perimetroId) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

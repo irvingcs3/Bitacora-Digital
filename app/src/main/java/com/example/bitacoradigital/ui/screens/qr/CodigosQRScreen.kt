@@ -3,10 +3,13 @@ package com.example.bitacoradigital.ui.screens.qr
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,15 +21,18 @@ import androidx.navigation.NavHostController
 import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.model.CodigoQR
 import com.example.bitacoradigital.ui.components.HomeConfigNavBar
-import com.example.bitacoradigital.util.toReadableDate
 import com.example.bitacoradigital.viewmodel.CodigosQRViewModel
 import com.example.bitacoradigital.viewmodel.CodigosQRViewModelFactory
 
 @Composable
-fun CodigosQRScreen(permisos: List<String>, navController: NavHostController) {
+fun CodigosQRScreen(
+    perimetroId: Int,
+    permisos: List<String>,
+    navController: NavHostController
+) {
     val context = LocalContext.current
     val prefs = remember { SessionPreferences(context) }
-    val viewModel: CodigosQRViewModel = viewModel(factory = CodigosQRViewModelFactory(prefs))
+    val viewModel: CodigosQRViewModel = viewModel(factory = CodigosQRViewModelFactory(prefs, perimetroId))
 
     val codigos by viewModel.codigos.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
@@ -95,26 +101,52 @@ fun CodigosQRScreen(permisos: List<String>, navController: NavHostController) {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(codigos, key = { it.id_invitacion }) { qr ->
-                            Card(modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(Modifier.weight(1f)) {
-                                        Text(qr.telefono)
-                                        Text("Inicio: ${qr.timestamp_inicio.toReadableDate()}", style = MaterialTheme.typography.bodySmall)
-                                        Text("Fin: ${qr.timestamp_final.toReadableDate()}", style = MaterialTheme.typography.bodySmall)
-                                    }
-                                    if (puedeModificar) {
-                                        IconButton(onClick = { modificar = qr; diasExtra = "" }) {
-                                            Icon(Icons.Default.Edit, contentDescription = null)
+                            var expandida by remember { mutableStateOf(false) }
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .animateContentSize()
+                            ) {
+                                Column(Modifier.fillMaxWidth().padding(8.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text(qr.nombre_invitado)
+                                            Text(qr.destino, style = MaterialTheme.typography.bodySmall)
+                                            Text(
+                                                qr.estado.uppercase(),
+                                                color = if (qr.estado == "expirado") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+                                        IconButton(onClick = { expandida = !expandida }) {
+                                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
                                         }
                                     }
-                                    if (puedeEliminar) {
-                                        IconButton(onClick = { viewModel.borrarCodigo(qr.id_invitacion) }) {
-                                            Icon(Icons.Default.Delete, contentDescription = null)
+                                    AnimatedVisibility(expandida) {
+                                        Column(modifier = Modifier.fillMaxWidth()) {
+                                            Text(qr.periodo_activo, style = MaterialTheme.typography.bodySmall)
+                                            Row(
+                                                Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                TextButton(onClick = { navController.navigate("qr/seguimiento/${qr.id_invitacion}") }) { Text("Seguimiento") }
+                                                Row {
+                                                    if (puedeModificar) {
+                                                        IconButton(onClick = { modificar = qr; diasExtra = "" }) {
+                                                            Icon(Icons.Default.Edit, contentDescription = null)
+                                                        }
+                                                    }
+                                                    if (puedeEliminar) {
+                                                        IconButton(onClick = { viewModel.borrarCodigo(qr.id_invitacion) }) {
+                                                            Icon(Icons.Default.Delete, contentDescription = null)
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
