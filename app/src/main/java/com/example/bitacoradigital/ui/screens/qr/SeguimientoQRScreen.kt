@@ -6,7 +6,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,9 +46,15 @@ fun SeguimientoQRScreen(
 
     var confirmarBorrar by remember { mutableStateOf(false) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    error?.let { msg ->
+        LaunchedEffect(msg) { snackbarHostState.showSnackbar(msg) }
+    }
+
     LaunchedEffect(Unit) { viewModel.cargarTodo() }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             HomeConfigNavBar(
                 current = "",
@@ -58,32 +67,46 @@ fun SeguimientoQRScreen(
             Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (cargando) {
-                CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
-            } else if (error != null) {
-                Text(error!!)
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             } else {
                 info?.let { data ->
-                    Text("Fase: ${'$'}{data.fase}")
-                    data.checkpointActualNombre?.let { Text("Actual: ${'$'}it") }
-                    data.siguientePerimetro?.let { Text("Próximo perímetro: ${'$'}it") }
+                    Text("Seguimiento de invitación", style = MaterialTheme.typography.titleMedium)
+                    val estado = data.mensaje ?: data.fase
+                    val badgeColor = if (estado == "La visita ha concluido") MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(estado) },
+                        colors = AssistChipDefaults.assistChipColors(containerColor = badgeColor)
+                    )
+                    if (data.checkpointActualNombre == null) {
+                        Text("Aún no ha iniciado el recorrido", style = MaterialTheme.typography.bodySmall)
+                    } else {
+                        Text("Actual: ${data.checkpointActualNombre}")
+                    }
+                    data.siguientePerimetro?.let {
+                        AssistChip(onClick = {}, label = { Text(it) })
+                    }
                     if (data.siguiente.isNotEmpty()) {
-                        Text("Siguientes:")
-                        data.siguiente.forEach { cp ->
-                            Text("- ${'$'}{cp.nombre}")
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            data.siguiente.forEach { cp ->
+                                AssistChip(onClick = {}, label = { Text(cp.nombre) })
+                            }
                         }
                     }
-                    Spacer(Modifier.height(8.dp))
                 }
-                Text("Historial:")
+                Text("Historial de Seguimiento", style = MaterialTheme.typography.titleMedium)
                 LazyColumn(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(historial, key = { it.fecha + it.checkpoint }) { h ->
-                        Text("${'$'}{h.fecha} - ${'$'}{h.checkpoint} (${ '$'}{h.perimetro })")
+                        Text("${h.fecha} - ${h.checkpoint} (${h.perimetro})", style = MaterialTheme.typography.bodySmall)
                     }
                 }
                 Row(
@@ -91,10 +114,14 @@ fun SeguimientoQRScreen(
                     horizontalArrangement = Arrangement.End
                 ) {
                     if (puedeModificar) {
-                        IconButton(onClick = { modificar = true }) { Icon(Icons.Default.Edit, contentDescription = null) }
+                        IconButton(onClick = { modificar = true }) {
+                            Icon(Icons.Default.Edit, contentDescription = null)
+                        }
                     }
                     if (puedeEliminar) {
-                        IconButton(onClick = { confirmarBorrar = true }) { Icon(Icons.Default.Delete, contentDescription = null) }
+                        IconButton(onClick = { confirmarBorrar = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = null)
+                        }
                     }
                 }
             }

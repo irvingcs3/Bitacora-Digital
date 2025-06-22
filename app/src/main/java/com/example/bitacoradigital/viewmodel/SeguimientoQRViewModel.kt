@@ -78,7 +78,8 @@ class SeguimientoQRViewModel(
                     checkpointActualNombre = obj.optJSONObject("checkpoint_actual")?.optString("nombre"),
                     checkpointActualPerimetro = obj.optString("checkpoint_actual_perimetro"),
                     siguientePerimetro = if (obj.isNull("siguiente_perimetro")) null else obj.optString("siguiente_perimetro"),
-                    siguiente = siguienteList
+                    siguiente = siguienteList,
+                    mensaje = obj.optString("mensaje", null)
                 )
             } else {
                 _error.value = "Error ${resp.code}"

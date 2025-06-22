@@ -7,7 +7,8 @@ data class SeguimientoInfo(
     val checkpointActualNombre: String?,
     val checkpointActualPerimetro: String?,
     val siguientePerimetro: String?,
-    val siguiente: List<CheckpointSimple>
+    val siguiente: List<CheckpointSimple>,
+    val mensaje: String? = null
 )
 
 /** Modelo simple de checkpoint */
