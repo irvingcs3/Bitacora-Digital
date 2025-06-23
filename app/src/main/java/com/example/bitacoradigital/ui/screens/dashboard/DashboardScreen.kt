@@ -109,7 +109,7 @@ fun DashboardScreen(
 }
 
 @Composable
-private fun DashboardCard(title: String, value: Int, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+private fun RowScope.DashboardCard(title: String, value: Int, icon: androidx.compose.ui.graphics.vector.ImageVector) {
     Card(
         modifier = Modifier.weight(1f),
         colors = CardDefaults.cardColors()
@@ -150,7 +150,7 @@ private fun InvitacionesChart(data: List<InvitacionEstado>) {
 }
 
 @Composable
-private fun Bar(color: Color, value: Int) {
+private fun RowScope.Bar(color: Color, value: Int) {
     Canvas(modifier = Modifier
         .weight(1f)
         .height(80.dp)) {
