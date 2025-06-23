@@ -49,7 +49,8 @@ class ForgotPasswordViewModel : ViewModel() {
         code: String,
         password: String,
         sessionViewModel: SessionViewModel,
-        onSuccess: () -> Unit
+        onSuccess: () -> Unit,
+        onUpdateRequired: () -> Unit
     ) {
         viewModelScope.launch {
             try {
@@ -66,7 +67,11 @@ class ForgotPasswordViewModel : ViewModel() {
                         val newToken = body.meta.session_token ?: token
                         sessionViewModel.guardarSesion(newToken, body.data.user)
                         state = null
-                        onSuccess()
+                        if (body.data.user.Version == com.example.bitacoradigital.util.Constants.APP_VERSION) {
+                            onSuccess()
+                        } else {
+                            onUpdateRequired()
+                        }
                     } else {
                         state = "Respuesta inesperada"
                     }

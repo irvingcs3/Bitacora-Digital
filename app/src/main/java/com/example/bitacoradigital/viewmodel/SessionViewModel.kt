@@ -36,6 +36,8 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
     private val _tieneAccesoABitacora = MutableStateFlow<Boolean?>(null)
     val tieneAccesoABitacora: StateFlow<Boolean?> = _tieneAccesoABitacora.asStateFlow()
+    private val _versionOk = MutableStateFlow<Boolean?>(null)
+    val versionOk: StateFlow<Boolean?> = _versionOk.asStateFlow()
     val favoritoEmpresaId = prefs.favoritoEmpresaId
     val favoritoPerimetroId = prefs.favoritoPerimetroId
 
@@ -59,6 +61,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
                         _token.value = token
                         _usuario.value = user
                         _tieneAccesoABitacora.value = acceso
+                        _versionOk.value = user.Version == com.example.bitacoradigital.util.Constants.APP_VERSION
                     } catch (e: Exception) {
                         // No cerrar sesión si falla el parseo, solo informar
                         Log.e("SessionViewModel", "Error al deserializar sesión", e)
@@ -66,6 +69,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
                 } else {
                     // Si están vacíos o nulos
                     _tieneAccesoABitacora.value = null
+                    _versionOk.value = null
                 }
             }.collect()
         }
@@ -97,6 +101,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         _usuario.value = user
         val tieneAcceso = user.empresas.any { it.B }
         _tieneAccesoABitacora.value = tieneAcceso
+        _versionOk.value = user.Version == com.example.bitacoradigital.util.Constants.APP_VERSION
         prefs.guardarSesion(token, user.id, user.persona_id, gson.toJson(user))
     }
 
@@ -109,6 +114,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         _token.value = null
         _usuario.value = null
         _tieneAccesoABitacora.value = null // ← esto es CRUCIAL
+        _versionOk.value = null
     }
 
     fun actualizarPerfil(

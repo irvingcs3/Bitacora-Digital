@@ -107,7 +107,8 @@ class SignupViewModel : ViewModel() {
         code: String,
         sessionViewModel: SessionViewModel,
         homeViewModel: HomeViewModel,
-        onSuccess: () -> Unit
+        onSuccess: () -> Unit,
+        onUpdateRequired: () -> Unit
     ) {
         viewModelScope.launch {
             loading = true
@@ -120,7 +121,11 @@ class SignupViewModel : ViewModel() {
                 sessionViewModel.guardarSesion(newToken, response.data.user)
                 homeViewModel.cargarDesdeLogin(response.data.user, sessionViewModel)
                 signupState = null
-                onSuccess()
+                if (response.data.user.Version == com.example.bitacoradigital.util.Constants.APP_VERSION) {
+                    onSuccess()
+                } else {
+                    onUpdateRequired()
+                }
             } catch (e: Exception) {
                 signupState = "Error: ${e.localizedMessage}"
             } finally {
