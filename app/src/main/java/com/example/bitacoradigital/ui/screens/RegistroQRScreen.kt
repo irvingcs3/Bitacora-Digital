@@ -31,6 +31,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.bitacoradigital.ui.components.HomeConfigNavBar
 import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.viewmodel.RegistroQRViewModel
 import com.example.bitacoradigital.viewmodel.RegistroQRViewModelFactory
@@ -76,11 +77,35 @@ fun RegistroQRScreen(perimetroId: Int, navController: NavHostController) {
         if (checkpoints.size == 1) viewModel.seleccionado.value = checkpoints.first()
     }
 
+    var cameraActive by remember { mutableStateOf(true) }
+
     if (mostrandoImagen && crop != null) {
-        Box(Modifier.fillMaxSize()) {
-            Image(bitmap = crop!!.asImageBitmap(), contentDescription = null, modifier = Modifier.fillMaxSize())
-            Button(onClick = { viewModel.reiniciar() }, modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)) {
-                Text("Continuar")
+        Scaffold(
+            bottomBar = {
+                HomeConfigNavBar(
+                    current = "",
+                    onHomeClick = { navController.navigate("home") },
+                    onConfigClick = { navController.navigate("configuracion") }
+                )
+            }
+        ) { innerPadding ->
+            Box(Modifier.fillMaxSize().padding(innerPadding)) {
+                Image(
+                    bitmap = crop!!.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Button(
+                    onClick = {
+                        viewModel.reiniciar()
+                        navController.navigate("visitas") {
+                            popUpTo("visitas") { inclusive = true }
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
+                ) {
+                    Text("Continuar")
+                }
             }
         }
         return
@@ -100,7 +125,12 @@ fun RegistroQRScreen(perimetroId: Int, navController: NavHostController) {
             }
             else -> {
                 if (hasCameraPermission) {
-                    CameraPreview(onCodeScanned = { codigo -> viewModel.procesarCodigo(codigo) })
+                    if (cameraActive) {
+                        CameraPreview(onCodeScanned = { codigo ->
+                            cameraActive = false
+                            viewModel.procesarCodigo(codigo)
+                        })
+                    }
                 } else {
                     Column(
                         Modifier.align(Alignment.Center),
@@ -149,7 +179,7 @@ private fun CameraPreview(onCodeScanned: (String) -> Unit) {
 
     AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
 
-    LaunchedEffect(Unit) {
+    DisposableEffect(Unit) {
         val provider = ProcessCameraProvider.getInstance(context).get()
         val preview = androidx.camera.core.Preview.Builder().build().also {
             it.setSurfaceProvider(previewView.surfaceProvider)
@@ -165,7 +195,16 @@ private fun CameraPreview(onCodeScanned: (String) -> Unit) {
             }
         }
         provider.unbindAll()
-        provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
+        provider.bindToLifecycle(
+            lifecycleOwner,
+            CameraSelector.DEFAULT_BACK_CAMERA,
+            preview,
+            analysis
+        )
+
+        onDispose {
+            provider.unbindAll()
+        }
     }
 }
 
