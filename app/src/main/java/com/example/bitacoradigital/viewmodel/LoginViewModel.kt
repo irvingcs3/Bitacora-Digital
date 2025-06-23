@@ -30,7 +30,8 @@ class LoginViewModel : ViewModel() {
         sessionViewModel: SessionViewModel,
         onLoginSuccess: () -> Unit,
         onLoginDenied: () -> Unit,
-        onAwaitCode: () -> Unit
+        onAwaitCode: () -> Unit,
+        onUpdateRequired: () -> Unit
     ) {
         viewModelScope.launch {
             loading = true
@@ -48,8 +49,13 @@ class LoginViewModel : ViewModel() {
 
                 if (user.empresas.any { it.B }) {
                     sessionViewModel.guardarSesion(token, user)
-                    loginState = "Login exitoso"
-                    onLoginSuccess()
+                    if (user.Version == com.example.bitacoradigital.util.Constants.APP_VERSION) {
+                        loginState = "Login exitoso"
+                        onLoginSuccess()
+                    } else {
+                        loginState = null
+                        onUpdateRequired()
+                    }
                 } else {
                     loginState = "Acceso denegado"
                     onLoginDenied()

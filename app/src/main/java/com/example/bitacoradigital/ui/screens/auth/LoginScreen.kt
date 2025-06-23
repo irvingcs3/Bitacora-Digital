@@ -32,6 +32,7 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onLoginDenied: () -> Unit,
     onAwaitCode: () -> Unit = {},
+    onUpdateRequired: () -> Unit = {},
     onRegisterClick: () -> Unit,
     onForgotPasswordClick: () -> Unit = {}
 )
@@ -110,7 +111,8 @@ fun LoginScreen(
                         onLoginSuccess()
                     },
                     onLoginDenied = onLoginDenied,
-                    onAwaitCode = onAwaitCode
+                    onAwaitCode = onAwaitCode,
+                    onUpdateRequired = onUpdateRequired
                 )
             },
             modifier = Modifier.fillMaxWidth()

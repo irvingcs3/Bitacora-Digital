@@ -23,7 +23,8 @@ fun PasswordResetScreen(
     viewModel: ForgotPasswordViewModel,
     sessionViewModel: SessionViewModel,
 
-    onSuccess: () -> Unit
+    onSuccess: () -> Unit,
+    onUpdateRequired: () -> Unit = {}
 ) {
     var code by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -82,7 +83,7 @@ fun PasswordResetScreen(
         Button(
             onClick = {
                 if (password == confirm) {
-                    viewModel.resetPassword(code, password, sessionViewModel, onSuccess)
+                    viewModel.resetPassword(code, password, sessionViewModel, onSuccess, onUpdateRequired)
 
                 } else {
                     localError = "Las contraseñas no coinciden"

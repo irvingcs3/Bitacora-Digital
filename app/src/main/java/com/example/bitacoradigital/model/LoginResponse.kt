@@ -21,6 +21,7 @@ data class User(
     val apellido_paterno: String?,
     val apellido_materno: String?,
     val telefono: String?,
+    val Version: String,
     val has_usable_password: Boolean,
     val empresas: List<Empresa>
 )

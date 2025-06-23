@@ -50,11 +50,13 @@ fun AppNavGraph(
     }
 
     val tieneAcceso by sessionViewModel.tieneAccesoABitacora.collectAsState()
+    val versionOk by sessionViewModel.versionOk.collectAsState()
 
-    val startDestination = when (tieneAcceso) {
-        true -> "home"
-        false -> "denegado"
-        null -> "login" // ← esto asegura inicio limpio
+    val startDestination = when {
+        versionOk == false -> "update"
+        tieneAcceso == true -> "home"
+        tieneAcceso == false -> "denegado"
+        else -> "login" // ← esto asegura inicio limpio
     }
 
 
@@ -71,6 +73,7 @@ fun AppNavGraph(
                 onLoginSuccess = { navController.navigate("home") { popUpTo("login") { inclusive = true } } },
                 onLoginDenied = { navController.navigate("denegado") { popUpTo("login") { inclusive = true } } },
                 onAwaitCode = { navController.navigate("verify") },
+                onUpdateRequired = { navController.navigate("update") { popUpTo("login") { inclusive = true } } },
                 onRegisterClick = { navController.navigate("register") },
                 onForgotPasswordClick = { navController.navigate("forgot/email") }
             )
@@ -92,7 +95,8 @@ fun AppNavGraph(
                 homeViewModel = homeViewModel,
                 onVerified = {
                     navController.navigate("home") { popUpTo("login") { inclusive = true } }
-                }
+                },
+                onUpdateRequired = { navController.navigate("update") { popUpTo("login") { inclusive = true } } }
             )
         }
 
@@ -111,7 +115,8 @@ fun AppNavGraph(
                 onSuccess = {
                     navController.navigate("login") { popUpTo("login") { inclusive = true } }
 
-                }
+                },
+                onUpdateRequired = { navController.navigate("update") { popUpTo("login") { inclusive = true } } }
             )
         }
         composable("visitas") {
@@ -211,6 +216,15 @@ fun AppNavGraph(
 
         composable("denegado") {
             AccesoDenegadoScreen()
+        }
+
+        composable("update") {
+            ActualizacionRequeridaScreen(
+                sessionViewModel = sessionViewModel,
+                onCerrarSesion = {
+                    navController.navigate("login") { popUpTo("update") { inclusive = true } }
+                }
+            )
         }
     }
 }

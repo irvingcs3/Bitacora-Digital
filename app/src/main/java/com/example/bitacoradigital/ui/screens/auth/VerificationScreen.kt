@@ -18,7 +18,8 @@ fun VerificationScreen(
     signupViewModel: SignupViewModel,
     sessionViewModel: SessionViewModel,
     homeViewModel: HomeViewModel,
-    onVerified: () -> Unit
+    onVerified: () -> Unit,
+    onUpdateRequired: () -> Unit = {}
 ) {
     var code by remember { mutableStateOf("") }
     val state = signupViewModel.signupState
@@ -47,7 +48,7 @@ fun VerificationScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { signupViewModel.verifyEmail(code, sessionViewModel, homeViewModel, onVerified) },
+            onClick = { signupViewModel.verifyEmail(code, sessionViewModel, homeViewModel, onVerified, onUpdateRequired) },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Verificar")
