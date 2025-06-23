@@ -40,7 +40,7 @@ class CodigosQRViewModel(
             try {
                 val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
                 val request = Request.Builder()
-                    .url("https://bit.cs3.mx/api/v1/invitaciones-detalle/?perimetro=$perimetroId")
+                    .url("https://bit.cs3.mx/api/v1/invitaciones-detalle/?perimetro_id=$perimetroId")
                     .get()
                     .addHeader("x-session-token", token)
                     .build()

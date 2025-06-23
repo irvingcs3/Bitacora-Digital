@@ -31,75 +31,82 @@ fun PasoVerificacion(viewModel: RegistroVisitaViewModel) {
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("Paso 3: Verifica tus Datos", style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(16.dp))
-
-        if (editando) {
-            OutlinedTextField(
-                value = nuevoNombre,
-                onValueChange = { nuevoNombre = it },
-                label = { Text("Nombre(s)") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
-            )
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = nuevoApellidoPat,
-                onValueChange = { nuevoApellidoPat = it },
-                label = { Text("Apellido Paterno") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
-            )
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = nuevoApellidoMat,
-                onValueChange = { nuevoApellidoMat = it },
-                label = { Text("Apellido Materno") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done)
-            )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Paso 3: Verifica tus Datos", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(16.dp))
 
-            ElevatedButton(
-                onClick = {
-                    viewModel.actualizarDatos(
-                        nombre = nuevoNombre,
-                        paterno = nuevoApellidoPat,
-                        materno = nuevoApellidoMat
-                    )
-                    editando = false
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Guardar y Continuar")
-            }
-        } else {
-            Card {
-                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Nombre(s): $nombre")
-                    Text("Apellido Paterno: $apellidoPaterno")
-                    Text("Apellido Materno: $apellidoMaterno")
+            if (editando) {
+                OutlinedTextField(
+                    value = nuevoNombre,
+                    onValueChange = { nuevoNombre = it },
+                    label = { Text("Nombre(s)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = nuevoApellidoPat,
+                    onValueChange = { nuevoApellidoPat = it },
+                    label = { Text("Apellido Paterno") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = nuevoApellidoMat,
+                    onValueChange = { nuevoApellidoMat = it },
+                    label = { Text("Apellido Materno") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done)
+                )
+                Spacer(Modifier.height(16.dp))
+
+                ElevatedButton(
+                    onClick = {
+                        viewModel.actualizarDatos(
+                            nombre = nuevoNombre,
+                            paterno = nuevoApellidoPat,
+                            materno = nuevoApellidoMat
+                        )
+                        editando = false
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Guardar y Continuar")
+                }
+            } else {
+                Card {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Nombre(s): $nombre")
+                        Text("Apellido Paterno: $apellidoPaterno")
+                        Text("Apellido Materno: $apellidoMaterno")
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ElevatedButton(onClick = { editando = true }, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Default.Edit, contentDescription = null)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Editar")
+                    }
+                    ElevatedButton(
+                        onClick = { viewModel.avanzarPaso() },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Siguiente")
+                    }
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ElevatedButton(onClick = { editando = true }, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Default.Edit, contentDescription = null)
-                    Spacer(Modifier.width(4.dp))
-                    Text("Editar")
-                }
-                ElevatedButton(onClick = { viewModel.avanzarPaso() }, modifier = Modifier.weight(1f)) {
-                    Text("Siguiente")
-                }
+            Spacer(modifier = Modifier.height(16.dp))
+            TextButton(onClick = { viewModel.retrocederPaso() }) {
+                Text("← Regresar")
             }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = { viewModel.retrocederPaso() }) {
-            Text("← Regresar")
         }
     }
 }

@@ -7,9 +7,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.ui.unit.dp
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Refresh
@@ -28,6 +31,7 @@ import com.example.bitacoradigital.viewmodel.ResidentesViewModel
 import com.example.bitacoradigital.viewmodel.ResidentesViewModelFactory
 import com.example.bitacoradigital.ui.components.HomeConfigNavBar
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResidentesScreen(
     homeViewModel: HomeViewModel,
@@ -146,7 +150,7 @@ fun ResidentesScreen(
                             ) {
                                 ElevatedCard(
                                     modifier = Modifier
-                                        .fillMaxWidth()
+                                        .fillMaxWidth(),
                                     shape = RoundedCornerShape(16.dp),
                                     colors = CardDefaults.elevatedCardColors(
                                         containerColor = MaterialTheme.colorScheme.surfaceVariant

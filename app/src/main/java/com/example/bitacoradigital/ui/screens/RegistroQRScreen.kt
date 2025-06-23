@@ -2,6 +2,8 @@ package com.example.bitacoradigital.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
+import androidx.compose.foundation.Canvas
+
 import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts

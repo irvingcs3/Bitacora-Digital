@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PasoAutorizacion(viewModel: RegistroVisitaViewModel) {
     val destino by viewModel.destinoSeleccionado.collectAsState()
