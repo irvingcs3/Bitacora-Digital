@@ -27,16 +27,21 @@ import com.example.bitacoradigital.model.CodigoQR
 import com.example.bitacoradigital.ui.components.HomeConfigNavBar
 import com.example.bitacoradigital.viewmodel.CodigosQRViewModel
 import com.example.bitacoradigital.viewmodel.CodigosQRViewModelFactory
+import com.example.bitacoradigital.viewmodel.HomeViewModel
 
 @Composable
 fun CodigosQRScreen(
-    perimetroId: Int,
+    homeViewModel: HomeViewModel,
     permisos: List<String>,
     navController: NavHostController
 ) {
+    val perimetroSeleccionado by homeViewModel.perimetroSeleccionado.collectAsState()
+    val perimetroId = perimetroSeleccionado?.perimetroId ?: return
+    val empresaId = perimetroSeleccionado?.empresaId ?: return
     val context = LocalContext.current
     val prefs = remember { SessionPreferences(context) }
-    val viewModel: CodigosQRViewModel = viewModel(factory = CodigosQRViewModelFactory(prefs, perimetroId))
+    val viewModel: CodigosQRViewModel =
+        viewModel(factory = CodigosQRViewModelFactory(prefs, perimetroId, empresaId))
 
     val codigos by viewModel.codigos.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
