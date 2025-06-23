@@ -21,7 +21,8 @@ import org.json.JSONObject
 
 class CodigosQRViewModel(
     private val prefs: SessionPreferences,
-    private val perimetroId: Int
+    private val perimetroId: Int,
+    private val empresaId: Int
 ) : ViewModel() {
 
     private val _codigos = MutableStateFlow<List<CodigoQR>>(emptyList())
@@ -40,7 +41,7 @@ class CodigosQRViewModel(
             try {
                 val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
                 val request = Request.Builder()
-                    .url("https://bit.cs3.mx/api/v1/invitaciones-detalle/?perimetro_id=$perimetroId")
+                    .url("https://bit.cs3.mx/api/v1/invitaciones-detalle/?perimetro_id=$perimetroId&empresa_id=$empresaId")
                     .get()
                     .addHeader("x-session-token", token)
                     .build()
@@ -146,12 +147,13 @@ class CodigosQRViewModel(
 
 class CodigosQRViewModelFactory(
     private val prefs: SessionPreferences,
-    private val perimetroId: Int
+    private val perimetroId: Int,
+    private val empresaId: Int
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CodigosQRViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return CodigosQRViewModel(prefs, perimetroId) as T
+            return CodigosQRViewModel(prefs, perimetroId, empresaId) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

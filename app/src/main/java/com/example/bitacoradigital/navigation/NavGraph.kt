@@ -133,9 +133,8 @@ fun AppNavGraph(
         }
 
         composable("qr") {
-            val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
             CodigosQRScreen(
-                perimetroId = perimetroId,
+                homeViewModel = homeViewModel,
                 permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Códigos QR") ?: emptyList(),
                 navController = navController
             )
