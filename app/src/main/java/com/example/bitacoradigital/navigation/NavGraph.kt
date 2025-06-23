@@ -193,7 +193,10 @@ fun AppNavGraph(
         }
 
         composable("dashboard") {
-            DashboardScreen(navController = navController)
+            DashboardScreen(
+                homeViewModel = homeViewModel,
+                navController = navController
+            )
         }
 
 
