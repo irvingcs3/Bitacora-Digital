@@ -40,7 +40,7 @@ fun VerificationScreen(
             value = code,
             onValueChange = { code = it },
             label = { Text("Código de verificación") },
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text),
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
