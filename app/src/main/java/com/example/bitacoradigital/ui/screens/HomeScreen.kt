@@ -81,18 +81,77 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    activo.modulos.keys.forEach { modulo ->
-                        val icon = moduloIcon(modulo)
-                        ModuleButton(title = modulo, icon = icon) {
-                            when (modulo) {
-                                "Registros de Visitas" -> navController.navigate("visitas")
-                                "Perímetro" -> navController.navigate("perimetros")
-                                "Códigos QR" -> navController.navigate("qr")
-                                "Dashboard" -> navController.navigate("dashboard")
-                                "Accesos" -> navController.navigate("accesos")
-                                "Residentes" -> navController.navigate("residentes")
-                                else -> { }
+                // Agrupaciones de módulos visibles
+                val ocultos = listOf(
+                    "Tags Vehiculares",
+                    "Eventos",
+                    "Administración de Usuarios",
+                    "Ajustes"
+                )
+
+                val perimetroMods = listOf("Dashboard", "Perímetro", "Residentes", "Accesos")
+                val accesoMods = listOf("Códigos QR", "Registros de Visitas")
+
+                val modulosVisibles = activo.modulos.keys.filterNot { it in ocultos }
+
+                val modsPerimetro = modulosVisibles.filter { it in perimetroMods }
+                val modsAcceso = modulosVisibles.filter { it in accesoMods }
+
+                Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                    if (modsPerimetro.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text("Perímetros", style = MaterialTheme.typography.titleMedium)
+                                modsPerimetro.forEach { modulo ->
+                                    val icon = moduloIcon(modulo)
+                                    ModuleButton(title = modulo, icon = icon) {
+                                        when (modulo) {
+                                            "Registros de Visitas" -> navController.navigate("visitas")
+                                            "Perímetro" -> navController.navigate("perimetros")
+                                            "Códigos QR" -> navController.navigate("qr")
+                                            "Dashboard" -> navController.navigate("dashboard")
+                                            "Accesos" -> navController.navigate("accesos")
+                                            "Residentes" -> navController.navigate("residentes")
+                                            else -> {}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (modsAcceso.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text("Control de Acceso", style = MaterialTheme.typography.titleMedium)
+                                modsAcceso.forEach { modulo ->
+                                    val icon = moduloIcon(modulo)
+                                    ModuleButton(title = modulo, icon = icon) {
+                                        when (modulo) {
+                                            "Registros de Visitas" -> navController.navigate("visitas")
+                                            "Perímetro" -> navController.navigate("perimetros")
+                                            "Códigos QR" -> navController.navigate("qr")
+                                            "Dashboard" -> navController.navigate("dashboard")
+                                            "Accesos" -> navController.navigate("accesos")
+                                            "Residentes" -> navController.navigate("residentes")
+                                            else -> {}
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
