@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -43,7 +41,6 @@ fun SeguimientoQRScreen(
     val historial by viewModel.historial.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
     val error by viewModel.error.collectAsState()
-    val scrollState = rememberScrollState()
 
     val puedeEliminar = "Eliminar Código QR" in permisos
     val puedeModificar = "Modificar Código QR" in permisos
@@ -77,24 +74,26 @@ fun SeguimientoQRScreen(
                 contentAlignment = Alignment.Center
             ) { CircularProgressIndicator() }
         } else {
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 16.dp)
-                    .verticalScroll(scrollState),
+                    .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "Seguimiento de invitación",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
+                item {
+                    Text(
+                        text = "Seguimiento de invitación",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                }
 
                 info?.let { data ->
-                    Card(
+                    item {
+                        Card(
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(),
                         elevation = CardDefaults.cardElevation(4.dp)
@@ -154,10 +153,12 @@ fun SeguimientoQRScreen(
                                 )
                             }
                         }
+                        }
                     }
 
                     data.siguientePerimetro?.let { next ->
-                        Card(
+                        item {
+                            Card(
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(),
                             elevation = CardDefaults.cardElevation(4.dp)
@@ -187,7 +188,8 @@ fun SeguimientoQRScreen(
                     }
 
                     if (data.siguiente.isNotEmpty()) {
-                        Card(
+                        item {
+                            Card(
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(),
                             elevation = CardDefaults.cardElevation(4.dp)
@@ -224,42 +226,38 @@ fun SeguimientoQRScreen(
                     }
                 }
 
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(),
-                    elevation = CardDefaults.cardElevation(4.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+
+                item {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(),
+                        elevation = CardDefaults.cardElevation(4.dp)
                     ) {
-                        Text(
-                            text = "\uD83D\uDD50 Historial de seguimiento",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        if (historial.isEmpty()) {
-                            Icon(
-                                Icons.Default.LocationOn,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                                modifier = Modifier.size(48.dp)
-                            )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
                             Text(
-                                text = "No hay historial de seguimiento disponible",
-                                style = MaterialTheme.typography.bodyMedium,
-                                textAlign = TextAlign.Center
+                                text = "\uD83D\uDD50 Historial de seguimiento",
+                                style = MaterialTheme.typography.titleMedium
                             )
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .fillMaxHeight(0.5f),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(historial, key = { it.fecha + it.checkpoint }) { h ->
+                            if (historial.isEmpty()) {
+                                Icon(
+                                    Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                                    modifier = Modifier.size(48.dp)
+                                )
+                                Text(
+                                    text = "No hay historial de seguimiento disponible",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    textAlign = TextAlign.Center
+                                )
+                            } else {
+                                historial.forEach { h ->
                                     Card(
                                         shape = RoundedCornerShape(12.dp),
                                         colors = CardDefaults.cardColors(),
@@ -279,7 +277,6 @@ fun SeguimientoQRScreen(
                         }
                     }
                 }
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
