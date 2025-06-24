@@ -12,19 +12,29 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -81,7 +91,38 @@ fun RegistroQRScreen(perimetroId: Int, navController: NavHostController) {
     var cameraActive by remember { mutableStateOf(true) }
 
     if (mostrandoImagen && crop != null) {
+        val time by produceState(initialValue = "") {
+            while (true) {
+                value = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+                kotlinx.coroutines.delay(1000)
+            }
+        }
+
+        val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+        val pressed by interactionSource.collectIsPressedAsState()
+        val scale by androidx.compose.animation.core.animateFloatAsState(if (pressed) 0.97f else 1f)
+
         Scaffold(
+            containerColor = com.example.bitacoradigital.ui.theme.DashboardBackground,
+            topBar = {
+                SmallTopAppBar(
+                    title = {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(time, style = MaterialTheme.typography.bodyLarge)
+                            Image(
+                                painter = painterResource(id = com.example.bitacoradigital.R.drawable.logo_topbar),
+                                contentDescription = null,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+                )
+            },
             bottomBar = {
                 HomeConfigNavBar(
                     current = "",
@@ -90,29 +131,70 @@ fun RegistroQRScreen(perimetroId: Int, navController: NavHostController) {
                 )
             }
         ) { innerPadding ->
-            Box(Modifier.fillMaxSize().padding(innerPadding)) {
-                siguientePerimetro?.let { nombre ->
-                    Text(
-                        "Por favor, brinda instrucciones para ir a $nombre",
-                        color = Color.White,
-                        modifier = Modifier.align(Alignment.TopCenter).padding(16.dp)
-                    )
-                }
-                Image(
-                    bitmap = crop!!.asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize()
-                )
-                Button(
-                    onClick = {
-                        viewModel.reiniciar()
-                        navController.navigate("visitas") {
-                            popUpTo("visitas") { inclusive = true }
-                        }
-                    },
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Text("Continuar")
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn() + scaleIn()
+                    ) {
+                        Card(elevation = CardDefaults.elevatedCardElevation(8.dp)) {
+                            Image(
+                                bitmap = crop!!.asImageBitmap(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 300.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    siguientePerimetro?.let { nombre ->
+                        AnimatedVisibility(
+                            visible = true,
+                            enter = fadeIn()
+                        ) {
+                            Text(
+                                "Por favor, brinda instrucciones para ir a $nombre",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        onClick = {
+                            viewModel.reiniciar()
+                            navController.navigate("visitas") {
+                                popUpTo("visitas") { inclusive = true }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .scale(scale)
+                            .padding(horizontal = 32.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        interactionSource = interactionSource
+                    ) {
+                        Text("Continuar", style = MaterialTheme.typography.bodyLarge)
+                    }
                 }
             }
         }
