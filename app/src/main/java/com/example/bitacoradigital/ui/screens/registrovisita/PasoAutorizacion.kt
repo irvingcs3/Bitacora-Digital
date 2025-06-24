@@ -2,6 +2,8 @@ package com.example.bitacoradigital.ui.screens.registrovisita
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
@@ -25,6 +27,7 @@ fun PasoAutorizacion(viewModel: RegistroVisitaViewModel) {
     val cargandoReg by viewModel.cargandoRegistro.collectAsState()
     val registroCompleto by viewModel.registroCompleto.collectAsState()
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
 
     LaunchedEffect(destino) {
         destino?.let { viewModel.cargarResidentesDestino(it.perimetro_id) }
@@ -38,7 +41,12 @@ fun PasoAutorizacion(viewModel: RegistroVisitaViewModel) {
     val seleccionado = residentes.find { it.idPersona == invitanteId }
 
     Box(Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(scrollState)
+        ) {
             Text("Paso 7: ¿Quién autorizó?", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(16.dp))
 

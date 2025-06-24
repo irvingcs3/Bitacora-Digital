@@ -3,6 +3,8 @@
 package com.example.bitacoradigital.ui.screens.registrovisita
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
@@ -24,6 +26,7 @@ fun PasoVerificacion(viewModel: RegistroVisitaViewModel) {
     var nuevoNombre by remember { mutableStateOf(nombre) }
     var nuevoApellidoPat by remember { mutableStateOf(apellidoPaterno) }
     var nuevoApellidoMat by remember { mutableStateOf(apellidoMaterno) }
+    val scrollState = rememberScrollState()
 
     Box(
         modifier = Modifier
@@ -31,7 +34,10 @@ fun PasoVerificacion(viewModel: RegistroVisitaViewModel) {
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier.verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text("Paso 3: Verifica tus Datos", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(16.dp))
 

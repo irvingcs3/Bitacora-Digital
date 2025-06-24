@@ -2,6 +2,8 @@ package com.example.bitacoradigital.ui.screens.auth
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,12 +26,14 @@ fun VerificationScreen(
     var code by remember { mutableStateOf("") }
     val state = signupViewModel.signupState
     val loading = signupViewModel.loading
+    val scrollState = rememberScrollState()
 
     Box(Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(32.dp),
+                .padding(32.dp)
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

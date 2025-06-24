@@ -2,6 +2,8 @@
 package com.example.bitacoradigital.ui.screens.registrovisita
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,10 +25,12 @@ fun PasoFinal(viewModel: RegistroVisitaViewModel, navController: NavHostControll
     val respuesta by viewModel.respuestaRegistro.collectAsState()
     val qrBitmap by viewModel.qrBitmap.collectAsState()
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(24.dp)
+            .verticalScroll(scrollState),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
