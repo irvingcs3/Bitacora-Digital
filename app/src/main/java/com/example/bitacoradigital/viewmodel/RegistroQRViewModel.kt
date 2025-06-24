@@ -46,6 +46,8 @@ class RegistroQRViewModel(
     val resultado = MutableStateFlow<String?>(null)
     val imagenCrop = MutableStateFlow<Bitmap?>(null)
     val mostrandoImagen = MutableStateFlow(false)
+    private val _nombreSiguientePerimetro = MutableStateFlow<String?>(null)
+    val nombreSiguientePerimetro: StateFlow<String?> = _nombreSiguientePerimetro.asStateFlow()
 
     fun cargarCheckpoints() {
         viewModelScope.launch {
@@ -119,7 +121,28 @@ class RegistroQRViewModel(
                         val resStr = withContext(Dispatchers.IO) { resp.body?.string() }
                         Log.d(TAG, "Respuesta exitosa: $resStr")
                         val obj = JSONObject(resStr ?: "{}")
-                        resultado.value = obj.optString("estado")
+
+                        val estado = obj.optString("estado", null)
+                        if (!estado.isNullOrBlank()) {
+                            resultado.value = estado
+                            if (estado == "valido") {
+                                obj.optJSONArray("siguiente_checkpoints")?.let { arr ->
+                                    if (arr.length() > 0) {
+                                        val cpId = arr.getJSONObject(0).optInt("checkpoint_id")
+                                        if (cpId != 0) cargarNombreSiguientePerimetro(cpId)
+                                    }
+                                }
+                            }
+                        } else {
+                            val detalle = obj.optJSONObject("detalle")
+                            val estadoDetalle = detalle?.optString("estado")
+                            resultado.value = when (estadoDetalle) {
+                                "invalido" -> "no permitido"
+                                null -> obj.optString("error", "error")
+                                else -> estadoDetalle
+                            }
+                        }
+
                         obj.optString("crop")?.takeIf { it.isNotBlank() }?.let { base ->
                             val bytes = Base64.decode(base, Base64.DEFAULT)
                             imagenCrop.value = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
@@ -140,10 +163,49 @@ class RegistroQRViewModel(
         }
     }
 
+    private fun cargarNombreSiguientePerimetro(checkpointId: Int) {
+        viewModelScope.launch {
+            try {
+                val token = withContext(Dispatchers.IO) { prefs.sessionToken.first() } ?: return@launch
+                val client = OkHttpClient()
+
+                val cpRequest = Request.Builder()
+                    .url("https://bit.cs3.mx/api/v1/checkpoints/$checkpointId")
+                    .get()
+                    .addHeader("x-session-token", token)
+                    .build()
+                val cpResp = withContext(Dispatchers.IO) { client.newCall(cpRequest).execute() }
+                cpResp.use { cpr ->
+                    if (cpr.isSuccessful) {
+                        val cpJson = JSONObject(withContext(Dispatchers.IO) { cpr.body?.string() } ?: "{}")
+                        val perimetroIdNext = cpJson.optInt("perimetro")
+                        if (perimetroIdNext != 0) {
+                            val perRequest = Request.Builder()
+                                .url("https://bit.cs3.mx/api/v1/perimetro/$perimetroIdNext")
+                                .get()
+                                .addHeader("x-session-token", token)
+                                .build()
+                            val perResp = withContext(Dispatchers.IO) { client.newCall(perRequest).execute() }
+                            perResp.use { pr ->
+                                if (pr.isSuccessful) {
+                                    val perJson = JSONObject(withContext(Dispatchers.IO) { pr.body?.string() } ?: "{}")
+                                    _nombreSiguientePerimetro.value = perJson.optString("nombre")
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error cargando siguiente perimetro", e)
+            }
+        }
+    }
+
     fun reiniciar() {
         resultado.value = null
         imagenCrop.value = null
         mostrandoImagen.value = false
+        _nombreSiguientePerimetro.value = null
     }
 }
 
