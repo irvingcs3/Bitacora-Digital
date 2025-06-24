@@ -5,7 +5,6 @@ import androidx.compose.runtime.*
 import androidx.compose.material3.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
@@ -56,7 +55,6 @@ fun RegistroVisitaWizardScreen(perimetroId: Int, navController: NavHostControlle
             .fillMaxSize()
             .padding(innerPadding)
             .padding(16.dp)
-            .verticalScroll(scrollState)
     ) {
         Stepper(pasoActual, totalPasos = 8)
         Spacer(Modifier.height(24.dp))
