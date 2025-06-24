@@ -3,6 +3,7 @@ package com.example.bitacoradigital.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
@@ -28,6 +29,7 @@ import kotlinx.coroutines.withContext
 import com.example.bitacoradigital.viewmodel.SessionViewModel
 import kotlinx.coroutines.launch
 import com.example.bitacoradigital.ui.components.HomeConfigNavBar
+import androidx.compose.ui.platform.LocalUriHandler
 
 @Composable
 fun ConfiguracionScreen(
@@ -46,6 +48,7 @@ fun ConfiguracionScreen(
     var logoutConfirm by remember { mutableStateOf(false) }
     var updateMsg by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
 
     val hayCambios = usuario != null && (
         nombre != (usuario?.nombre ?: "") ||
@@ -149,6 +152,14 @@ fun ConfiguracionScreen(
                     Spacer(Modifier.width(8.dp))
                     Text("Restablecer contraseña")
                 }
+
+                Text(
+                    text = "Consulta nuestro aviso de privacidad",
+                    modifier = Modifier
+                        .clickable { uriHandler.openUri("https://bit.cs3.mx/aviso-privacidad") }
+                        .padding(top = 8.dp),
+                    color = MaterialTheme.colorScheme.primary
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Divider()
