@@ -277,18 +277,20 @@ fun SeguimientoQRScreen(
                         }
                     }
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    if (puedeModificar) {
-                        IconButton(onClick = { showModificar = true }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Editar")
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        if (puedeModificar) {
+                            IconButton(onClick = { showModificar = true }) {
+                                Icon(Icons.Default.Edit, contentDescription = "Editar")
+                            }
                         }
-                    }
-                    if (puedeEliminar) {
-                        IconButton(onClick = { showBorrar = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                        if (puedeEliminar) {
+                            IconButton(onClick = { showBorrar = true }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                            }
                         }
                     }
                 }
