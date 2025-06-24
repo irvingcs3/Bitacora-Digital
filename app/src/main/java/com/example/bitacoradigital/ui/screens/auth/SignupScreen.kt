@@ -3,6 +3,8 @@ package com.example.bitacoradigital.ui.screens.auth
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PersonAdd
@@ -38,12 +40,14 @@ fun SignupScreen(
     var showPassword by remember { mutableStateOf(false) }
     val state = signupViewModel.signupState
     val loading = signupViewModel.loading
+    val scrollState = rememberScrollState()
 
     Box(Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 32.dp),
+                .padding(horizontal = 32.dp)
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

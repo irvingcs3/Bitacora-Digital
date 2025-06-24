@@ -1,6 +1,8 @@
 package com.example.bitacoradigital.ui.screens.qr
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -29,6 +31,7 @@ fun GenerarCodigoQRScreen(navController: NavHostController) {
     val caducidad by viewModel.caducidad.collectAsState()
     val mensaje by viewModel.mensaje.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
+    val scrollState = rememberScrollState()
 
     Scaffold(
         bottomBar = {
@@ -43,7 +46,8 @@ fun GenerarCodigoQRScreen(navController: NavHostController) {
         modifier = Modifier
             .fillMaxSize()
             .padding(innerPadding)
-            .padding(16.dp),
+            .padding(16.dp)
+            .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

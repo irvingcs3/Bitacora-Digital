@@ -5,6 +5,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -45,6 +47,7 @@ import kotlinx.coroutines.launch
 fun PasoFotos(viewModel: RegistroVisitaViewModel) {
     val fotos by viewModel.fotosAdicionales.collectAsState()
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -78,7 +81,12 @@ fun PasoFotos(viewModel: RegistroVisitaViewModel) {
         onResult = { success -> if (success) tempUri?.let { viewModel.agregarFoto(it) } }
     )
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(scrollState)
+    ) {
         Text("Paso 5: Fotos adicionales", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(16.dp))
 

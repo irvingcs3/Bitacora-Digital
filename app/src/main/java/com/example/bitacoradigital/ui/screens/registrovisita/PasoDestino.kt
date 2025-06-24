@@ -2,6 +2,8 @@
 package com.example.bitacoradigital.ui.screens.registrovisita
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -21,6 +23,7 @@ fun PasoDestino(viewModel: RegistroVisitaViewModel) {
     val cargando by viewModel.cargandoDestino.collectAsState()
     val error by viewModel.errorDestino.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val scrollState = rememberScrollState()
 
     LaunchedEffect(Unit) {
         viewModel.cargarJerarquiaDestino()
@@ -32,6 +35,7 @@ fun PasoDestino(viewModel: RegistroVisitaViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .verticalScroll(scrollState)
     ) {
         Text("Paso 4: Selección de Destino", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(16.dp))

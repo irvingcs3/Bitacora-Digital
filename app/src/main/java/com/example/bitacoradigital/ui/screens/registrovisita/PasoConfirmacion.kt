@@ -4,6 +4,8 @@ package com.example.bitacoradigital.ui.screens.registrovisita
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,13 +29,17 @@ fun PasoConfirmacion(viewModel: RegistroVisitaViewModel) {
     val documento = viewModel.documentoUri.value
     val destino by viewModel.destinoSeleccionado.collectAsState()
     val fotos by viewModel.fotosAdicionales.collectAsState()
+    val scrollState = rememberScrollState()
 
 
 
     Box(Modifier.fillMaxSize()) {
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(scrollState)
+        ) {
 
         Text("Paso 6: Confirma tu Registro", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(16.dp))

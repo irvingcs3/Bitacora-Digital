@@ -43,6 +43,7 @@ fun SeguimientoQRScreen(
     val historial by viewModel.historial.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
     val error by viewModel.error.collectAsState()
+    val scrollState = rememberScrollState()
 
     val puedeEliminar = "Eliminar Código QR" in permisos
     val puedeModificar = "Modificar Código QR" in permisos
@@ -80,7 +81,8 @@ fun SeguimientoQRScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(scrollState),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
