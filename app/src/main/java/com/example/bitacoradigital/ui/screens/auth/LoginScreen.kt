@@ -23,6 +23,7 @@ import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import com.example.bitacoradigital.R
 
@@ -46,6 +47,8 @@ fun LoginScreen(
     val loading = loginViewModel.loading
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollState = rememberScrollState()
+    var showPrivacyDialog by remember { mutableStateOf(true) }
+    val uriHandler = LocalUriHandler.current
 
     Box(Modifier.fillMaxSize()) {
         Column(
@@ -165,6 +168,20 @@ fun LoginScreen(
             ) {
                 CircularProgressIndicator()
             }
+        }
+
+        if (showPrivacyDialog) {
+            AlertDialog(
+                onDismissRequest = { showPrivacyDialog = false },
+                confirmButton = {
+                    TextButton(onClick = { showPrivacyDialog = false }) { Text("Continuar") }
+                },
+                text = {
+                    TextButton(onClick = { uriHandler.openUri("https://bit.cs3.mx/aviso-privacidad") }) {
+                        Text("Consultar aviso de privacidad")
+                    }
+                }
+            )
         }
     }
 }
