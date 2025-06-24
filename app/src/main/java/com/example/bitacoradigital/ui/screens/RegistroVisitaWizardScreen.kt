@@ -60,7 +60,7 @@ fun RegistroVisitaWizardScreen(perimetroId: Int, navController: NavHostControlle
             5 -> PasoFotos(viewModel)
             6 -> PasoConfirmacion(viewModel)
             7 -> PasoAutorizacion(viewModel)
-            8 -> PasoFinal(viewModel)
+            8 -> PasoFinal(viewModel, navController)
         }
     }
     }

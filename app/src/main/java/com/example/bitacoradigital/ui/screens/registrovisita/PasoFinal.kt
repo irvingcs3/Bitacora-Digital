@@ -16,9 +16,10 @@ import androidx.core.content.FileProvider
 import java.io.File
 import com.example.bitacoradigital.util.Constants
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
+import androidx.navigation.NavHostController
 
 @Composable
-fun PasoFinal(viewModel: RegistroVisitaViewModel) {
+fun PasoFinal(viewModel: RegistroVisitaViewModel, navController: NavHostController) {
     val respuesta by viewModel.respuestaRegistro.collectAsState()
     val qrBitmap by viewModel.qrBitmap.collectAsState()
     val context = LocalContext.current
@@ -65,7 +66,12 @@ fun PasoFinal(viewModel: RegistroVisitaViewModel) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Button(onClick = { viewModel.reiniciar() }, modifier = Modifier.fillMaxWidth()) {
+        Button(onClick = {
+            viewModel.reiniciar()
+            navController.navigate("visitas") {
+                popUpTo("visitas") { inclusive = true }
+            }
+        }, modifier = Modifier.fillMaxWidth()) {
             Text("Registrar otra visita")
         }
     }

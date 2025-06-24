@@ -51,6 +51,7 @@ fun RegistroQRScreen(perimetroId: Int, navController: NavHostController) {
     val resultado by viewModel.resultado.collectAsState()
     val crop by viewModel.imagenCrop.collectAsState()
     val mostrandoImagen by viewModel.mostrandoImagen.collectAsState()
+    val siguientePerimetro by viewModel.nombreSiguientePerimetro.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
     val error by viewModel.error.collectAsState()
 
@@ -90,6 +91,13 @@ fun RegistroQRScreen(perimetroId: Int, navController: NavHostController) {
             }
         ) { innerPadding ->
             Box(Modifier.fillMaxSize().padding(innerPadding)) {
+                siguientePerimetro?.let { nombre ->
+                    Text(
+                        "Por favor, brinda instrucciones para ir a $nombre",
+                        color = Color.White,
+                        modifier = Modifier.align(Alignment.TopCenter).padding(16.dp)
+                    )
+                }
                 Image(
                     bitmap = crop!!.asImageBitmap(),
                     contentDescription = null,
@@ -151,8 +159,14 @@ fun RegistroQRScreen(perimetroId: Int, navController: NavHostController) {
                 anim.snapTo(0f)
                 anim.animateTo(1f, tween(500))
                 delay(3000)
-                if (res == "valido") viewModel.mostrandoImagen.value = true
-                else viewModel.reiniciar()
+                if (res == "valido") {
+                    viewModel.mostrandoImagen.value = true
+                } else {
+                    viewModel.reiniciar()
+                    navController.navigate("visitas") {
+                        popUpTo("visitas") { inclusive = true }
+                    }
+                }
             }
             CanvasOverlay(color = if (res == "valido") Color(0x8800FF00) else Color(0x88FF0000), progress = anim.value, text = res)
         }
