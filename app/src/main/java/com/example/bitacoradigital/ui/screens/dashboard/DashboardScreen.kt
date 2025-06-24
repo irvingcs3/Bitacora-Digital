@@ -263,7 +263,7 @@ private fun InvitacionesChart(data: List<InvitacionEstado>) {
 }
 
 @Composable
-private fun BarWithLabel(label: String, value: Int, color: Color) {
+private fun RowScope.BarWithLabel(label: String, value: Int, color: Color) {
     Column(
         modifier = Modifier.weight(1f),
         horizontalAlignment = Alignment.CenterHorizontally
