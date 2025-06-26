@@ -213,7 +213,7 @@ fun ConfiguracionScreen(
                                 val token = sessionViewModel.token.value
                                 if (token != null) {
                                     val request = Request.Builder()
-                                        .url("https://bit.cs3.mx/_allauth/app/v1/auth/session")
+                                        .url("https://bit.cs3.mx/_allauth/app/v1/auth/session/")
                                         .delete()
                                         .addHeader("x-session-token", token)
                                         .build()

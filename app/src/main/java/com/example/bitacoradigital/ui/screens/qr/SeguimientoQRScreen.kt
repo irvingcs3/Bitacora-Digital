@@ -94,102 +94,6 @@ fun SeguimientoQRScreen(
                 info?.let { data ->
                     item {
                         Card(
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = "Estado Actual",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-
-                                val estado = data.mensaje ?: data.fase
-                                val chipBg = when (estado) {
-                                    "Ingresando" -> Color(0xFFD1FAE5)
-                                    "Concluido", "La visita ha concluido" -> MaterialTheme.colorScheme.surfaceVariant
-                                    else -> MaterialTheme.colorScheme.surfaceVariant
-                                }
-                                val chipText = when (estado) {
-                                    "Ingresando" -> Color(0xFF065F46)
-                                    "Concluido", "La visita ha concluido" -> MaterialTheme.colorScheme.onSurfaceVariant
-                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-
-                                AssistChip(
-                                    onClick = {},
-                                    label = { Text(estado) },
-                                    leadingIcon = { Icon(Icons.Default.Visibility, contentDescription = null) },
-                                    colors = AssistChipDefaults.assistChipColors(
-                                        containerColor = chipBg,
-                                        labelColor = chipText
-                                    )
-                                )
-                            }
-
-                            if (data.checkpointActualNombre == null) {
-                                Text(
-                                    text = "⚠️ Aún no ha iniciado el recorrido",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            } else {
-                                Text(
-                                    text = "Actual: ${data.checkpointActualNombre}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                        }
-                        }
-                    }
-
-                    data.siguientePerimetro?.let { next ->
-                        item {
-                            Card(
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(),
-                            elevation = CardDefaults.cardElevation(4.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = "Siguiente destino:",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                AssistChip(
-                                    onClick = {},
-                                    label = { Text(next) },
-                                    leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
-                                    colors = AssistChipDefaults.assistChipColors(
-                                        containerColor = BrandOrange,
-                                        labelColor = Color.White
-                                    )
-                                )
-                            }
-                        }
-                    }
-
-                    if (data.siguiente.isNotEmpty()) {
-                        item {
-                            Card(
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(),
                             elevation = CardDefaults.cardElevation(4.dp)
@@ -198,148 +102,275 @@ fun SeguimientoQRScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text(
-                                    text = "Próximos checkpoints:",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                FlowRow(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    data.siguiente.forEach { cp ->
-                                        AssistChip(
-                                            onClick = {},
-                                            label = { Text(cp.nombre) },
-                                            leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
-                                            colors = AssistChipDefaults.assistChipColors(
-                                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        )
+                                    Text(
+                                        text = "Estado Actual",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+
+                                    val estado = data.mensaje ?: data.fase
+                                    val chipBg = when (estado) {
+                                        "Ingresando" -> Color(0xFFD1FAE5)
+                                        "Concluido", "La visita ha concluido" -> MaterialTheme.colorScheme.surfaceVariant
+                                        else -> MaterialTheme.colorScheme.surfaceVariant
                                     }
+                                    val chipText = when (estado) {
+                                        "Ingresando" -> Color(0xFF065F46)
+                                        "Concluido", "La visita ha concluido" -> MaterialTheme.colorScheme.onSurfaceVariant
+                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+
+                                    AssistChip(
+                                        onClick = {},
+                                        label = { Text(estado) },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Default.Visibility,
+                                                contentDescription = null
+                                            )
+                                        },
+                                        colors = AssistChipDefaults.assistChipColors(
+                                            containerColor = chipBg,
+                                            labelColor = chipText
+                                        )
+                                    )
+                                }
+
+                                if (data.checkpointActualNombre == null) {
+                                    Text(
+                                        text = "⚠️ Aún no ha iniciado el recorrido",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                } else {
+                                    Text(
+                                        text = "Actual: ${data.checkpointActualNombre}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
                                 }
                             }
                         }
                     }
-                }
 
-
-                item {
-                    Card(
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "\uD83D\uDD50 Historial de seguimiento",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            if (historial.isEmpty()) {
-                                Icon(
-                                    Icons.Default.LocationOn,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                                    modifier = Modifier.size(48.dp)
-                                )
-                                Text(
-                                    text = "No hay historial de seguimiento disponible",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    textAlign = TextAlign.Center
-                                )
-                            } else {
-                                historial.forEach { h ->
-                                    Card(
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = CardDefaults.cardColors(),
-                                        elevation = CardDefaults.cardElevation(4.dp),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Column(modifier = Modifier.padding(12.dp)) {
-                                            Text(h.fecha, style = MaterialTheme.typography.bodySmall)
-                                            Text(
-                                                "${h.checkpoint} (${h.perimetro})",
-                                                style = MaterialTheme.typography.bodyMedium
+                    data.siguientePerimetro?.let { next ->
+                        item {
+                            Card(
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(),
+                                elevation = CardDefaults.cardElevation(4.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "Siguiente destino:",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    AssistChip(
+                                        onClick = {},
+                                        label = { Text(next) },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Default.LocationOn,
+                                                contentDescription = null
                                             )
+                                        },
+                                        colors = AssistChipDefaults.assistChipColors(
+                                            containerColor = BrandOrange,
+                                            labelColor = Color.White
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                        if (data.siguiente.isNotEmpty()) {
+                            item {
+                                Card(
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(),
+                                    elevation = CardDefaults.cardElevation(4.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "Próximos checkpoints:",
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                        FlowRow(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            data.siguiente.forEach { cp ->
+                                                AssistChip(
+                                                    onClick = {},
+                                                    label = { Text(cp.nombre) },
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            Icons.Default.LocationOn,
+                                                            contentDescription = null
+                                                        )
+                                                    },
+                                                    colors = AssistChipDefaults.assistChipColors(
+                                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                )
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-                }
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        if (puedeModificar) {
-                            IconButton(onClick = { showModificar = true }) {
-                                Icon(Icons.Default.Edit, contentDescription = "Editar")
+
+
+                        item {
+                            Card(
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(),
+                                elevation = CardDefaults.cardElevation(4.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "\uD83D\uDD50 Historial de seguimiento",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    if (historial.isEmpty()) {
+                                        Icon(
+                                            Icons.Default.LocationOn,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                alpha = 0.3f
+                                            ),
+                                            modifier = Modifier.size(48.dp)
+                                        )
+                                        Text(
+                                            text = "No hay historial de seguimiento disponible",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    } else {
+                                        historial.forEach { h ->
+                                            Card(
+                                                shape = RoundedCornerShape(12.dp),
+                                                colors = CardDefaults.cardColors(),
+                                                elevation = CardDefaults.cardElevation(4.dp),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Column(modifier = Modifier.padding(12.dp)) {
+                                                    Text(
+                                                        h.fecha,
+                                                        style = MaterialTheme.typography.bodySmall
+                                                    )
+                                                    Text(
+                                                        "${h.checkpoint} (${h.perimetro})",
+                                                        style = MaterialTheme.typography.bodyMedium
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
-                        if (puedeEliminar) {
-                            IconButton(onClick = { showBorrar = true }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                if (puedeModificar) {
+                                    IconButton(onClick = { showModificar = true }) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Editar")
+                                    }
+                                }
+                                if (puedeEliminar) {
+                                    IconButton(onClick = { showBorrar = true }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
-        }
-    }
 
-    if (showModificar) {
-        AlertDialog(
-            onDismissRequest = { showModificar = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        diasExtraText.toIntOrNull()?.let { viewModel.modificarCaducidad(it) }
-                        showModificar = false
+            if (showModificar) {
+                AlertDialog(
+                    onDismissRequest = { showModificar = false },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                diasExtraText.toIntOrNull()
+                                    ?.let { viewModel.modificarCaducidad(it) }
+                                showModificar = false
+                            },
+                            enabled = diasExtraText.toIntOrNull() != null
+                        ) { Text("Guardar") }
                     },
-                    enabled = diasExtraText.toIntOrNull() != null
-                ) { Text("Guardar") }
-            },
-            dismissButton = { TextButton(onClick = { showModificar = false }) { Text("Cancelar") } },
-            title = { Text("Modificar caducidad") },
-            text = {
-                OutlinedTextField(
-                    value = diasExtraText,
-                    onValueChange = { diasExtraText = it },
-                    label = { Text("Días extra") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
-                    )
+                    dismissButton = {
+                        TextButton(onClick = {
+                            showModificar = false
+                        }) { Text("Cancelar") }
+                    },
+                    title = { Text("Modificar caducidad") },
+                    text = {
+                        OutlinedTextField(
+                            value = diasExtraText,
+                            onValueChange = { diasExtraText = it },
+                            label = { Text("Días extra") },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            )
+                        )
+                    }
                 )
             }
-        )
-    }
 
-    if (showBorrar) {
-        AlertDialog(
-            onDismissRequest = { showBorrar = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.borrarCodigo()
-                    showBorrar = false
-                    navController.popBackStack()
-                }) { Text("Borrar") }
-            },
-            dismissButton = { TextButton(onClick = { showBorrar = false }) { Text("Cancelar") } },
-            title = { Text("Eliminar QR") },
-            text = { Text("¿Seguro que deseas eliminar este código?") }
-        )
+            if (showBorrar) {
+                AlertDialog(
+                    onDismissRequest = { showBorrar = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            viewModel.borrarCodigo()
+                            showBorrar = false
+                            navController.popBackStack()
+                        }) { Text("Borrar") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            showBorrar = false
+                        }) { Text("Cancelar") }
+                    },
+                    title = { Text("Eliminar QR") },
+                    text = { Text("¿Seguro que deseas eliminar este código?") }
+                )
+            }
+        }
     }
 }
 

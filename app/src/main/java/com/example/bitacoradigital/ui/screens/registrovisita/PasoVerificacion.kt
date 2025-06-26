@@ -116,3 +116,4 @@ fun PasoVerificacion(viewModel: RegistroVisitaViewModel) {
         }
     }
 }
+

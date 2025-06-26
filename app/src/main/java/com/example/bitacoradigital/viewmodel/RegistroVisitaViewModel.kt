@@ -393,6 +393,9 @@ class RegistroVisitaViewModel(
                                         .callTimeout(0, TimeUnit.MILLISECONDS)
                                         .build()
                                     val qrResp = withContext(Dispatchers.IO) { qrClient.newCall(qrRequest).execute() }
+                                    Log.d("Que esta pasando", "Ayuda: algo mas")
+                                    Log.d("Que esta pasando", "Ayuda: $qrResp")
+
                                     qrResp.use { qrR ->
                                         if (qrR.isSuccessful) {
                                             val qStr = withContext(Dispatchers.IO) { qrR.body?.string() }

@@ -8,6 +8,7 @@ import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -18,6 +19,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -51,6 +53,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -307,6 +310,7 @@ private fun CameraPreview(onCodeScanned: (String) -> Unit) {
     }
 }
 
+@OptIn(ExperimentalGetImage::class)
 private fun processImage(image: ImageProxy, scanner: com.google.mlkit.vision.barcode.BarcodeScanner, onScanned: (String) -> Unit, onComplete: () -> Unit) {
     val mediaImage = image.image
     if (mediaImage != null) {
