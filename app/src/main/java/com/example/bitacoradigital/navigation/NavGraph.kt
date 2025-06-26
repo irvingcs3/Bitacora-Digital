@@ -7,6 +7,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -51,6 +52,15 @@ fun AppNavGraph(
 
     val tieneAcceso by sessionViewModel.tieneAccesoABitacora.collectAsState()
     val versionOk by sessionViewModel.versionOk.collectAsState()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+
+    LaunchedEffect(versionOk) {
+        if (versionOk == false && backStackEntry?.destination?.route != "update") {
+            navController.navigate("update") {
+                popUpTo("update") { inclusive = true }
+            }
+        }
+    }
 
     val startDestination = when {
         versionOk == false -> "update"
