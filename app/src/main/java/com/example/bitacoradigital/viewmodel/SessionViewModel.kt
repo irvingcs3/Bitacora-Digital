@@ -54,8 +54,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             prefs.sessionToken
                 .combine(prefs.jsonSession) { token, json -> token to json }
-                .combine(prefs.version) { (token, json), version -> Triple(token, json, version) }
-                .collect { (token, json, version) ->
+                .collect { (token, json) ->
                     if (!token.isNullOrBlank() && !json.isNullOrBlank()) {
                         try {
                             val user = gson.fromJson(json, User::class.java)
@@ -64,7 +63,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
                             _token.value = token
                             _usuario.value = user
                             _tieneAccesoABitacora.value = acceso
-                            _versionOk.value = version?.let { it == com.example.bitacoradigital.util.Constants.APP_VERSION }
+                            _versionOk.value = null
                         } catch (e: Exception) {
                             // No cerrar sesión si falla el parseo, solo informar
                             Log.e("SessionViewModel", "Error al deserializar sesión", e)
