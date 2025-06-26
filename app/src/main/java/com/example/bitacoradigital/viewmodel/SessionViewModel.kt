@@ -52,26 +52,29 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
 
     private fun recuperarSesion() {
         viewModelScope.launch {
-            prefs.sessionToken.combine(prefs.jsonSession) { token, json ->
-                if (!token.isNullOrBlank() && !json.isNullOrBlank()) {
-                    try {
-                        val user = gson.fromJson(json, User::class.java)
-                        val acceso = user.empresas.any { it.B }
+            prefs.sessionToken
+                .combine(prefs.jsonSession) { token, json -> token to json }
+                .combine(prefs.version) { (token, json), version -> Triple(token, json, version) }
+                .collect { (token, json, version) ->
+                    if (!token.isNullOrBlank() && !json.isNullOrBlank()) {
+                        try {
+                            val user = gson.fromJson(json, User::class.java)
+                            val acceso = user.empresas.any { it.B }
 
-                        _token.value = token
-                        _usuario.value = user
-                        _tieneAccesoABitacora.value = acceso
-                        _versionOk.value = user.Version == com.example.bitacoradigital.util.Constants.APP_VERSION
-                    } catch (e: Exception) {
-                        // No cerrar sesión si falla el parseo, solo informar
-                        Log.e("SessionViewModel", "Error al deserializar sesión", e)
+                            _token.value = token
+                            _usuario.value = user
+                            _tieneAccesoABitacora.value = acceso
+                            _versionOk.value = version?.let { it == com.example.bitacoradigital.util.Constants.APP_VERSION }
+                        } catch (e: Exception) {
+                            // No cerrar sesión si falla el parseo, solo informar
+                            Log.e("SessionViewModel", "Error al deserializar sesión", e)
+                        }
+                    } else {
+                        // Si están vacíos o nulos
+                        _tieneAccesoABitacora.value = null
+                        _versionOk.value = null
                     }
-                } else {
-                    // Si están vacíos o nulos
-                    _tieneAccesoABitacora.value = null
-                    _versionOk.value = null
                 }
-            }.collect()
         }
     }
 
@@ -102,7 +105,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         val tieneAcceso = user.empresas.any { it.B }
         _tieneAccesoABitacora.value = tieneAcceso
         _versionOk.value = user.Version == com.example.bitacoradigital.util.Constants.APP_VERSION
-        prefs.guardarSesion(token, user.id, user.persona_id, gson.toJson(user))
+        prefs.guardarSesion(token, user.id, user.persona_id, gson.toJson(user), user.Version)
     }
 
     fun setTemporalToken(token: String) {
