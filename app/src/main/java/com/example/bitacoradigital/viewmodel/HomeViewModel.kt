@@ -28,6 +28,9 @@ class HomeViewModel : ViewModel() {
         user.empresas.filter { it.B }.forEach { empresa ->
             empresa.perimetros.forEach { p ->
                 p.rol.forEach { (rol, modulos) ->
+                    val modulosConGuardia =
+                        if ("Guardia" in modulos) modulos
+                        else modulos + ("Guardia" to emptyList())
                     lista.add(
                         PerimetroVisual(
                             empresaId = empresa.id,
@@ -35,7 +38,7 @@ class HomeViewModel : ViewModel() {
                             perimetroId = p.id,
                             perimetroNombre = p.nombre,
                             rol = rol,
-                            modulos = modulos
+                            modulos = modulosConGuardia
                         )
                     )
                 }

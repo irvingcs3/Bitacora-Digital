@@ -91,11 +91,13 @@ fun HomeScreen(
 
                 val perimetroMods = listOf("Dashboard", "Perímetro", "Residentes", "Accesos")
                 val accesoMods = listOf("Códigos QR", "Registros de Visitas")
+                val guardiaMods = listOf("Guardia")
 
                 val modulosVisibles = activo.modulos.keys.filterNot { it in ocultos }
 
                 val modsPerimetro = modulosVisibles.filter { it in perimetroMods }
                 val modsAcceso = modulosVisibles.filter { it in accesoMods }
+                val modsGuardia = guardiaMods
 
                 Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     if (modsPerimetro.isNotEmpty()) {
@@ -151,6 +153,25 @@ fun HomeScreen(
                                             else -> {}
                                         }
                                     }
+                                }
+                            }
+                        }
+                    }
+
+                    if (modsGuardia.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text("Guardia", style = MaterialTheme.typography.titleMedium)
+                                modsGuardia.forEach { modulo ->
+                                    val icon = moduloIcon(modulo)
+                                    ModuleButton(title = modulo, icon = icon) {}
                                 }
                             }
                         }
