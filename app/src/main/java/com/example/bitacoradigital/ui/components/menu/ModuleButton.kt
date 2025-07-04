@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -71,5 +72,6 @@ fun moduloIcon(nombre: String): ImageVector = when (nombre) {
     "Administración de Usuarios" -> Icons.Default.Group
     "Registros de Visitas" -> Icons.Default.ListAlt
     "Accesos" -> Icons.Default.DirectionsCar
+    "Guardia" -> Icons.Default.Security
     else -> Icons.Default.Dashboard
 }
