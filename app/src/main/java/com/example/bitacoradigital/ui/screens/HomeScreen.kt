@@ -91,11 +91,15 @@ fun HomeScreen(
 
                 val perimetroMods = listOf("Dashboard", "Perímetro", "Residentes", "Accesos")
                 val accesoMods = listOf("Códigos QR", "Registros de Visitas")
+                val guardiaMods = listOf("Guardia")
+                val novedadesMods = listOf("Novedades")
 
                 val modulosVisibles = activo.modulos.keys.filterNot { it in ocultos }
 
                 val modsPerimetro = modulosVisibles.filter { it in perimetroMods }
                 val modsAcceso = modulosVisibles.filter { it in accesoMods }
+                val modsGuardia = modulosVisibles.filter {it in guardiaMods}
+                val modsNovedades = modulosVisibles.filter {it in novedadesMods}
 
                 Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     if (modsPerimetro.isNotEmpty()) {
@@ -148,6 +152,52 @@ fun HomeScreen(
                                             "Dashboard" -> navController.navigate("dashboard")
                                             "Accesos" -> navController.navigate("accesos")
                                             "Residentes" -> navController.navigate("residentes")
+                                            else -> {}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (modsGuardia.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text("Guardia", style = MaterialTheme.typography.titleMedium)
+                                modsGuardia.forEach { modulo ->
+                                    val icon = moduloIcon(modulo)
+                                    ModuleButton(title = modulo, icon = icon) {
+                                        when (modulo) {
+                                            "Guardia" -> navController.navigate("guardia")
+                                            else -> {}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (modsNovedades.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text("Novedades", style = MaterialTheme.typography.titleMedium)
+                                modsNovedades.forEach { modulo ->
+                                    val icon = moduloIcon(modulo)
+                                    ModuleButton(title = modulo, icon = icon) {
+                                        when (modulo) {
+                                            "Novedades" -> navController.navigate("novedades")
                                             else -> {}
                                         }
                                     }
