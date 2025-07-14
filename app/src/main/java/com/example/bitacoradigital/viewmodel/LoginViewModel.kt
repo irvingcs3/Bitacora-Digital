@@ -49,6 +49,7 @@ class LoginViewModel : ViewModel() {
 
                 if (user.empresas.any { it.B }) {
                     sessionViewModel.guardarSesion(token, user)
+                    sessionViewModel.registrarBotonPanico()
                     if (user.Version == com.example.bitacoradigital.util.Constants.APP_VERSION) {
                         loginState = "Login exitoso"
                         onLoginSuccess()

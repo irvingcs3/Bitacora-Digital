@@ -91,7 +91,7 @@ fun HomeScreen(
 
                 val perimetroMods = listOf("Dashboard", "Perímetro", "Residentes", "Accesos")
                 val accesoMods = listOf("Códigos QR", "Registros de Visitas")
-                val guardiaMods = listOf("Guardia")
+                val guardiaMods = listOf("Guardia", "DronGuard")
                 val novedadesMods = listOf("Novedades")
 
                 val modulosVisibles = activo.modulos.keys.filterNot { it in ocultos }
@@ -175,6 +175,7 @@ fun HomeScreen(
                                     ModuleButton(title = modulo, icon = icon) {
                                         when (modulo) {
                                             "Guardia" -> navController.navigate("guardia")
+                                            "DronGuard" -> navController.navigate("dronguard")
                                             else -> {}
                                         }
                                     }

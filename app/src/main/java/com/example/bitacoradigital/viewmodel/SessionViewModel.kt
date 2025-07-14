@@ -40,6 +40,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
     val versionOk: StateFlow<Boolean?> = _versionOk.asStateFlow()
     val favoritoEmpresaId = prefs.favoritoEmpresaId
     val favoritoPerimetroId = prefs.favoritoPerimetroId
+    val uuidBoton = prefs.uuidBoton
 
     // Check for updates periodically without replacing the current token
     private val REFRESH_INTERVAL_MS = 5 * 60 * 1000L // 5 minutes
@@ -105,6 +106,45 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         _tieneAccesoABitacora.value = tieneAcceso
         _versionOk.value = user.Version == com.example.bitacoradigital.util.Constants.APP_VERSION
         prefs.guardarSesion(token, user.id, user.persona_id, gson.toJson(user), user.Version)
+    }
+
+    fun registrarBotonPanico() {
+        viewModelScope.launch {
+            try {
+                val bodyJson = JSONObject().apply {
+                    put("nombre", "javier")
+                    put("apellido_paterno", "fernandez")
+                    put("apellido_materno", "ayala")
+                    put("direccion", "av. revolucion 439")
+                    put("calle", "av. revolucion 439")
+                    put("colonia", "San Pedro de los Pinos")
+                    put("municipio", "Benito Juarez")
+                    put("estado", "CDMX")
+                    put("cp", "03800")
+                    put("celular", "5535033739")
+                    put("correo", "fjfayala@gmail.com")
+                    put("contacto_1", "franciso fernandez")
+                    put("telefono_1", "5512345678")
+                    put("contacto_2", "roverto ayala")
+                    put("telefono_2", "5587654321")
+                }
+                val body = bodyJson.toString().toRequestBody("application/json".toMediaType())
+                val request = Request.Builder()
+                    .url(com.example.bitacoradigital.util.Constants.DRON_GUARD_REGISTRO)
+                    .post(body)
+                    .addHeader("X-Authorization", com.example.bitacoradigital.util.Constants.DRON_GUARD_TOKEN)
+                    .addHeader("Content-Type", "application/json")
+                    .build()
+                val client = OkHttpClient()
+                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                response.use { resp ->
+                    if (resp.isSuccessful) {
+                        val uuid = JSONObject(resp.body?.string() ?: "{}").optString("uuid_usuario")
+                        if (uuid.isNotEmpty()) prefs.guardarUuidBoton(uuid)
+                    }
+                }
+            } catch (_: Exception) { }
+        }
     }
 
     fun setTemporalToken(token: String) {
