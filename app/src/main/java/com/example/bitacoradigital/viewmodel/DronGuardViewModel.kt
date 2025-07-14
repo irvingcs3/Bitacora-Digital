@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.util.Log
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -37,7 +38,10 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
                     .addHeader("X-Authorization", com.example.bitacoradigital.util.Constants.DRON_GUARD_TOKEN)
                     .addHeader("Content-Type", "application/json")
                     .build()
-                withContext(Dispatchers.IO) { client.newCall(request).execute().close() }
+                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                val respBody = response.body?.string()
+                Log.d("DronGuard", "Response code: ${'$'}{response.code} body: ${'$'}respBody")
+                response.close()
             } catch (_: Exception) { }
         }
     }
