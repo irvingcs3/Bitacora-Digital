@@ -65,6 +65,7 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
                             _usuario.value = user
                             _tieneAccesoABitacora.value = acceso
                             _versionOk.value = null
+                            registrarBotonPanico()
                         } catch (e: Exception) {
                             // No cerrar sesión si falla el parseo, solo informar
                             Log.e("SessionViewModel", "Error al deserializar sesión", e)
@@ -106,11 +107,14 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         _tieneAccesoABitacora.value = tieneAcceso
         _versionOk.value = user.Version == com.example.bitacoradigital.util.Constants.APP_VERSION
         prefs.guardarSesion(token, user.id, user.persona_id, gson.toJson(user), user.Version)
+        registrarBotonPanico()
     }
 
     fun registrarBotonPanico() {
         viewModelScope.launch {
             try {
+                val existing = prefs.uuidBoton.first()
+                if (!existing.isNullOrBlank()) return@launch
                 val bodyJson = JSONObject().apply {
                     put("nombre", "javier")
                     put("apellido_paterno", "fernandez")
