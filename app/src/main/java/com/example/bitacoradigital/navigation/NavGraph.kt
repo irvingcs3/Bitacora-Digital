@@ -28,11 +28,14 @@ import com.example.bitacoradigital.ui.screens.qr.SeguimientoQRScreen
 import com.example.bitacoradigital.ui.screens.dashboard.DashboardScreen
 import com.example.bitacoradigital.ui.screens.accesos.AccesosScreen
 import com.example.bitacoradigital.ui.screens.residentes.ResidentesScreen
+import com.example.bitacoradigital.ui.screens.guardia.DronGuardScreen
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
 import com.example.bitacoradigital.viewmodel.SignupViewModel
 import com.example.bitacoradigital.viewmodel.ForgotPasswordViewModel
+import com.example.bitacoradigital.viewmodel.DronGuardViewModel
+import androidx.compose.ui.platform.LocalContext
 
 
 @Composable
@@ -207,6 +210,13 @@ fun AppNavGraph(
                 homeViewModel = homeViewModel,
                 navController = navController
             )
+        }
+
+        composable("dronguard") {
+            val context = LocalContext.current
+            val prefs = remember { SessionPreferences(context) }
+            val viewModel: DronGuardViewModel = viewModel(factory = DronGuardViewModel.Factory(prefs))
+            DronGuardScreen(viewModel = viewModel, navController = navController)
         }
 
 
