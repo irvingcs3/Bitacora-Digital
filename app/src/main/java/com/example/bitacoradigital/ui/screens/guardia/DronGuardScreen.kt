@@ -26,6 +26,7 @@ import androidx.core.app.ActivityCompat
 import androidx.navigation.NavHostController
 import com.example.bitacoradigital.viewmodel.DronGuardViewModel
 import com.google.android.gms.location.LocationServices
+import android.util.Log
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -44,13 +45,16 @@ fun DronGuardScreen(viewModel: DronGuardViewModel, navController: NavHostControl
 
     LaunchedEffect(pressed) {
         if (pressed && !showMessage) {
+            Log.d("DronGuardScreen", "Bot\u00f3n presionado")
             sizeAnim.snapTo(200.dp)
             sizeAnim.animateTo(600.dp, tween(3000))
             if (pressed) {
+                Log.d("DronGuardScreen", "Presionado 3s, enviando alerta")
                 if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                     permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 } else {
                     fused.lastLocation.addOnSuccessListener { loc ->
+                        Log.d("DronGuardScreen", "Ubicaci\u00f3n obtenida: ${'$'}loc")
                         loc?.let { viewModel.enviarAlerta(it.latitude, it.longitude) }
                     }
                 }

@@ -31,6 +31,8 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
                     put("lat", lat.toString())
                     put("lng", lng.toString())
                 }
+                Log.d("DronGuard", "Enviando alerta uuid=$id lat=$lat lng=$lng")
+
                 val body = bodyJson.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder()
                     .url(com.example.bitacoradigital.util.Constants.DRON_GUARD_SEND)
@@ -38,11 +40,14 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
                     .addHeader("X-Authorization", com.example.bitacoradigital.util.Constants.DRON_GUARD_TOKEN)
                     .addHeader("Content-Type", "application/json")
                     .build()
+
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
                 val respBody = response.body?.string()
                 Log.d("DronGuard", "Response code: ${'$'}{response.code} body: ${'$'}respBody")
                 response.close()
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                Log.e("DronGuard", "Error enviando alerta", e)
+            }
         }
     }
 
