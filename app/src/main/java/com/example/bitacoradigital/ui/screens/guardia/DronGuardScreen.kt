@@ -43,6 +43,10 @@ fun DronGuardScreen(viewModel: DronGuardViewModel, navController: NavHostControl
     val pressed by interaction.collectIsPressedAsState()
     val sizeAnim = remember { Animatable(200.dp, Dp.VectorConverter) }
 
+    LaunchedEffect(Unit) {
+        viewModel.registrarBotonPanico()
+    }
+
     LaunchedEffect(pressed) {
         if (pressed && !showMessage) {
             Log.d("DronGuardScreen", "Bot\u00f3n presionado")
