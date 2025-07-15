@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.bitacoradigital.data.SessionPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.util.Log
@@ -19,9 +21,19 @@ import org.json.JSONObject
 
 class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
 
-    val uuid: StateFlow<String?> = prefs.uuidBoton.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Lazily, null)
+    private val _uuid = MutableStateFlow<String?>(null)
+    val uuid: StateFlow<String?> = _uuid.asStateFlow()
 
     private val client = OkHttpClient()
+
+    init {
+        viewModelScope.launch {
+            prefs.uuidBoton.collect { value ->
+                Log.d("DronGuard", "UUID collected from prefs: $value")
+                _uuid.value = value
+            }
+        }
+    }
 
     fun registrarBotonPanico() {
         viewModelScope.launch {
@@ -59,7 +71,7 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
                     .build()
 
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                Log.d("DronGuard", "HOLAAAAA")
+                Log.d("DronGuard", "Registro enviado")
 
                 val respBody = response.body?.string()
                 if (response.isSuccessful) {
@@ -83,8 +95,11 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
     fun enviarAlerta(lat: Double, lng: Double) {
         viewModelScope.launch {
 
-            val id = uuid.value ?: return@launch
-            Log.d("DronGuard", "HOLAJODER")
+            val id = uuid.value ?: run {
+                Log.e("DronGuard", "UUID nulo, no se puede enviar alerta")
+                return@launch
+            }
+            Log.d("DronGuard", "UUID listo para alerta: $id")
 
             try {
                 val bodyJson = JSONObject().apply {
