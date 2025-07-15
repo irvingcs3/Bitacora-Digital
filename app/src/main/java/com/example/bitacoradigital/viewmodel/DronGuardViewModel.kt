@@ -24,6 +24,9 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
     private val _uuid = MutableStateFlow<String?>(null)
     val uuid: StateFlow<String?> = _uuid.asStateFlow()
 
+    private val _direccionEvento = MutableStateFlow<String?>(null)
+    val direccionEvento: StateFlow<String?> = _direccionEvento.asStateFlow()
+
     private val client = OkHttpClient()
 
     init {
@@ -33,6 +36,10 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
                 _uuid.value = value
             }
         }
+    }
+
+    fun clearDireccionEvento() {
+        _direccionEvento.value = null
     }
 
     fun registrarBotonPanico() {
@@ -100,6 +107,8 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
     fun enviarAlerta(lat: Double, lng: Double) {
         viewModelScope.launch {
 
+            _direccionEvento.value = null
+
             val id = uuid.value ?: run {
                 Log.e("DronGuard", "UUID nulo, no se puede enviar alerta")
                 return@launch
@@ -125,6 +134,14 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
                 val respBody = response.body?.string()
                 Log.d("DronGuard", "Response code: ${response.code} body: ${respBody}")
+                if (response.isSuccessful) {
+                    try {
+                        val json = JSONObject(respBody ?: "{}")
+                        _direccionEvento.value = json.optString("direccion_evento")
+                    } catch (e: Exception) {
+                        Log.e("DronGuard", "Error parsing response", e)
+                    }
+                }
                 response.close()
             } catch (e: Exception) {
                 Log.e("DronGuard", "Error enviando alerta", e)

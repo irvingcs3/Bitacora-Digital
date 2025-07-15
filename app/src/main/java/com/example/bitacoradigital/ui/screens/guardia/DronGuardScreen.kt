@@ -39,17 +39,20 @@ fun DronGuardScreen(viewModel: DronGuardViewModel, navController: NavHostControl
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     val scope = rememberCoroutineScope()
 
-    var showMessage by remember { mutableStateOf(false) }
+    var envioIniciado by remember { mutableStateOf(false) }
+    val direccionEvento by viewModel.direccionEvento.collectAsState()
+    val showMessage = envioIniciado && direccionEvento != null
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val sizeAnim = remember { Animatable(200.dp, Dp.VectorConverter) }
 
     LaunchedEffect(Unit) {
+        viewModel.clearDireccionEvento()
         viewModel.registrarBotonPanico()
     }
 
     LaunchedEffect(pressed) {
-        if (pressed && !showMessage) {
+        if (pressed && !envioIniciado) {
             Log.d("DronGuardScreen", "Bot\u00f3n presionado")
             sizeAnim.snapTo(200.dp)
             sizeAnim.animateTo(600.dp, tween(3000))
@@ -63,9 +66,9 @@ fun DronGuardScreen(viewModel: DronGuardViewModel, navController: NavHostControl
                         loc?.let { viewModel.enviarAlerta(it.latitude, it.longitude) }
                     }
                 }
-                showMessage = true
+                envioIniciado = true
             }
-        } else if (!pressed && !showMessage) {
+        } else if (!pressed && !envioIniciado) {
             sizeAnim.snapTo(200.dp)
         }
     }
@@ -79,7 +82,7 @@ fun DronGuardScreen(viewModel: DronGuardViewModel, navController: NavHostControl
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    "Dron desplegado a tu ubicacion",
+                    "Dron desplegado a tu ubicacion en: ${direccionEvento ?: ""}",
                     color = Color.White,
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.headlineSmall
