@@ -24,6 +24,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
+import android.location.LocationManager
+import android.location.LocationListener
+import android.location.Location
+import android.os.Looper
+import android.os.Bundle
+import android.content.Context
 import androidx.navigation.NavHostController
 import com.example.bitacoradigital.viewmodel.DronGuardViewModel
 import com.google.android.gms.location.LocationServices
@@ -36,6 +42,7 @@ import kotlinx.coroutines.launch
 fun DronGuardScreen(viewModel: DronGuardViewModel, navController: NavHostController) {
     val context = LocalContext.current
     val fused = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val locationManager = remember { context.getSystemService(Context.LOCATION_SERVICE) as LocationManager }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     val scope = rememberCoroutineScope()
 
@@ -63,7 +70,37 @@ fun DronGuardScreen(viewModel: DronGuardViewModel, navController: NavHostControl
                 } else {
                     fused.lastLocation.addOnSuccessListener { loc ->
                         Log.d("DronGuardScreen", "Ubicaci\u00f3n obtenida: ${loc}")
-                        loc?.let { viewModel.enviarAlerta(it.latitude, it.longitude) }
+                        if (loc != null) {
+                            viewModel.enviarAlerta(loc.latitude, loc.longitude)
+                        } else {
+                            val fallback = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                                ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                            if (fallback != null) {
+                                viewModel.enviarAlerta(fallback.latitude, fallback.longitude)
+                            } else {
+                                val listener = object : LocationListener {
+                                    override fun onLocationChanged(p0: Location) {
+                                        Log.d("DronGuardScreen", "Fallback ubicaci\u00f3n: ${'$'}p0")
+                                        viewModel.enviarAlerta(p0.latitude, p0.longitude)
+                                        locationManager.removeUpdates(this)
+                                    }
+
+                                    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+                                    override fun onProviderEnabled(provider: String) {}
+                                    override fun onProviderDisabled(provider: String) {}
+                                }
+                                val provider = if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                                    LocationManager.GPS_PROVIDER
+                                } else {
+                                    LocationManager.NETWORK_PROVIDER
+                                }
+                                locationManager.requestSingleUpdate(provider, listener, Looper.getMainLooper())
+                            }
+                        }
+                    }.addOnFailureListener {
+                        val fallback = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                            ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                        fallback?.let { viewModel.enviarAlerta(it.latitude, it.longitude) }
                     }
                 }
                 envioIniciado = true
