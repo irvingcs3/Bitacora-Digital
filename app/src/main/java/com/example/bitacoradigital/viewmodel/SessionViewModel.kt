@@ -11,8 +11,6 @@ import android.util.Log
 import com.example.bitacoradigital.model.User
 import com.example.bitacoradigital.network.RetrofitInstance
 import com.google.gson.Gson
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaType
 import org.json.JSONObject
@@ -110,46 +108,6 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         registrarBotonPanico()
     }
 
-    fun registrarBotonPanico() {
-        viewModelScope.launch {
-            try {
-                val existing = prefs.uuidBoton.first()
-                if (!existing.isNullOrBlank()) return@launch
-                val bodyJson = JSONObject().apply {
-                    put("nombre", "javier")
-                    put("apellido_paterno", "fernandez")
-                    put("apellido_materno", "ayala")
-                    put("direccion", "av. revolucion 439")
-                    put("calle", "av. revolucion 439")
-                    put("colonia", "San Pedro de los Pinos")
-                    put("municipio", "Benito Juarez")
-                    put("estado", "CDMX")
-                    put("cp", "03800")
-                    put("celular", "5535033739")
-                    put("correo", "fjfayala@gmail.com")
-                    put("contacto_1", "franciso fernandez")
-                    put("telefono_1", "5512345678")
-                    put("contacto_2", "roverto ayala")
-                    put("telefono_2", "5587654321")
-                }
-                val body = bodyJson.toString().toRequestBody("application/json".toMediaType())
-                val request = Request.Builder()
-                    .url(com.example.bitacoradigital.util.Constants.DRON_GUARD_REGISTRO)
-                    .post(body)
-                    .addHeader("X-Authorization", com.example.bitacoradigital.util.Constants.DRON_GUARD_TOKEN)
-                    .addHeader("Content-Type", "application/json")
-                    .build()
-                val client = OkHttpClient()
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                response.use { resp ->
-                    if (resp.isSuccessful) {
-                        val uuid = JSONObject(resp.body?.string() ?: "{}").optString("uuid_usuario")
-                        if (uuid.isNotEmpty()) prefs.guardarUuidBoton(uuid)
-                    }
-                }
-            } catch (_: Exception) { }
-        }
-    }
 
     fun setTemporalToken(token: String) {
         _token.value = token
