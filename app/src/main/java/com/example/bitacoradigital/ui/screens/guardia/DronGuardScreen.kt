@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -58,7 +59,7 @@ fun DronGuardScreen(viewModel: DronGuardViewModel, navController: NavHostControl
                     permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 } else {
                     fused.lastLocation.addOnSuccessListener { loc ->
-                        Log.d("DronGuardScreen", "Ubicaci\u00f3n obtenida: ${'$'}loc")
+                        Log.d("DronGuardScreen", "Ubicaci\u00f3n obtenida: ${loc}")
                         loc?.let { viewModel.enviarAlerta(it.latitude, it.longitude) }
                     }
                 }

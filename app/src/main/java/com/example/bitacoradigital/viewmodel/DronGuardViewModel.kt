@@ -59,6 +59,8 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
                     .build()
 
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                Log.d("DronGuard", "HOLAAAAA")
+
                 val respBody = response.body?.string()
                 if (response.isSuccessful) {
                     val uuid = JSONObject(respBody ?: "{}").optString("uuid_usuario")
@@ -80,7 +82,10 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
 
     fun enviarAlerta(lat: Double, lng: Double) {
         viewModelScope.launch {
+
             val id = uuid.value ?: return@launch
+            Log.d("DronGuard", "HOLAJODER")
+
             try {
                 val bodyJson = JSONObject().apply {
                     put("uuid_usuario", id)
@@ -99,7 +104,7 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
 
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
                 val respBody = response.body?.string()
-                Log.d("DronGuard", "Response code: ${'$'}{response.code} body: ${'$'}respBody")
+                Log.d("DronGuard", "Response code: ${response.code} body: ${respBody}")
                 response.close()
             } catch (e: Exception) {
                 Log.e("DronGuard", "Error enviando alerta", e)
