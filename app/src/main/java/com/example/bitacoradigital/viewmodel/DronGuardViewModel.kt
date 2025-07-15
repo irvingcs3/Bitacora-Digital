@@ -44,18 +44,23 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
                     return@launch
                 }
 
+                // Obtener datos de usuario almacenados en preferencias
+                val userJson = prefs.jsonSession.first()
+                val usuarioObj = userJson?.let { JSONObject(it) }
+
                 val bodyJson = JSONObject().apply {
-                    put("nombre", "javier")
-                    put("apellido_paterno", "fernandez")
-                    put("apellido_materno", "ayala")
+                    // Utilizar información disponible del usuario si existe
+                    put("nombre", usuarioObj?.optString("nombre") ?: "javier")
+                    put("apellido_paterno", usuarioObj?.optString("apellido_paterno") ?: "fernandez")
+                    put("apellido_materno", usuarioObj?.optString("apellido_materno") ?: "ayala")
                     put("direccion", "av. revolucion 439")
                     put("calle", "av. revolucion 439")
                     put("colonia", "San Pedro de los Pinos")
                     put("municipio", "Benito Juarez")
                     put("estado", "CDMX")
                     put("cp", "03800")
-                    put("celular", "5535033739")
-                    put("correo", "fjfayala@gmail.com")
+                    put("celular", usuarioObj?.optString("telefono") ?: "5535033739")
+                    put("correo", usuarioObj?.optString("email") ?: "fjfayala@gmail.com")
                     put("contacto_1", "franciso fernandez")
                     put("telefono_1", "5512345678")
                     put("contacto_2", "roverto ayala")
