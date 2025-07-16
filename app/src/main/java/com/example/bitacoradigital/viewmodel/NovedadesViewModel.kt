@@ -97,10 +97,13 @@ class NovedadesViewModel(
             _cargando.value = true
             try {
                 val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
-                val builder = MultipartBody.Builder().setType(MultipartBody.FORM)
+                val builder = MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
                     .addFormDataPart("contenido", contenido)
                     .addFormDataPart("perimetro", perimetroId.toString())
-                    .addFormDataPart("padre", padreId?.toString() ?: "null")
+                if (padreId != null) {
+                    builder.addFormDataPart("padre", padreId.toString())
+                }
                 if (imagenUri != null) {
                     val bytes = withContext(Dispatchers.IO) {
                         context.contentResolver.openInputStream(imagenUri)?.use { it.readBytes() }
