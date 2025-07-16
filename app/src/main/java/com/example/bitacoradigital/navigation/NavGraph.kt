@@ -28,6 +28,7 @@ import com.example.bitacoradigital.ui.screens.qr.SeguimientoQRScreen
 import com.example.bitacoradigital.ui.screens.dashboard.DashboardScreen
 import com.example.bitacoradigital.ui.screens.accesos.AccesosScreen
 import com.example.bitacoradigital.ui.screens.residentes.ResidentesScreen
+import com.example.bitacoradigital.ui.screens.novedades.NovedadesScreen
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
@@ -204,6 +205,13 @@ fun AppNavGraph(
 
         composable("dashboard") {
             DashboardScreen(
+                homeViewModel = homeViewModel,
+                navController = navController
+            )
+        }
+
+        composable("novedades") {
+            NovedadesScreen(
                 homeViewModel = homeViewModel,
                 navController = navController
             )
