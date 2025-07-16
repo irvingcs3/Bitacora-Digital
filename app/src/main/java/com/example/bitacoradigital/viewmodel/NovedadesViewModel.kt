@@ -56,7 +56,13 @@ class NovedadesViewModel(
                         val list = mutableListOf<Novedad>()
                         for (i in 0 until arr.length()) {
                             val obj = arr.getJSONObject(i)
-                            if (obj.optInt("perimetro") == perimetroId && obj.isNull("padre")) {
+                            val padreRaw = obj.opt("padre")
+                            val padreRoot = when (padreRaw) {
+                                null -> null
+                                is Int -> if (padreRaw == 0) null else padreRaw
+                                else -> null
+                            }
+                            if (obj.optInt("perimetro") == perimetroId && padreRoot == null) {
                                 list.add(parseNovedad(obj))
                             }
                         }
@@ -80,6 +86,12 @@ class NovedadesViewModel(
             val child = respuestasArr.getJSONObject(i)
             hijos.add(parseNovedad(child))
         }
+        val padreVal = obj.optInt("padre")
+        val padreId = when {
+            obj.isNull("padre") -> null
+            padreVal == 0 -> null
+            else -> padreVal
+        }
         return Novedad(
             id = obj.optInt("id"),
             autor = obj.optInt("autor"),
@@ -87,7 +99,7 @@ class NovedadesViewModel(
             imagen = if (obj.isNull("imagen")) null else obj.optString("imagen"),
             fecha_creacion = obj.optString("fecha_creacion"),
             perimetro = obj.optInt("perimetro"),
-            padre = if (obj.isNull("padre")) null else obj.optInt("padre"),
+            padre = padreId,
             respuestas = hijos
         )
     }

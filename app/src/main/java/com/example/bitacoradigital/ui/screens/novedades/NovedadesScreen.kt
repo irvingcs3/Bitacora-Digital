@@ -22,6 +22,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -50,8 +53,21 @@ fun NovedadesScreen(
     val cargando by viewModel.cargando.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    LaunchedEffect(Unit) { viewModel.cargarComentarios() }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(Unit) {
+        viewModel.cargarComentarios()
+    }
 
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.cargarComentarios()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     var nuevo by remember { mutableStateOf("") }
     var imagenNueva by remember { mutableStateOf<android.net.Uri?>(null) }
     val imageLauncher = rememberLauncherForActivityResult(
@@ -177,7 +193,7 @@ fun ComentarioItem(
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imagenRespuesta = uri }
-    var expandido by remember { mutableStateOf(true) }
+    var expandido by remember { mutableStateOf(false) }
     val rotacion by animateFloatAsState(if (expandido) 90f else 0f, label = "rotacion")
 
     Column(
