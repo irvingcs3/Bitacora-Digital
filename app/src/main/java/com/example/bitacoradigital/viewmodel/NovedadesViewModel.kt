@@ -44,7 +44,7 @@ class NovedadesViewModel(
             try {
                 val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
                 val request = Request.Builder()
-                    .url("http://192.168.100.8:8601/api/v1/novedad/")
+                    .url("https://bit.cs3.mx/api/v1/novedad/")
                     .get()
                     .addHeader("x-session-token", token)
                     .build()
@@ -130,7 +130,7 @@ class NovedadesViewModel(
                 }
                 val requestBody = builder.build()
                 val request = Request.Builder()
-                    .url("http://192.168.100.8:8601/api/v1/novedad/")
+                    .url("https://bit.cs3.mx/api/v1/novedad/")
                     .post(requestBody)
                     .addHeader("x-session-token", token)
                     .build()
