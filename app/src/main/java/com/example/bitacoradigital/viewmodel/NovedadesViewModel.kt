@@ -35,6 +35,16 @@ class NovedadesViewModel(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+    private val _destacados = MutableStateFlow<Set<Int>>(emptySet())
+    val destacados: StateFlow<Set<Int>> = _destacados.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            prefs.destacados.collect { set ->
+                _destacados.value = set.mapNotNull { it.toIntOrNull() }.toSet()
+            }
+        }
+    }
 
     fun clearError() { _error.value = null }
 
@@ -94,7 +104,7 @@ class NovedadesViewModel(
         }
         return Novedad(
             id = obj.optInt("id"),
-            autor = obj.optInt("autor"),
+            autor = obj.optString("autor"),
             contenido = obj.optString("contenido"),
             imagen = if (obj.isNull("imagen")) null else obj.optString("imagen"),
             fecha_creacion = obj.optString("fecha_creacion"),
@@ -122,9 +132,9 @@ class NovedadesViewModel(
                     }
                     bytes?.let {
                         builder.addFormDataPart(
-                            "file",
+                            "imagen",
                             "imagen.jpg",
-                            it.toRequestBody("image/*".toMediaTypeOrNull())
+                            it.toRequestBody("image/jpeg".toMediaTypeOrNull())
                         )
                     }
                 }
@@ -148,6 +158,11 @@ class NovedadesViewModel(
             } finally {
                 _cargando.value = false
             }
+        }
+    }
+    fun toggleDestacado(id: Int) {
+        viewModelScope.launch {
+            prefs.toggleDestacado(id)
         }
     }
 }

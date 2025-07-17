@@ -16,6 +16,9 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,6 +41,8 @@ import com.example.bitacoradigital.ui.components.HomeConfigNavBar
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.NovedadesViewModel
 import com.example.bitacoradigital.viewmodel.NovedadesViewModelFactory
+import com.example.bitacoradigital.util.toReadableDateTime
+
 
 @Composable
 fun NovedadesScreen(
@@ -52,6 +57,8 @@ fun NovedadesScreen(
     val comentarios by viewModel.comentarios.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
     val error by viewModel.error.collectAsState()
+    val destacados by viewModel.destacados.collectAsState()
+
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(Unit) {
@@ -97,7 +104,16 @@ fun NovedadesScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            Text("Novedades", style = MaterialTheme.typography.headlineSmall)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Novedades", style = MaterialTheme.typography.headlineSmall)
+                IconButton(onClick = { navController.navigate("destacados") }) {
+                    Icon(Icons.Default.Star, contentDescription = null)
+                }
+            }
             Spacer(Modifier.height(8.dp))
             if (cargando) {
                 CircularProgressIndicator()
@@ -125,6 +141,8 @@ fun NovedadesScreen(
                         ComentarioItem(
                             comentario = c,
                             nivel = 0,
+                            destacados = destacados,
+                            onToggleDestacado = { viewModel.toggleDestacado(it) },
                             onResponder = { id, texto, uri ->
                                 viewModel.publicarComentario(context, texto, uri, id)
                             }
@@ -185,6 +203,8 @@ fun NovedadesScreen(
 fun ComentarioItem(
     comentario: Novedad,
     nivel: Int,
+    destacados: Set<Int>,
+    onToggleDestacado: (Int) -> Unit,
     onResponder: (Int, String, android.net.Uri?) -> Unit
 ) {
     var responder by remember { mutableStateOf(false) }
@@ -221,10 +241,18 @@ fun ComentarioItem(
                         }
                     }
                     Column(Modifier.weight(1f)) {
-                        Text("Autor: ${'$'}{comentario.autor}", style = MaterialTheme.typography.labelMedium)
-                        Text(comentario.contenido, style = MaterialTheme.typography.bodyMedium)
+                        Text(comentario.autor, style = MaterialTheme.typography.titleSmall)
+                        Text(comentario.fecha_creacion.toReadableDateTime(), style = MaterialTheme.typography.labelSmall)
                     }
+                    IconButton(onClick = { onToggleDestacado(comentario.id) }) {
+                        val marcado = destacados.contains(comentario.id)
+                        Icon(
+                            imageVector = if (marcado) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = null
+                        )                    }
                 }
+                Spacer(Modifier.height(4.dp))
+                Text(comentario.contenido, style = MaterialTheme.typography.bodyMedium)
                 comentario.imagen?.let { url ->
                     Spacer(Modifier.height(4.dp))
                     val request = ImageRequest.Builder(LocalContext.current)
@@ -240,11 +268,7 @@ fun ComentarioItem(
                         contentScale = ContentScale.Crop
                     )
                 }
-                Text(
-                    comentario.fecha_creacion,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.align(Alignment.End)
-                )
+                Spacer(Modifier.height(4.dp))
                 TextButton(onClick = { responder = !responder }) {
                     Text("Responder")
                 }
@@ -303,8 +327,15 @@ fun ComentarioItem(
         AnimatedVisibility(visible = expandido) {
             Column {
                 Spacer(Modifier.height(8.dp))
-                comentario.respuestas.forEach { child ->
-                    ComentarioItem(comentario = child, nivel = nivel + 1, onResponder = onResponder)
+                comentario.respuestas.forEachIndexed { index, child ->
+                    ComentarioItem(
+                        comentario = child,
+                        nivel = nivel + 1,
+                        destacados = destacados,
+                        onToggleDestacado = onToggleDestacado,
+                        onResponder = onResponder
+                    )
+                    Spacer(Modifier.height(8.dp))
                 }
             }
         }

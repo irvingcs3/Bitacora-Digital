@@ -1,7 +1,12 @@
 package com.example.bitacoradigital.util
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import java.text.SimpleDateFormat
 import java.util.*
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 object Constants {
     const val FILE_PROVIDER_AUTHORITY: String = "com.example.bitacoradigital.fileprovider"
@@ -17,4 +22,15 @@ fun Long.toReadableDate(): String {
     val date = Date(this)
     val format = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
     return format.format(date)
+}
+@RequiresApi(Build.VERSION_CODES.O)
+fun String.toReadableDateTime(): String {
+    return try {
+        val odt = OffsetDateTime.parse(this)
+        val local = odt.atZoneSameInstant(ZoneId.systemDefault())
+        val fmt = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm", Locale.getDefault())
+        local.format(fmt)
+    } catch (e: Exception) {
+        this
+    }
 }
