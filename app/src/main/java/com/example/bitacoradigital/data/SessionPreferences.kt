@@ -17,6 +17,7 @@ object SessionKeys {
     val JSON_SESSION = stringPreferencesKey("json_session") // ✅ nuevo
     val VERSION = stringPreferencesKey("version")
     val UUID_BOTON = stringPreferencesKey("uuid_boton")
+    val DESTACADOS = stringSetPreferencesKey("destacados")
 }
 
 class SessionPreferences(private val context: Context) {
@@ -26,9 +27,10 @@ class SessionPreferences(private val context: Context) {
     val personaId: Flow<Int?> = context.dataStore.data.map { it[SessionKeys.PERSONA_ID] }
     val favoritoEmpresaId: Flow<Int?> = context.dataStore.data.map { it[SessionKeys.FAVORITO_EMPRESA_ID] }
     val favoritoPerimetroId: Flow<Int?> = context.dataStore.data.map { it[SessionKeys.FAVORITO_PERIMETRO_ID] }
-    val jsonSession: Flow<String?> = context.dataStore.data.map { it[SessionKeys.JSON_SESSION] } // ✅ nuevo
+    val jsonSession: Flow<String?> = context.dataStore.data.map { it[SessionKeys.JSON_SESSION] }
     val version: Flow<String?> = context.dataStore.data.map { it[SessionKeys.VERSION] }
     val uuidBoton: Flow<String?> = context.dataStore.data.map { it[SessionKeys.UUID_BOTON] }
+    val destacados: Flow<Set<String>> = context.dataStore.data.map { it[SessionKeys.DESTACADOS] ?: emptySet() }
 
     suspend fun guardarSesion(token: String, userId: Int, personaId: Int, json: String, version: String) {
         context.dataStore.edit { prefs ->
@@ -51,6 +53,18 @@ class SessionPreferences(private val context: Context) {
     suspend fun guardarUuidBoton(uuid: String) {
         context.dataStore.edit { prefs ->
             prefs[SessionKeys.UUID_BOTON] = uuid
+        }
+    }
+
+    suspend fun toggleDestacado(id: Int) {
+        context.dataStore.edit { prefs ->
+            val current = prefs[SessionKeys.DESTACADOS] ?: emptySet()
+            val stringId = id.toString()
+            prefs[SessionKeys.DESTACADOS] = if (current.contains(stringId)) {
+                current - stringId
+            } else {
+                current + stringId
+            }
         }
     }
 

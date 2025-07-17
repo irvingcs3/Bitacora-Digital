@@ -2,7 +2,7 @@ package com.example.bitacoradigital.model
 
 data class Novedad(
     val id: Int,
-    val autor: Int,
+    val autor: String,
     val contenido: String,
     val imagen: String?,
     val fecha_creacion: String,
