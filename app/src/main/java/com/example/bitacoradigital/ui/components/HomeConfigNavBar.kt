@@ -1,5 +1,6 @@
 package com.example.bitacoradigital.ui.components
 
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
@@ -9,6 +10,8 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun HomeConfigNavBar(
@@ -17,6 +20,7 @@ fun HomeConfigNavBar(
     onConfigClick: () -> Unit
 ) {
     NavigationBar(
+        modifier = Modifier.height(70.dp),
         containerColor = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary
     ) {

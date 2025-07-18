@@ -65,6 +65,8 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.1")
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.36.0")
+
 
     // Required for animateItemPlacement and other foundation features
     implementation("androidx.compose.foundation:foundation")
