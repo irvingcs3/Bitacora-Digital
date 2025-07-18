@@ -1,5 +1,6 @@
 package com.example.bitacoradigital.ui.screens.novedades
 
+import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -9,7 +10,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import androidx.compose.ui.draw.rotate
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.window.Dialog
+import kotlin.math.abs
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Send
@@ -19,7 +27,13 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material3.*
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.DatePickerDialog
+import android.app.TimePickerDialog
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +47,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.bitacoradigital.data.SessionPreferences
@@ -44,6 +63,23 @@ import com.example.bitacoradigital.viewmodel.NovedadesViewModelFactory
 import com.example.bitacoradigital.util.toReadableDateTime
 
 
+@RequiresApi(Build.VERSION_CODES.O)
+enum class FilterType { HORA, FECHA, AUTOR, CONTENIDO }
+
+@Composable
+fun autorColor(name: String): Color {
+    val palette = listOf(
+
+        Color(0xFFFFFFFF), // orange
+        Color(0xFF000000),
+        Color(0xFFD65930)
+    )
+    val index = abs(name.hashCode()) % palette.size
+    return palette[index]
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NovedadesScreen(
     homeViewModel: HomeViewModel,
@@ -59,6 +95,24 @@ fun NovedadesScreen(
     val error by viewModel.error.collectAsState()
     val destacados by viewModel.destacados.collectAsState()
 
+    var filterText by remember { mutableStateOf("") }
+    var filterType by remember { mutableStateOf(FilterType.CONTENIDO) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+
+    val filtrados = remember(comentarios, filterText, filterType) {
+        fun filtrar(n: Novedad): Novedad? {
+            val match = when (filterType) {
+                FilterType.AUTOR -> n.autor.contains(filterText, true)
+                FilterType.FECHA, FilterType.HORA -> n.fecha_creacion.contains(filterText, true)
+                FilterType.CONTENIDO -> n.contenido.contains(filterText, true)
+            }
+            val children = n.respuestas.mapNotNull { filtrar(it) }
+            return if (match || children.isNotEmpty()) n.copy(respuestas = children) else null
+        }
+        if (filterText.isBlank()) comentarios else comentarios.mapNotNull { filtrar(it) }
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(Unit) {
@@ -89,6 +143,16 @@ fun NovedadesScreen(
     }
 
     Scaffold(
+        topBar = {
+            SmallTopAppBar(
+                title = { Text("Novedades") },
+                actions = {
+                    IconButton(onClick = { navController.navigate("destacados") }) {
+                        Icon(Icons.Default.Star, contentDescription = null)
+                    }
+                }
+            )
+        },
         bottomBar = {
             HomeConfigNavBar(
                 current = "",
@@ -102,22 +166,87 @@ fun NovedadesScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp)
+                .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Novedades", style = MaterialTheme.typography.headlineSmall)
-                IconButton(onClick = { navController.navigate("destacados") }) {
-                    Icon(Icons.Default.Star, contentDescription = null)
+            if (showDatePicker) {
+                DatePickerDialog(
+                    onDismissRequest = { showDatePicker = false },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            datePickerState.selectedDateMillis?.let { millis ->
+                                val date = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+                                filterText = date.toString()
+                            }
+                            showDatePicker = false
+                        }) { Text("OK") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+                    }
+                ) {
+                    DatePicker(state = datePickerState)
                 }
             }
-            Spacer(Modifier.height(8.dp))
+            if (showTimePicker) {
+                val context = LocalContext.current
+                LaunchedEffect(Unit) {
+                    val now = LocalTime.now()
+                    val dialog = TimePickerDialog(
+                        context,
+                        { _, hour, minute ->
+                            filterText = LocalTime.of(hour, minute).toString()
+                            showTimePicker = false
+                        },
+                        now.hour,
+                        now.minute,
+                        true
+                    )
+                    dialog.setOnDismissListener { showTimePicker = false }
+                    dialog.show()
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = filterText,
+                    onValueChange = { filterText = it },
+                    label = { Text("Filtrar") },
+                    modifier = Modifier.weight(1f),
+                    readOnly = filterType == FilterType.FECHA || filterType == FilterType.HORA,
+                    trailingIcon = {
+                        when (filterType) {
+                            FilterType.FECHA -> IconButton(onClick = { showDatePicker = true }) {
+                                Icon(Icons.Default.DateRange, contentDescription = null)
+                            }
+                            FilterType.HORA -> IconButton(onClick = { showTimePicker = true }) {
+                                Icon(Icons.Default.AccessTime, contentDescription = null)
+                            }
+                            else -> {}
+                        }
+                    }
+                )
+                Spacer(Modifier.width(8.dp))
+                var menuOpen by remember { mutableStateOf(false) }
+                Box {
+                    TextButton(onClick = { menuOpen = true }) {
+                        Text(filterType.name.lowercase().replaceFirstChar { it.uppercase() })
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        FilterType.values().forEach { opt ->
+                            DropdownMenuItem(
+                                text = { Text(opt.name.lowercase().replaceFirstChar { c -> c.uppercase() }) },
+                                onClick = {
+                                    filterType = opt
+                                    menuOpen = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(4.dp))
             if (cargando) {
                 CircularProgressIndicator()
-            } else if (comentarios.isEmpty()) {
+            } else if (filtrados.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -131,22 +260,29 @@ fun NovedadesScreen(
                     }
                 }
             } else {
-                LazyColumn(
+                val swipeState = rememberSwipeRefreshState(cargando)
+                SwipeRefresh(
+                    state = swipeState,
+                    onRefresh = { viewModel.cargarComentarios() },
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .fillMaxWidth()
                 ) {
-                    items(comentarios, key = { it.id }) { c ->
-                        ComentarioItem(
-                            comentario = c,
-                            nivel = 0,
-                            destacados = destacados,
-                            onToggleDestacado = { viewModel.toggleDestacado(it) },
-                            onResponder = { id, texto, uri ->
-                                viewModel.publicarComentario(context, texto, uri, id)
-                            }
-                        )
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(filtrados, key = { it.id }) { c ->
+                            ComentarioItem(
+                                comentario = c,
+                                nivel = 0,
+                                destacados = destacados,
+                                onToggleDestacado = { viewModel.toggleDestacado(it) },
+                                onResponder = { id, texto, uri ->
+                                    viewModel.publicarComentario(context, texto, uri, id)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -199,6 +335,21 @@ fun NovedadesScreen(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun FullScreenImageDialog(url: String, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+            AsyncImage(
+                model = url,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ComentarioItem(
     comentario: Novedad,
@@ -210,6 +361,7 @@ fun ComentarioItem(
     var responder by remember { mutableStateOf(false) }
     var texto by remember { mutableStateOf("") }
     var imagenRespuesta by remember { mutableStateOf<android.net.Uri?>(null) }
+    var showImage by remember { mutableStateOf<String?>(null) }
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imagenRespuesta = uri }
@@ -241,8 +393,15 @@ fun ComentarioItem(
                         }
                     }
                     Column(Modifier.weight(1f)) {
-                        Text(comentario.autor, style = MaterialTheme.typography.titleSmall)
-                        Text(comentario.fecha_creacion.toReadableDateTime(), style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            comentario.autor,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = autorColor(comentario.autor)
+                        )
+                        Text(
+                            comentario.fecha_creacion.toReadableDateTime(),
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
                     IconButton(onClick = { onToggleDestacado(comentario.id) }) {
                         val marcado = destacados.contains(comentario.id)
@@ -252,7 +411,10 @@ fun ComentarioItem(
                         )                    }
                 }
                 Spacer(Modifier.height(4.dp))
-                Text(comentario.contenido, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    comentario.contenido,
+                    style = MaterialTheme.typography.bodyLarge
+                )
                 comentario.imagen?.let { url ->
                     Spacer(Modifier.height(4.dp))
                     val request = ImageRequest.Builder(LocalContext.current)
@@ -264,7 +426,8 @@ fun ComentarioItem(
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(150.dp),
+                            .height(150.dp)
+                            .clickable { showImage = url },
                         contentScale = ContentScale.Crop
                     )
                 }
@@ -338,6 +501,9 @@ fun ComentarioItem(
                     Spacer(Modifier.height(8.dp))
                 }
             }
+        }
+        showImage?.let { img ->
+            FullScreenImageDialog(url = img) { showImage = null }
         }
     }
 }
