@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.FlowRow
@@ -28,12 +29,20 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import android.Manifest
+import android.content.pm.PackageManager
+import android.net.Uri
+import java.io.File
 import androidx.compose.material3.*
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.rememberDatePickerState
@@ -62,6 +71,7 @@ import coil.request.ImageRequest
 import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.model.Novedad
 import com.example.bitacoradigital.ui.components.HomeConfigNavBar
+import com.example.bitacoradigital.util.Constants
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.NovedadesViewModel
 import com.example.bitacoradigital.viewmodel.NovedadesViewModelFactory
@@ -135,11 +145,38 @@ fun NovedadesScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     var nuevo by remember { mutableStateOf("") }
-    var imagenNueva by remember { mutableStateOf<android.net.Uri?>(null) }
+    var imagenNueva by remember { mutableStateOf<Uri?>(null) }
     var showCtpatDialog by remember { mutableStateOf(false) }
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imagenNueva = uri }
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted -> hasCameraPermission = granted }
+
+    var tempUri by remember { mutableStateOf<Uri?>(null) }
+
+    fun createImageUri(): Uri {
+        val imagesDir = File(context.cacheDir, "images").apply { mkdirs() }
+        val image = File.createTempFile("comment_", ".jpg", imagesDir)
+        return FileProvider.getUriForFile(
+            context,
+            Constants.FILE_PROVIDER_AUTHORITY,
+            image
+        )
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success -> if (success) tempUri?.let { imagenNueva = it } }
     val snackbarHostState = remember { SnackbarHostState() }
     error?.let { msg ->
         LaunchedEffect(msg) {
@@ -335,6 +372,19 @@ fun NovedadesScreen(
                             }
                         )
                         DropdownMenuItem(
+                            text = { Text("Tomar foto") },
+                            onClick = {
+                                attachMenu = false
+                                if (hasCameraPermission) {
+                                    val uriTemp = createImageUri()
+                                    tempUri = uriTemp
+                                    cameraLauncher.launch(uriTemp)
+                                } else {
+                                    permissionLauncher.launch(Manifest.permission.CAMERA)
+                                }
+                            }
+                        )
+                        DropdownMenuItem(
                             text = { Text("CTPAT") },
                             onClick = {
                                 attachMenu = false
@@ -384,11 +434,11 @@ fun ComentarioItem(
     nivel: Int,
     destacados: Set<Int>,
     onToggleDestacado: (Int) -> Unit,
-    onResponder: (Int, String, android.net.Uri?) -> Unit
+    onResponder: (Int, String, Uri?) -> Unit
 ) {
     var responder by remember { mutableStateOf(false) }
     var texto by remember { mutableStateOf("") }
-    var imagenRespuesta by remember { mutableStateOf<android.net.Uri?>(null) }
+    var imagenRespuesta by remember { mutableStateOf<Uri?>(null) }
     var showImage by remember { mutableStateOf<String?>(null) }
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -557,64 +607,104 @@ private val ctpatItems = listOf(
     "Escape (cuerda firme, empaques bien grabados)"
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CtpatDialog(onDismiss: () -> Unit) {
     val estados = remember { ctpatItems.map { mutableStateOf<CtpatEstado?>(null) } }
     val observaciones = remember { ctpatItems.map { mutableStateOf("") } }
     var comentarioGeneral by remember { mutableStateOf("") }
-    val scrollState = rememberScrollState()
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.background
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .verticalScroll(scrollState)
-                    .fillMaxWidth()
-            ) {
-                ctpatItems.forEachIndexed { index, item ->
-                    Text(
-                        text = "${index + 1} $item",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = BrandOrange
-                    )
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        CtpatEstado.values().forEach { estado ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(
-                                    selected = estados[index].value == estado,
-                                    onClick = { estados[index].value = estado }
-                                )
-                                Text(estado.label)
+            Scaffold(
+                topBar = { SmallTopAppBar(title = { Text("Checklist de inspección") }) },
+                floatingActionButton = {
+                    FloatingActionButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Send, contentDescription = "Enviar")
+                    }
+                }
+            ) { innerPadding ->
+                LazyColumn(
+                    modifier = Modifier
+                        .padding(innerPadding)
+                        .fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    itemsIndexed(ctpatItems) { index, item ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth().animateContentSize(),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(4.dp)
+                        ) {
+                            Column(Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "${index + 1}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.primaryContainer
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = item,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = BrandOrange
+                                    )
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    CtpatEstado.values().forEach { estado ->
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            RadioButton(
+                                                selected = estados[index].value == estado,
+                                                onClick = { estados[index].value = estado }
+                                            )
+                                            val icon = when (estado) {
+                                                CtpatEstado.CONFORME -> Icons.Default.Check
+                                                CtpatEstado.NO_CONFORME -> Icons.Default.Close
+                                                CtpatEstado.NA -> Icons.Default.Remove
+                                            }
+                                            Icon(icon, contentDescription = estado.label)
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(estado.label)
+                                        }
+                                    }
+                                }
+                                if (estados[index].value == CtpatEstado.NO_CONFORME) {
+                                    Spacer(Modifier.height(8.dp))
+                                    OutlinedTextField(
+                                        value = observaciones[index].value,
+                                        onValueChange = { observaciones[index].value = it },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        placeholder = { Text("Observaciones") }
+                                    )
+                                }
                             }
                         }
                     }
-                    if (estados[index].value == CtpatEstado.NO_CONFORME) {
+                    item {
                         OutlinedTextField(
-                            value = observaciones[index].value,
-                            onValueChange = { observaciones[index].value = it },
+                            value = comentarioGeneral,
+                            onValueChange = { comentarioGeneral = it },
                             modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("Observaciones") }
+                            label = { Text("Comentario general") }
                         )
                     }
-                    Spacer(Modifier.height(8.dp))
-                }
-                OutlinedTextField(
-                    value = comentarioGeneral,
-                    onValueChange = { comentarioGeneral = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Comentario general") }
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("Cerrar") }
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(onClick = onDismiss) { Text("Cerrar") }
+                        }
+                    }
                 }
             }
         }
