@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.FlowRow
+import com.example.bitacoradigital.ui.theme.BrandOrange
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import androidx.compose.ui.draw.rotate
@@ -22,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
@@ -131,6 +136,7 @@ fun NovedadesScreen(
     }
     var nuevo by remember { mutableStateOf("") }
     var imagenNueva by remember { mutableStateOf<android.net.Uri?>(null) }
+    var showCtpatDialog by remember { mutableStateOf(false) }
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imagenNueva = uri }
@@ -313,10 +319,29 @@ fun NovedadesScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = { imageLauncher.launch("image/*") }) {
-                    Icon(Icons.Default.Image, contentDescription = null)
-                    Spacer(Modifier.width(4.dp))
-                    Text("Agregar imagen")
+                var attachMenu by remember { mutableStateOf(false) }
+                Box {
+                    TextButton(onClick = { attachMenu = true }) {
+                        Icon(Icons.Default.AttachFile, contentDescription = null)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Adjuntar")
+                    }
+                    DropdownMenu(expanded = attachMenu, onDismissRequest = { attachMenu = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Imagen") },
+                            onClick = {
+                                attachMenu = false
+                                imageLauncher.launch("image/*")
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("CTPAT") },
+                            onClick = {
+                                attachMenu = false
+                                showCtpatDialog = true
+                            }
+                        )
+                    }
                 }
                 Button(
                     onClick = {
@@ -330,6 +355,9 @@ fun NovedadesScreen(
                     Spacer(Modifier.width(8.dp))
                     Text("Publicar")
                 }
+            }
+            if (showCtpatDialog) {
+                CtpatDialog { showCtpatDialog = false }
             }
         }
     }
@@ -504,6 +532,91 @@ fun ComentarioItem(
         }
         showImage?.let { img ->
             FullScreenImageDialog(url = img) { showImage = null }
+        }
+    }
+}
+enum class CtpatEstado(val label: String) { CONFORME("Conforme"), NO_CONFORME("No conforme"), NA("N/A") }
+
+private val ctpatItems = listOf(
+    "Parachoques (revisión con linterna y espejo internos)",
+    "Motor (especialmente rincones, con linterna/espejo)",
+    "Llantas (incluye repuesto; vibración y revisión de huecos)",
+    "Piso del camión (sin personas ocultas; tapetes levantados)",
+    "Tanque de gasolina (golpeo para comprobar huecos, interior con linterna)",
+    "Compartimentos de almacenamiento (interior/exterior)",
+    "Tanques de aire (golpeo y revisión de soldaduras/marcas)",
+    "Ejes de accionamiento (sin reparaciones recientes, golpeo)",
+    "Quinta rueda (espacios limpios; área de batería segura)",
+    "Exteriores y chasis (uso de espejo en labio interno y luces traseras)",
+    "Puertas interior/exterior (funcionamiento de pernos y remaches)",
+    "Piso del tráiler (tablas planas y atornilladas)",
+    "Muros laterales (paneles sin daños, revisados con linterna)",
+    "Pared frontal (sin reparaciones recientes, sin paredes falsas)",
+    "Techo (altura y remaches en buena condición)",
+    "Unidad de refrigeración (contenido y estado interior con linterna)",
+    "Escape (cuerda firme, empaques bien grabados)"
+)
+
+@Composable
+fun CtpatDialog(onDismiss: () -> Unit) {
+    val estados = remember { ctpatItems.map { mutableStateOf<CtpatEstado?>(null) } }
+    val observaciones = remember { ctpatItems.map { mutableStateOf("") } }
+    var comentarioGeneral by remember { mutableStateOf("") }
+    val scrollState = rememberScrollState()
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .verticalScroll(scrollState)
+                    .fillMaxWidth()
+            ) {
+                ctpatItems.forEachIndexed { index, item ->
+                    Text(
+                        text = "${index + 1} $item",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = BrandOrange
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        CtpatEstado.values().forEach { estado ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                    selected = estados[index].value == estado,
+                                    onClick = { estados[index].value = estado }
+                                )
+                                Text(estado.label)
+                            }
+                        }
+                    }
+                    if (estados[index].value == CtpatEstado.NO_CONFORME) {
+                        OutlinedTextField(
+                            value = observaciones[index].value,
+                            onValueChange = { observaciones[index].value = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("Observaciones") }
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+                OutlinedTextField(
+                    value = comentarioGeneral,
+                    onValueChange = { comentarioGeneral = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Comentario general") }
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("Cerrar") }
+                }
+            }
         }
     }
 }
