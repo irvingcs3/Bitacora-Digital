@@ -8,12 +8,18 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.ui.zIndex
+import androidx.compose.foundation.layout.navigationBarsPadding
 import com.example.bitacoradigital.ui.theme.BrandOrange
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
@@ -21,6 +27,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.window.Dialog
 import kotlin.math.abs
 import androidx.compose.material.icons.Icons
@@ -37,6 +44,9 @@ import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.ZoomIn
+import kotlinx.coroutines.launch
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import android.Manifest
@@ -49,6 +59,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -147,6 +158,14 @@ fun NovedadesScreen(
     var nuevo by remember { mutableStateOf("") }
     var imagenNueva by remember { mutableStateOf<Uri?>(null) }
     var showCtpatDialog by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val showScrollToTop by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0 ||
+                    listState.firstVisibleItemScrollOffset > 0
+        }
+    }
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imagenNueva = uri }
@@ -203,8 +222,26 @@ fun NovedadesScreen(
                 onConfigClick = { navController.navigate("configuracion") }
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { innerPadding ->
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButtonPosition = FabPosition.End,
+        floatingActionButton = {
+            AnimatedVisibility(showScrollToTop) {
+                FloatingActionButton(
+                    onClick = {
+                        coroutineScope.launch { listState.animateScrollToItem(0) }
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .padding(bottom = 16.dp, end = 16.dp)
+                        .zIndex(1f)
+                ) {
+                    Icon(Icons.Default.ArrowUpward, contentDescription = "Ir al inicio")
+                }
+            }
+        }
+        ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -312,6 +349,7 @@ fun NovedadesScreen(
                         .fillMaxWidth()
                 ) {
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -417,12 +455,34 @@ fun NovedadesScreen(
 @Composable
 fun FullScreenImageDialog(url: String, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
-        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        val scale = remember { mutableStateOf(1f) }
+        val transformState = rememberTransformableState { zoomChange, _, _ ->
+            scale.value *= zoomChange
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
             AsyncImage(
                 model = url,
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(
+                        scaleX = scale.value,
+                        scaleY = scale.value
+                    )
+                    .transformable(transformState)
+            )
+            Icon(
+                Icons.Default.ZoomIn,
+                contentDescription = "Zoom",
+                tint = Color.White,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
             )
         }
     }
@@ -645,7 +705,7 @@ fun CtpatDialog(onDismiss: () -> Unit) {
                                     Text(
                                         text = "${index + 1}",
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.primaryContainer
+                                        color = BrandOrange
                                     )
                                     Spacer(Modifier.width(8.dp))
                                     Text(
