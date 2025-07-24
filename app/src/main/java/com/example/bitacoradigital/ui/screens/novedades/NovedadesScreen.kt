@@ -448,21 +448,21 @@ fun NovedadesScreen(
                             )
                         }
                     }
-                    if (showCtpatDialog) {
-                        CtpatDialog { showCtpatDialog = false }
+                    Button(
+                        onClick = {
+                            viewModel.publicarComentario(context, nuevo, imagenNueva, null)
+                            nuevo = ""
+                            imagenNueva = null
+                        },
+                        enabled = nuevo.isNotBlank()
+                    ) {
+                        Icon(Icons.Default.Send, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Publicar")
                     }
                 }
-                Button(
-                    onClick = {
-                        viewModel.publicarComentario(context, nuevo, imagenNueva, null)
-                        nuevo = ""
-                        imagenNueva = null
-                    },
-                    enabled = nuevo.isNotBlank()
-                ) {
-                    Icon(Icons.Default.Send, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Publicar")
+                if (showCtpatDialog) {
+                    CtpatDialog { showCtpatDialog = false }
                 }
             }
         }
