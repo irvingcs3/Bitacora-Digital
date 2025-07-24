@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -79,6 +80,63 @@ class NovedadesViewModel(
                         _comentarios.value = list
                     } else {
                         _error.value = "Error ${r.code}"
+                    }
+                }
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage
+            } finally {
+                _cargando.value = false
+            }
+        }
+    }
+
+    fun editarComentario(id: Int, contenido: String) {
+        viewModelScope.launch {
+            _cargando.value = true
+            try {
+                val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
+                val json = JSONObject().apply { put("contenido", contenido) }
+                val body = json.toString().toRequestBody("application/json".toMediaType())
+                val request = Request.Builder()
+                    .url("https://bit.cs3.mx/api/v1/novedad/${id}/")
+                    .patch(body)
+                    .addHeader("x-session-token", token)
+                    .addHeader("Content-Type", "application/json")
+                    .build()
+                val client = OkHttpClient()
+                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                response.use { resp ->
+                    if (resp.isSuccessful) {
+                        cargarComentarios()
+                    } else {
+                        _error.value = "Error ${resp.code}"
+                    }
+                }
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage
+            } finally {
+                _cargando.value = false
+            }
+        }
+    }
+
+    fun eliminarComentario(id: Int) {
+        viewModelScope.launch {
+            _cargando.value = true
+            try {
+                val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
+                val request = Request.Builder()
+                    .url("https://bit.cs3.mx/api/v1/novedad/${id}/")
+                    .delete()
+                    .addHeader("x-session-token", token)
+                    .build()
+                val client = OkHttpClient()
+                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                response.use { resp ->
+                    if (resp.isSuccessful) {
+                        cargarComentarios()
+                    } else {
+                        _error.value = "Error ${resp.code}"
                     }
                 }
             } catch (e: Exception) {

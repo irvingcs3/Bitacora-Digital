@@ -8,12 +8,18 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.ui.zIndex
+import androidx.compose.foundation.layout.navigationBarsPadding
 import com.example.bitacoradigital.ui.theme.BrandOrange
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
@@ -21,6 +27,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.window.Dialog
 import kotlin.math.abs
 import androidx.compose.material.icons.Icons
@@ -37,6 +44,11 @@ import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.ZoomIn
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Delete
+import kotlinx.coroutines.launch
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import android.Manifest
@@ -49,6 +61,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -98,6 +111,7 @@ fun autorColor(name: String): Color {
 @Composable
 fun NovedadesScreen(
     homeViewModel: HomeViewModel,
+    permisos: List<String>,
     navController: NavHostController
 ) {
     val perimetro = homeViewModel.perimetroSeleccionado.collectAsState().value?.perimetroId ?: return
@@ -109,6 +123,12 @@ fun NovedadesScreen(
     val cargando by viewModel.cargando.collectAsState()
     val error by viewModel.error.collectAsState()
     val destacados by viewModel.destacados.collectAsState()
+
+    val puedeResponder = "Responder Comentario" in permisos
+    val puedeEditar = "Editar Comentario" in permisos
+    val puedeEliminar = "Borrar Comentario" in permisos
+    val puedeVer = "Ver Novedades" in permisos
+    val puedePublicar = "Publicar Novedad" in permisos
 
     var filterText by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf(FilterType.CONTENIDO) }
@@ -131,14 +151,14 @@ fun NovedadesScreen(
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(Unit) {
-        viewModel.cargarComentarios()
+        if (puedeVer) viewModel.cargarComentarios()
     }
 
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.cargarComentarios()
+                if (puedeVer) viewModel.cargarComentarios()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -147,6 +167,14 @@ fun NovedadesScreen(
     var nuevo by remember { mutableStateOf("") }
     var imagenNueva by remember { mutableStateOf<Uri?>(null) }
     var showCtpatDialog by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val showScrollToTop by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0 ||
+                    listState.firstVisibleItemScrollOffset > 0
+        }
+    }
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imagenNueva = uri }
@@ -203,7 +231,25 @@ fun NovedadesScreen(
                 onConfigClick = { navController.navigate("configuracion") }
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButtonPosition = FabPosition.End,
+        floatingActionButton = {
+            AnimatedVisibility(showScrollToTop) {
+                FloatingActionButton(
+                    onClick = {
+                        coroutineScope.launch { listState.animateScrollToItem(0) }
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .padding(bottom = 16.dp, end = 16.dp)
+                        .zIndex(1f)
+                ) {
+                    Icon(Icons.Default.ArrowUpward, contentDescription = "Ir al inicio")
+                }
+            }
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -287,7 +333,9 @@ fun NovedadesScreen(
                 }
             }
             Spacer(Modifier.height(4.dp))
-            if (cargando) {
+            if (!puedeVer) {
+                Text("Sin permisos para ver novedades")
+            } else if (cargando) {
                 CircularProgressIndicator()
             } else if (filtrados.isEmpty()) {
                 Box(
@@ -312,6 +360,7 @@ fun NovedadesScreen(
                         .fillMaxWidth()
                 ) {
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -323,74 +372,84 @@ fun NovedadesScreen(
                                 onToggleDestacado = { viewModel.toggleDestacado(it) },
                                 onResponder = { id, texto, uri ->
                                     viewModel.publicarComentario(context, texto, uri, id)
-                                }
+                                },
+                                onEditar = { id, txt -> viewModel.editarComentario(id, txt) },
+                                onEliminar = { viewModel.eliminarComentario(it) },
+                                puedeResponder = puedeResponder,
+                                puedeEditar = puedeEditar,
+                                puedeEliminar = puedeEliminar
                             )
                         }
                     }
                 }
             }
-            OutlinedTextField(
-                value = nuevo,
-                onValueChange = { nuevo = it },
-                label = { Text("Nuevo comentario") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            imagenNueva?.let { uri ->
-                Spacer(Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    AsyncImage(
-                        model = uri,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(64.dp)
-                            .padding(end = 8.dp),
-                        contentScale = ContentScale.Crop
-                    )
-                    IconButton(onClick = { imagenNueva = null }) {
-                        Icon(Icons.Default.Close, contentDescription = null)
+            if (puedePublicar) {
+                OutlinedTextField(
+                    value = nuevo,
+                    onValueChange = { nuevo = it },
+                    label = { Text("Nuevo comentario") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                imagenNueva?.let { uri ->
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        AsyncImage(
+                            model = uri,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .padding(end = 8.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                        IconButton(onClick = { imagenNueva = null }) {
+                            Icon(Icons.Default.Close, contentDescription = null)
+                        }
                     }
                 }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                var attachMenu by remember { mutableStateOf(false) }
-                Box {
-                    TextButton(onClick = { attachMenu = true }) {
-                        Icon(Icons.Default.AttachFile, contentDescription = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Adjuntar")
-                    }
-                    DropdownMenu(expanded = attachMenu, onDismissRequest = { attachMenu = false }) {
-                        DropdownMenuItem(
-                            text = { Text("Imagen") },
-                            onClick = {
-                                attachMenu = false
-                                imageLauncher.launch("image/*")
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Tomar foto") },
-                            onClick = {
-                                attachMenu = false
-                                if (hasCameraPermission) {
-                                    val uriTemp = createImageUri()
-                                    tempUri = uriTemp
-                                    cameraLauncher.launch(uriTemp)
-                                } else {
-                                    permissionLauncher.launch(Manifest.permission.CAMERA)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    var attachMenu by remember { mutableStateOf(false) }
+                    Box {
+                        TextButton(onClick = { attachMenu = true }) {
+                            Icon(Icons.Default.AttachFile, contentDescription = null)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Adjuntar")
+                        }
+                        DropdownMenu(expanded = attachMenu, onDismissRequest = { attachMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Imagen") },
+                                onClick = {
+                                    attachMenu = false
+                                    imageLauncher.launch("image/*")
                                 }
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("CTPAT") },
-                            onClick = {
-                                attachMenu = false
-                                showCtpatDialog = true
-                            }
-                        )
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Tomar foto") },
+                                onClick = {
+                                    attachMenu = false
+                                    if (hasCameraPermission) {
+                                        val uriTemp = createImageUri()
+                                        tempUri = uriTemp
+                                        cameraLauncher.launch(uriTemp)
+                                    } else {
+                                        permissionLauncher.launch(Manifest.permission.CAMERA)
+                                    }
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("CTPAT") },
+                                onClick = {
+                                    attachMenu = false
+                                    showCtpatDialog = true
+                                }
+                            )
+                        }
+                    }
+                    if (showCtpatDialog) {
+                        CtpatDialog { showCtpatDialog = false }
                     }
                 }
                 Button(
@@ -406,9 +465,6 @@ fun NovedadesScreen(
                     Text("Publicar")
                 }
             }
-            if (showCtpatDialog) {
-                CtpatDialog { showCtpatDialog = false }
-            }
         }
     }
 }
@@ -417,12 +473,34 @@ fun NovedadesScreen(
 @Composable
 fun FullScreenImageDialog(url: String, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
-        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        val scale = remember { mutableStateOf(1f) }
+        val transformState = rememberTransformableState { zoomChange, _, _ ->
+            scale.value *= zoomChange
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
             AsyncImage(
                 model = url,
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(
+                        scaleX = scale.value,
+                        scaleY = scale.value
+                    )
+                    .transformable(transformState)
+            )
+            Icon(
+                Icons.Default.ZoomIn,
+                contentDescription = "Zoom",
+                tint = Color.White,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
             )
         }
     }
@@ -434,12 +512,20 @@ fun ComentarioItem(
     nivel: Int,
     destacados: Set<Int>,
     onToggleDestacado: (Int) -> Unit,
-    onResponder: (Int, String, Uri?) -> Unit
+    onResponder: (Int, String, Uri?) -> Unit,
+    onEditar: (Int, String) -> Unit,
+    onEliminar: (Int) -> Unit,
+    puedeResponder: Boolean,
+    puedeEditar: Boolean,
+    puedeEliminar: Boolean
 ) {
     var responder by remember { mutableStateOf(false) }
     var texto by remember { mutableStateOf("") }
     var imagenRespuesta by remember { mutableStateOf<Uri?>(null) }
     var showImage by remember { mutableStateOf<String?>(null) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var editDialog by remember { mutableStateOf(false) }
+    var editText by remember { mutableStateOf(comentario.contenido) }
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imagenRespuesta = uri }
@@ -458,7 +544,8 @@ fun ComentarioItem(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             elevation = CardDefaults.elevatedCardElevation(4.dp)
-        ) {
+        )
+        {
             Column(Modifier.padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (comentario.respuestas.isNotEmpty()) {
@@ -487,6 +574,19 @@ fun ComentarioItem(
                             imageVector = if (marcado) Icons.Default.Star else Icons.Default.StarBorder,
                             contentDescription = null
                         )                    }
+                    if (puedeEditar) {
+                        IconButton(onClick = {
+                            editText = comentario.contenido
+                            editDialog = true
+                        }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Editar")
+                        }
+                    }
+                    if (puedeEliminar) {
+                        IconButton(onClick = { confirmDelete = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                        }
+                    }
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -510,10 +610,12 @@ fun ComentarioItem(
                     )
                 }
                 Spacer(Modifier.height(4.dp))
-                TextButton(onClick = { responder = !responder }) {
-                    Text("Responder")
+                if (puedeResponder) {
+                    TextButton(onClick = { responder = !responder }) {
+                        Text("Responder")
+                    }
                 }
-                AnimatedVisibility(visible = responder, enter = fadeIn(), exit = fadeOut()) {
+                AnimatedVisibility(visible = responder && puedeResponder, enter = fadeIn(), exit = fadeOut()) {
                     Column {
                         OutlinedTextField(
                             value = texto,
@@ -565,6 +667,7 @@ fun ComentarioItem(
                 }
             }
         }
+
         AnimatedVisibility(visible = expandido) {
             Column {
                 Spacer(Modifier.height(8.dp))
@@ -574,7 +677,12 @@ fun ComentarioItem(
                         nivel = nivel + 1,
                         destacados = destacados,
                         onToggleDestacado = onToggleDestacado,
-                        onResponder = onResponder
+                        onResponder = onResponder,
+                        onEditar = onEditar,
+                        onEliminar = onEliminar,
+                        puedeResponder = puedeResponder,
+                        puedeEditar = puedeEditar,
+                        puedeEliminar = puedeEliminar
                     )
                     Spacer(Modifier.height(8.dp))
                 }
@@ -582,6 +690,40 @@ fun ComentarioItem(
         }
         showImage?.let { img ->
             FullScreenImageDialog(url = img) { showImage = null }
+        }
+        if (confirmDelete) {
+            AlertDialog(
+                onDismissRequest = { confirmDelete = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        onEliminar(comentario.id)
+                        confirmDelete = false
+                    }) { Text("Eliminar") }
+                },
+                dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } },
+                title = { Text("Eliminar comentario") },
+                text = { Text("¿Seguro que deseas eliminar este comentario?") }
+            )
+        }
+        if (editDialog) {
+            AlertDialog(
+                onDismissRequest = { editDialog = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        onEditar(comentario.id, editText)
+                        editDialog = false
+                    }) { Text("Guardar") }
+                },
+                dismissButton = { TextButton(onClick = { editDialog = false }) { Text("Cancelar") } },
+                title = { Text("Editar comentario") },
+                text = {
+                    OutlinedTextField(
+                        value = editText,
+                        onValueChange = { editText = it },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            )
         }
     }
 }
@@ -645,7 +787,7 @@ fun CtpatDialog(onDismiss: () -> Unit) {
                                     Text(
                                         text = "${index + 1}",
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.primaryContainer
+                                        color = BrandOrange
                                     )
                                     Spacer(Modifier.width(8.dp))
                                     Text(
