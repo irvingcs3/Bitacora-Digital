@@ -32,6 +32,7 @@ import androidx.navigation.NavHostController
 @Composable
 fun DestacadosScreen(
     homeViewModel: HomeViewModel,
+    permisos: List<String>,
     navController: NavHostController
 ) {
     val perimetro = homeViewModel.perimetroSeleccionado.collectAsState().value?.perimetroId ?: return
@@ -42,8 +43,13 @@ fun DestacadosScreen(
     val comentarios by viewModel.comentarios.collectAsState()
     val destacados by viewModel.destacados.collectAsState()
 
+    val puedeResponder = "Responder Comentario" in permisos
+    val puedeEditar = "Editar Comentario" in permisos
+    val puedeEliminar = "Borrar Comentario" in permisos
+    val puedeVer = "Ver Novedades" in permisos
+
     LaunchedEffect(Unit) {
-        viewModel.cargarComentarios()
+        if (puedeVer) viewModel.cargarComentarios()
     }
 
     val planos = remember(comentarios) {
@@ -75,7 +81,16 @@ fun DestacadosScreen(
             )
         }
     ) { innerPadding ->
-        if (planos.isEmpty()) {
+        if (!puedeVer) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Sin permisos para ver novedades")
+            }
+        } else if (planos.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -105,7 +120,10 @@ fun DestacadosScreen(
                             viewModel.publicarComentario(context, texto, uri, id)
                         },
                         onEditar = { id, txt -> viewModel.editarComentario(id, txt) },
-                        onEliminar = { viewModel.eliminarComentario(it) }
+                        onEliminar = { viewModel.eliminarComentario(it) },
+                        puedeResponder = puedeResponder,
+                        puedeEditar = puedeEditar,
+                        puedeEliminar = puedeEliminar
                     )
                 }
             }

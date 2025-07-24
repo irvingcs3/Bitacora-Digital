@@ -2,6 +2,8 @@
 
 package com.example.bitacoradigital.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,6 +42,7 @@ import com.example.bitacoradigital.viewmodel.DronGuardViewModel
 import androidx.compose.ui.platform.LocalContext
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
@@ -215,15 +218,19 @@ fun AppNavGraph(
         }
 
         composable("novedades") {
+            val permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Novedades") ?: emptyList()
             NovedadesScreen(
                 homeViewModel = homeViewModel,
+                permisos = permisos,
                 navController = navController
             )
         }
 
         composable("destacados") {
+            val permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Novedades") ?: emptyList()
             DestacadosScreen(
                 homeViewModel = homeViewModel,
+                permisos = permisos,
                 navController = navController
             )
         }

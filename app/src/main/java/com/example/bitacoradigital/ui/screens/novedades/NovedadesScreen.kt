@@ -111,6 +111,7 @@ fun autorColor(name: String): Color {
 @Composable
 fun NovedadesScreen(
     homeViewModel: HomeViewModel,
+    permisos: List<String>,
     navController: NavHostController
 ) {
     val perimetro = homeViewModel.perimetroSeleccionado.collectAsState().value?.perimetroId ?: return
@@ -122,6 +123,12 @@ fun NovedadesScreen(
     val cargando by viewModel.cargando.collectAsState()
     val error by viewModel.error.collectAsState()
     val destacados by viewModel.destacados.collectAsState()
+
+    val puedeResponder = "Responder Comentario" in permisos
+    val puedeEditar = "Editar Comentario" in permisos
+    val puedeEliminar = "Borrar Comentario" in permisos
+    val puedeVer = "Ver Novedades" in permisos
+    val puedePublicar = "Publicar Novedad" in permisos
 
     var filterText by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf(FilterType.CONTENIDO) }
@@ -144,14 +151,14 @@ fun NovedadesScreen(
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(Unit) {
-        viewModel.cargarComentarios()
+        if (puedeVer) viewModel.cargarComentarios()
     }
 
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.cargarComentarios()
+                if (puedeVer) viewModel.cargarComentarios()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -243,7 +250,7 @@ fun NovedadesScreen(
                 }
             }
         }
-        ) { innerPadding ->
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -326,7 +333,9 @@ fun NovedadesScreen(
                 }
             }
             Spacer(Modifier.height(4.dp))
-            if (cargando) {
+            if (!puedeVer) {
+                Text("Sin permisos para ver novedades")
+            } else if (cargando) {
                 CircularProgressIndicator()
             } else if (filtrados.isEmpty()) {
                 Box(
@@ -365,74 +374,82 @@ fun NovedadesScreen(
                                     viewModel.publicarComentario(context, texto, uri, id)
                                 },
                                 onEditar = { id, txt -> viewModel.editarComentario(id, txt) },
-                                onEliminar = { viewModel.eliminarComentario(it) }
+                                onEliminar = { viewModel.eliminarComentario(it) },
+                                puedeResponder = puedeResponder,
+                                puedeEditar = puedeEditar,
+                                puedeEliminar = puedeEliminar
                             )
                         }
                     }
                 }
             }
-            OutlinedTextField(
-                value = nuevo,
-                onValueChange = { nuevo = it },
-                label = { Text("Nuevo comentario") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            imagenNueva?.let { uri ->
-                Spacer(Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    AsyncImage(
-                        model = uri,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(64.dp)
-                            .padding(end = 8.dp),
-                        contentScale = ContentScale.Crop
-                    )
-                    IconButton(onClick = { imagenNueva = null }) {
-                        Icon(Icons.Default.Close, contentDescription = null)
+            if (puedePublicar) {
+                OutlinedTextField(
+                    value = nuevo,
+                    onValueChange = { nuevo = it },
+                    label = { Text("Nuevo comentario") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                imagenNueva?.let { uri ->
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        AsyncImage(
+                            model = uri,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .padding(end = 8.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                        IconButton(onClick = { imagenNueva = null }) {
+                            Icon(Icons.Default.Close, contentDescription = null)
+                        }
                     }
                 }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                var attachMenu by remember { mutableStateOf(false) }
-                Box {
-                    TextButton(onClick = { attachMenu = true }) {
-                        Icon(Icons.Default.AttachFile, contentDescription = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Adjuntar")
-                    }
-                    DropdownMenu(expanded = attachMenu, onDismissRequest = { attachMenu = false }) {
-                        DropdownMenuItem(
-                            text = { Text("Imagen") },
-                            onClick = {
-                                attachMenu = false
-                                imageLauncher.launch("image/*")
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Tomar foto") },
-                            onClick = {
-                                attachMenu = false
-                                if (hasCameraPermission) {
-                                    val uriTemp = createImageUri()
-                                    tempUri = uriTemp
-                                    cameraLauncher.launch(uriTemp)
-                                } else {
-                                    permissionLauncher.launch(Manifest.permission.CAMERA)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    var attachMenu by remember { mutableStateOf(false) }
+                    Box {
+                        TextButton(onClick = { attachMenu = true }) {
+                            Icon(Icons.Default.AttachFile, contentDescription = null)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Adjuntar")
+                        }
+                        DropdownMenu(expanded = attachMenu, onDismissRequest = { attachMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Imagen") },
+                                onClick = {
+                                    attachMenu = false
+                                    imageLauncher.launch("image/*")
                                 }
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("CTPAT") },
-                            onClick = {
-                                attachMenu = false
-                                showCtpatDialog = true
-                            }
-                        )
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Tomar foto") },
+                                onClick = {
+                                    attachMenu = false
+                                    if (hasCameraPermission) {
+                                        val uriTemp = createImageUri()
+                                        tempUri = uriTemp
+                                        cameraLauncher.launch(uriTemp)
+                                    } else {
+                                        permissionLauncher.launch(Manifest.permission.CAMERA)
+                                    }
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("CTPAT") },
+                                onClick = {
+                                    attachMenu = false
+                                    showCtpatDialog = true
+                                }
+                            )
+                        }
+                    }
+                    if (showCtpatDialog) {
+                        CtpatDialog { showCtpatDialog = false }
                     }
                 }
                 Button(
@@ -447,9 +464,6 @@ fun NovedadesScreen(
                     Spacer(Modifier.width(8.dp))
                     Text("Publicar")
                 }
-            }
-            if (showCtpatDialog) {
-                CtpatDialog { showCtpatDialog = false }
             }
         }
     }
@@ -500,7 +514,10 @@ fun ComentarioItem(
     onToggleDestacado: (Int) -> Unit,
     onResponder: (Int, String, Uri?) -> Unit,
     onEditar: (Int, String) -> Unit,
-    onEliminar: (Int) -> Unit
+    onEliminar: (Int) -> Unit,
+    puedeResponder: Boolean,
+    puedeEditar: Boolean,
+    puedeEliminar: Boolean
 ) {
     var responder by remember { mutableStateOf(false) }
     var texto by remember { mutableStateOf("") }
@@ -557,14 +574,18 @@ fun ComentarioItem(
                             imageVector = if (marcado) Icons.Default.Star else Icons.Default.StarBorder,
                             contentDescription = null
                         )                    }
-                    IconButton(onClick = {
-                        editText = comentario.contenido
-                        editDialog = true
-                    }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Editar")
+                    if (puedeEditar) {
+                        IconButton(onClick = {
+                            editText = comentario.contenido
+                            editDialog = true
+                        }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Editar")
+                        }
                     }
-                    IconButton(onClick = { confirmDelete = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                    if (puedeEliminar) {
+                        IconButton(onClick = { confirmDelete = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                        }
                     }
                 }
                 Spacer(Modifier.height(4.dp))
@@ -589,10 +610,12 @@ fun ComentarioItem(
                     )
                 }
                 Spacer(Modifier.height(4.dp))
-                TextButton(onClick = { responder = !responder }) {
-                    Text("Responder")
+                if (puedeResponder) {
+                    TextButton(onClick = { responder = !responder }) {
+                        Text("Responder")
+                    }
                 }
-                AnimatedVisibility(visible = responder, enter = fadeIn(), exit = fadeOut()) {
+                AnimatedVisibility(visible = responder && puedeResponder, enter = fadeIn(), exit = fadeOut()) {
                     Column {
                         OutlinedTextField(
                             value = texto,
@@ -656,7 +679,10 @@ fun ComentarioItem(
                         onToggleDestacado = onToggleDestacado,
                         onResponder = onResponder,
                         onEditar = onEditar,
-                        onEliminar = onEliminar
+                        onEliminar = onEliminar,
+                        puedeResponder = puedeResponder,
+                        puedeEditar = puedeEditar,
+                        puedeEliminar = puedeEliminar
                     )
                     Spacer(Modifier.height(8.dp))
                 }
