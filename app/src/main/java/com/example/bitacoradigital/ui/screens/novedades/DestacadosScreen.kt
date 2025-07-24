@@ -1,5 +1,7 @@
 package com.example.bitacoradigital.ui.screens.novedades
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,6 +27,7 @@ import com.example.bitacoradigital.viewmodel.NovedadesViewModel
 import com.example.bitacoradigital.viewmodel.NovedadesViewModelFactory
 import androidx.navigation.NavHostController
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DestacadosScreen(
@@ -100,7 +103,9 @@ fun DestacadosScreen(
                         onToggleDestacado = { viewModel.toggleDestacado(it) },
                         onResponder = { id, texto, uri ->
                             viewModel.publicarComentario(context, texto, uri, id)
-                        }
+                        },
+                        onEditar = { id, txt -> viewModel.editarComentario(id, txt) },
+                        onEliminar = { viewModel.eliminarComentario(it) }
                     )
                 }
             }

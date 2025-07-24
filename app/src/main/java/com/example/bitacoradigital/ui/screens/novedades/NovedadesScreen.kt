@@ -46,6 +46,8 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ZoomIn
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Delete
 import kotlinx.coroutines.launch
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -361,7 +363,9 @@ fun NovedadesScreen(
                                 onToggleDestacado = { viewModel.toggleDestacado(it) },
                                 onResponder = { id, texto, uri ->
                                     viewModel.publicarComentario(context, texto, uri, id)
-                                }
+                                },
+                                onEditar = { id, txt -> viewModel.editarComentario(id, txt) },
+                                onEliminar = { viewModel.eliminarComentario(it) }
                             )
                         }
                     }
@@ -494,12 +498,17 @@ fun ComentarioItem(
     nivel: Int,
     destacados: Set<Int>,
     onToggleDestacado: (Int) -> Unit,
-    onResponder: (Int, String, Uri?) -> Unit
+    onResponder: (Int, String, Uri?) -> Unit,
+    onEditar: (Int, String) -> Unit,
+    onEliminar: (Int) -> Unit
 ) {
     var responder by remember { mutableStateOf(false) }
     var texto by remember { mutableStateOf("") }
     var imagenRespuesta by remember { mutableStateOf<Uri?>(null) }
     var showImage by remember { mutableStateOf<String?>(null) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var editDialog by remember { mutableStateOf(false) }
+    var editText by remember { mutableStateOf(comentario.contenido) }
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imagenRespuesta = uri }
@@ -518,7 +527,8 @@ fun ComentarioItem(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             elevation = CardDefaults.elevatedCardElevation(4.dp)
-        ) {
+        )
+        {
             Column(Modifier.padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (comentario.respuestas.isNotEmpty()) {
@@ -547,6 +557,15 @@ fun ComentarioItem(
                             imageVector = if (marcado) Icons.Default.Star else Icons.Default.StarBorder,
                             contentDescription = null
                         )                    }
+                    IconButton(onClick = {
+                        editText = comentario.contenido
+                        editDialog = true
+                    }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Editar")
+                    }
+                    IconButton(onClick = { confirmDelete = true }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                    }
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -625,6 +644,7 @@ fun ComentarioItem(
                 }
             }
         }
+
         AnimatedVisibility(visible = expandido) {
             Column {
                 Spacer(Modifier.height(8.dp))
@@ -634,7 +654,9 @@ fun ComentarioItem(
                         nivel = nivel + 1,
                         destacados = destacados,
                         onToggleDestacado = onToggleDestacado,
-                        onResponder = onResponder
+                        onResponder = onResponder,
+                        onEditar = onEditar,
+                        onEliminar = onEliminar
                     )
                     Spacer(Modifier.height(8.dp))
                 }
@@ -642,6 +664,40 @@ fun ComentarioItem(
         }
         showImage?.let { img ->
             FullScreenImageDialog(url = img) { showImage = null }
+        }
+        if (confirmDelete) {
+            AlertDialog(
+                onDismissRequest = { confirmDelete = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        onEliminar(comentario.id)
+                        confirmDelete = false
+                    }) { Text("Eliminar") }
+                },
+                dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } },
+                title = { Text("Eliminar comentario") },
+                text = { Text("¿Seguro que deseas eliminar este comentario?") }
+            )
+        }
+        if (editDialog) {
+            AlertDialog(
+                onDismissRequest = { editDialog = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        onEditar(comentario.id, editText)
+                        editDialog = false
+                    }) { Text("Guardar") }
+                },
+                dismissButton = { TextButton(onClick = { editDialog = false }) { Text("Cancelar") } },
+                title = { Text("Editar comentario") },
+                text = {
+                    OutlinedTextField(
+                        value = editText,
+                        onValueChange = { editText = it },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            )
         }
     }
 }
