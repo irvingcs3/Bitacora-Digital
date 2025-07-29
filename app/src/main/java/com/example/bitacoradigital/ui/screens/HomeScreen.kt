@@ -93,6 +93,7 @@ fun HomeScreen(
                 val accesoMods = listOf("Códigos QR", "Registros de Visitas")
                 val guardiaMods = listOf("Guardia", "DronGuard")
                 val novedadesMods = listOf("Novedades")
+                val dronGuardMods = listOf("DronGuard")
 
                 val modulosVisibles = activo.modulos.keys.filterNot { it in ocultos }
 
@@ -100,6 +101,7 @@ fun HomeScreen(
                 val modsAcceso = modulosVisibles.filter { it in accesoMods }
                 val modsGuardia = modulosVisibles.filter {it in guardiaMods}
                 val modsNovedades = modulosVisibles.filter {it in novedadesMods}
+                val modsDronGuard = modulosVisibles.filter { it in dronGuardMods }
 
                 Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     if (modsPerimetro.isNotEmpty()) {
@@ -175,7 +177,6 @@ fun HomeScreen(
                                     ModuleButton(title = modulo, icon = icon) {
                                         when (modulo) {
                                             "Guardia" -> navController.navigate("guardia")
-                                            "DronGuard" -> navController.navigate("dronguard")
                                             else -> {}
                                         }
                                     }
@@ -199,6 +200,29 @@ fun HomeScreen(
                                     ModuleButton(title = modulo, icon = icon) {
                                         when (modulo) {
                                             "Novedades" -> navController.navigate("novedades")
+                                            else -> {}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (modsDronGuard.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text("DronGuard", style = MaterialTheme.typography.titleMedium)
+                                modsDronGuard.forEach { modulo ->
+                                    val icon = moduloIcon(modulo)
+                                    ModuleButton(title = modulo, icon = icon) {
+                                        when (modulo) {
+                                            "DronGuard" -> navController.navigate("dronGuard")
                                             else -> {}
                                         }
                                     }

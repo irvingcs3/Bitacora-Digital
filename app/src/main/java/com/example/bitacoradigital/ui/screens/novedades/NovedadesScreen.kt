@@ -762,7 +762,7 @@ fun CtpatDialog(onDismiss: () -> Unit) {
             color = MaterialTheme.colorScheme.background
         ) {
             Scaffold(
-                topBar = { SmallTopAppBar(title = { Text("Checklist de inspección") }) },
+                topBar = { TopAppBar(title = { Text("Checklist de inspección") }) },
                 floatingActionButton = {
                     FloatingActionButton(onClick = onDismiss) {
                         Icon(Icons.Default.Send, contentDescription = "Enviar")
