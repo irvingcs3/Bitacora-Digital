@@ -91,7 +91,7 @@ fun HomeScreen(
 
                 val perimetroMods = listOf("Dashboard", "Perímetro", "Residentes", "Accesos")
                 val accesoMods = listOf("Códigos QR", "Registros de Visitas")
-                val guardiaMods = listOf("Guardia", "DronGuard")
+                val guardiaMods = listOf("Guardia")
                 val novedadesMods = listOf("Novedades")
                 val dronGuardMods = listOf("DronGuard")
 

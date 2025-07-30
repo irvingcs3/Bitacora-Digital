@@ -33,6 +33,7 @@ import com.example.bitacoradigital.ui.screens.residentes.ResidentesScreen
 import com.example.bitacoradigital.ui.screens.novedades.NovedadesScreen
 import com.example.bitacoradigital.ui.screens.novedades.DestacadosScreen
 import com.example.bitacoradigital.ui.screens.guardia.DronGuardScreen
+import com.example.bitacoradigital.ui.screens.guardia.GuardiaScreen
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
@@ -200,6 +201,11 @@ fun AppNavGraph(
                 navController = navController
             )
         }
+        composable("guardia") {
+            val permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Guardia") ?: emptyList()
+            GuardiaScreen(permisos = permisos, navController = navController)
+        }
+
 
         composable("home") {
             HomeScreen(
