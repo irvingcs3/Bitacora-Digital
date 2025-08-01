@@ -151,6 +151,11 @@ fun AppNavGraph(
             RegistroVisitaWizardScreen(perimetroId = perimetroId, navController = navController)
         }
 
+        composable("bitacora/general") {
+            val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
+            RegistroBitacoraGeneralWizardScreen(perimetroId = perimetroId, navController = navController)
+        }
+
         composable("visitas/qr") {
             val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
             RegistroQRScreen(perimetroId = perimetroId, navController = navController)

@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material3.*
 import androidx.compose.animation.animateContentSize
 import androidx.compose.runtime.Composable
@@ -66,6 +67,16 @@ fun VisitasScreen(
                 descripcion = "Escanea códigos QR de acceso rápido con verificación automática.",
                 color = MaterialTheme.colorScheme.primary,
                 onClick = { navController.navigate("visitas/qr") }
+            )
+        }
+
+        if ("bitacora general" in permisos) {
+            PermisoCard(
+                icon = Icons.Default.ListAlt,
+                titulo = "Bitácora General",
+                descripcion = "Registra entradas de bitácora general.",
+                color = MaterialTheme.colorScheme.primary,
+                onClick = { navController.navigate("bitacora/general") }
             )
         }
 
