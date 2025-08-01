@@ -91,6 +91,7 @@ fun HomeScreen(
 
                 val perimetroMods = listOf("Dashboard", "Perímetro", "Residentes", "Accesos")
                 val accesoMods = listOf("Códigos QR", "Registros de Visitas")
+                val lomasMods = listOf("Lomas Country")
                 val guardiaMods = listOf("Guardia")
                 val novedadesMods = listOf("Novedades")
                 val dronGuardMods = listOf("DronGuard")
@@ -99,6 +100,7 @@ fun HomeScreen(
 
                 val modsPerimetro = modulosVisibles.filter { it in perimetroMods }
                 val modsAcceso = modulosVisibles.filter { it in accesoMods }
+                val modsLomas = modulosVisibles.filter { it in lomasMods }
                 val modsGuardia = modulosVisibles.filter {it in guardiaMods}
                 val modsNovedades = modulosVisibles.filter {it in novedadesMods}
                 val modsDronGuard = modulosVisibles.filter { it in dronGuardMods }
@@ -157,6 +159,23 @@ fun HomeScreen(
                                             else -> {}
                                         }
                                     }
+                                }
+                            }
+                        }
+                    }
+                    if (modsLomas.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text("LomasCountry", style = MaterialTheme.typography.titleMedium)
+                                ModuleButton(title = "Registros de Visitas", icon = moduloIcon("Registros de Visitas")) {
+                                    navController.navigate("lomascountry")
                                 }
                             }
                         }

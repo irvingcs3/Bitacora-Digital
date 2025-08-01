@@ -22,6 +22,8 @@ import androidx.navigation.compose.composable
 import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.network.ApiService
 import com.example.bitacoradigital.ui.screens.*
+import com.example.bitacoradigital.ui.screens.LomasCountryVisitasScreen
+import com.example.bitacoradigital.ui.screens.RegistroVisitaLCWizardScreen
 import com.example.bitacoradigital.ui.screens.RegistroQRScreen
 import com.example.bitacoradigital.ui.screens.perimetro.PerimetrosScreen
 import com.example.bitacoradigital.ui.screens.qr.CodigosQRScreen
@@ -152,6 +154,20 @@ fun AppNavGraph(
         }
 
         composable("visitas/qr") {
+            val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
+            RegistroQRScreen(perimetroId = perimetroId, navController = navController)
+        }
+
+        composable("lomascountry") {
+            LomasCountryVisitasScreen(navController = navController)
+        }
+
+        composable("lomascountry/manual") {
+            val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
+            RegistroVisitaLCWizardScreen(perimetroId = perimetroId, navController = navController)
+        }
+
+        composable("lomascountry/qr") {
             val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
             RegistroQRScreen(perimetroId = perimetroId, navController = navController)
         }
