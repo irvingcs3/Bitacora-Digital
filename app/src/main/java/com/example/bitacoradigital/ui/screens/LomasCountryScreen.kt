@@ -49,7 +49,7 @@ fun LomasCountryScreen(
         )
 
         if ("Registrar Visitas" in permisos) {
-            PermisoCard(
+            PermisoCardLC(
                 icon = Icons.Default.PersonAdd,
                 titulo = "Registrar Visitas",
                 descripcion = "Captura datos completos de visitantes, proveedores o delivery.",
@@ -59,7 +59,7 @@ fun LomasCountryScreen(
         }
 
         if ("Registro por QR" in permisos) {
-            PermisoCard(
+            PermisoCardLC(
                 icon = Icons.Default.QrCodeScanner,
                 titulo = "Registro por QR",
                 descripcion = "Escanea códigos QR de acceso rápido con verificación automática.",
@@ -74,7 +74,7 @@ fun LomasCountryScreen(
 }
 
 @Composable
-fun PermisoCard(
+fun PermisoCardLC(
     icon: ImageVector,
     titulo: String,
     descripcion: String,
@@ -146,7 +146,7 @@ fun PermisoCard(
 }
 
 @Composable
-fun RegistrarVisitaManualScreen() {
+fun RegistrarVisitaManualScreenLC() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text("Pantalla: Registrar Visita Manual")
     }
