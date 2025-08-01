@@ -90,7 +90,7 @@ fun HomeScreen(
                 )
 
                 val perimetroMods = listOf("Dashboard", "Perímetro", "Residentes", "Accesos")
-                val accesoMods = listOf("Códigos QR", "Registros de Visitas")
+                val accesoMods = listOf("Códigos QR", "Registros de Visitas", "Bitácora General")
                 val guardiaMods = listOf("Guardia")
                 val novedadesMods = listOf("Novedades")
                 val dronGuardMods = listOf("DronGuard")
@@ -154,6 +154,7 @@ fun HomeScreen(
                                             "Dashboard" -> navController.navigate("dashboard")
                                             "Accesos" -> navController.navigate("accesos")
                                             "Residentes" -> navController.navigate("residentes")
+                                            "Bitácora General" -> navController.navigate("bitacora/general")
                                             else -> {}
                                         }
                                     }
