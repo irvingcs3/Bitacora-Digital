@@ -83,6 +83,7 @@ class RegistroVisitaViewModel(
     val apellidoMaterno = MutableStateFlow("")
 
     val destinoSeleccionado = MutableStateFlow<JerarquiaNodo?>(null)
+    val destinoLibre = MutableStateFlow("")
 
     // Ruta de navegación dentro de la jerarquía
     private val _rutaDestino = MutableStateFlow<List<JerarquiaNodo>>(emptyList())
@@ -116,6 +117,7 @@ class RegistroVisitaViewModel(
         apellidoPaterno.value = ""
         apellidoMaterno.value = ""
         destinoSeleccionado.value = null
+        destinoLibre.value = ""
         _rutaDestino.value = emptyList()
         fotosOpcionales.value = emptyList()
         respuestaRegistro.value = null
