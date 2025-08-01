@@ -125,6 +125,7 @@ fun HomeScreen(
                                             "Dashboard" -> navController.navigate("dashboard")
                                             "Accesos" -> navController.navigate("accesos")
                                             "Residentes" -> navController.navigate("residentes")
+                                            "Bitácora General" -> navController.navigate("bitacora/general")
                                             else -> {}
                                         }
                                     }

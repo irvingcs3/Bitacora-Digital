@@ -71,6 +71,7 @@ fun VisitasScreen(
         }
 
         if (permisos.any { it.equals("bitacora general", ignoreCase = true) || it.equals("bitácora general", ignoreCase = true) }) {
+
             PermisoCard(
                 icon = Icons.Default.ListAlt,
                 titulo = "Bitácora General",
