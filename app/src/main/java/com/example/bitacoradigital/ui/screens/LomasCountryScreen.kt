@@ -61,7 +61,7 @@ fun LomasCountryScreen(
                     titulo = "Generar Código QR",
                     descripcion = "Crea una invitación para acceso por QR",
                     color = MaterialTheme.colorScheme.primary,
-                    onClick = { navController.navigate("qr/generar") }
+                    onClick = { navController.navigate("lomascountry/qr/generar") }
                 )
             }
         }

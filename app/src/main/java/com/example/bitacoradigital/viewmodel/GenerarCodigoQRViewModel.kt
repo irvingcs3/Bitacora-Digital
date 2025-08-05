@@ -17,7 +17,10 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 
-class GenerarCodigoQRViewModel(private val prefs: SessionPreferences) : ViewModel() {
+class GenerarCodigoQRViewModel(
+    private val prefs: SessionPreferences,
+    private val perimetroId: Int? = null
+) : ViewModel() {
     val telefono = MutableStateFlow("")
     val caducidad = MutableStateFlow("")
     private val _mensaje = MutableStateFlow<String?>(null)
@@ -38,6 +41,8 @@ class GenerarCodigoQRViewModel(private val prefs: SessionPreferences) : ViewMode
                     put("id_invitante", id)
                     put("telefono_invitado", telefono.value)
                     put("cad", cadDias)
+                    perimetroId?.let { put("id_perimetro", it) }
+
                 }
                 val body = json.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder()
@@ -63,11 +68,14 @@ class GenerarCodigoQRViewModel(private val prefs: SessionPreferences) : ViewMode
     }
 }
 
-class GenerarCodigoQRViewModelFactory(private val prefs: SessionPreferences) : ViewModelProvider.Factory {
+class GenerarCodigoQRViewModelFactory(
+    private val prefs: SessionPreferences,
+    private val perimetroId: Int? = null
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(GenerarCodigoQRViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return GenerarCodigoQRViewModel(prefs) as T
+            return GenerarCodigoQRViewModel(prefs, perimetroId) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -39,7 +39,7 @@ fun RegistroVisitaWizardScreen(
     val sessionPrefs = remember { SessionPreferences(context) }
 
     val viewModel: RegistroVisitaViewModel = viewModel(
-        factory = RegistroVisitaViewModelFactory(apiService, sessionPrefs, perimetroId)
+        factory = RegistroVisitaViewModelFactory(apiService, sessionPrefs, perimetroId, isLomasCountry)
     )
 
     val pasoActual by viewModel.pasoActual.collectAsState()

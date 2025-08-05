@@ -163,16 +163,15 @@ fun AppNavGraph(
         }
 
         composable("lomascountry/manual") {
-            val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
             RegistroVisitaWizardScreen(
-                perimetroId = perimetroId,
+                perimetroId = 4158,
                 navController = navController,
                 isLomasCountry = true
-            )        }
+            )
+        }
 
         composable("lomascountry/qr") {
-            val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
-            RegistroQRScreen(perimetroId = perimetroId, navController = navController)
+            RegistroQRScreen(perimetroId = 4158, navController = navController)
         }
 
 
@@ -195,6 +194,10 @@ fun AppNavGraph(
 
         composable("qr/generar") {
             GenerarCodigoQRScreen(navController)
+        }
+
+        composable("lomascountry/qr/generar") {
+            GenerarCodigoQRScreen(navController, perimetroId = 4158)
         }
 
         composable("perimetros") {
