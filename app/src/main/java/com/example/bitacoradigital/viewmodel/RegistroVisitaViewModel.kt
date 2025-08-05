@@ -268,7 +268,7 @@ class RegistroVisitaViewModel(
     val residentesDestino = MutableStateFlow<List<Residente>>(emptyList())
     val cargandoResidentes = MutableStateFlow(false)
     val errorResidentes = MutableStateFlow<String?>(null)
-    val invitanteId = MutableStateFlow<Int?>(if (isLomasCountry) 334 else null)
+    val invitanteId = MutableStateFlow(if (isLomasCountry) 334 else null)
 
     fun agregarFoto(uri: Uri) {
         if (fotosAdicionales.value.size < 3) {
@@ -426,6 +426,7 @@ class RegistroVisitaViewModel(
                         // Enviar QR y whatsapp
                         val personaId = if (isLomasCountry) 334 else invitanteId.value ?: 0
                         val ineUri = documentoUri.value
+                            ?: if (isLomasCountry) fotosAdicionales.value.firstOrNull() else null
                         var qrMsg: String? = null
                         var qrImg: Bitmap? = null
                         if (ineUri != null) {
