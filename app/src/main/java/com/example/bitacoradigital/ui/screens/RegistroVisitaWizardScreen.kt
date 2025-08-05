@@ -29,7 +29,11 @@ import androidx.navigation.NavHostController
 
 
 @Composable
-fun RegistroVisitaWizardScreen(perimetroId: Int, navController: NavHostController) {
+fun RegistroVisitaWizardScreen(
+    perimetroId: Int,
+    navController: NavHostController,
+    isLomasCountry: Boolean = false
+) {
     val context = LocalContext.current
     val apiService = remember { ApiService.create() }
     val sessionPrefs = remember { SessionPreferences(context) }
@@ -60,7 +64,7 @@ fun RegistroVisitaWizardScreen(perimetroId: Int, navController: NavHostControlle
         Spacer(Modifier.height(24.dp))
 
         when (pasoActual) {
-            1 -> PasoTelefono(viewModel)
+            1 -> PasoTelefono(viewModel, isLomasCountry)
             2 -> PasoDocumento(viewModel)
             3 -> PasoVerificacion(viewModel)
             4 -> PasoDestino(viewModel)

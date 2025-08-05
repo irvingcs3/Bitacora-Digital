@@ -119,7 +119,7 @@ fun HomeScreen(
                                     val icon = moduloIcon(modulo)
                                     ModuleButton(title = modulo, icon = icon) {
                                         when (modulo) {
-                                            "Registros de Visitas" -> navController.navigate("visitas"),
+                                            "Registros de Visitas" -> navController.navigate("visitas")
                                             "Lomas Country" -> navController.navigate("lomascountry")
                                             "Perímetro" -> navController.navigate("perimetros")
                                             "Códigos QR" -> navController.navigate("qr")

@@ -164,8 +164,11 @@ fun AppNavGraph(
 
         composable("lomascountry/manual") {
             val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
-            RegistroVisitaWizardScreen(perimetroId = perimetroId, navController = navController)
-        }
+            RegistroVisitaWizardScreen(
+                perimetroId = perimetroId,
+                navController = navController,
+                isLomasCountry = true
+            )        }
 
         composable("lomascountry/qr") {
             val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
