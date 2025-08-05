@@ -60,18 +60,18 @@ fun RegistroVisitaWizardScreen(
             .padding(innerPadding)
             .padding(16.dp)
     ) {
-        Stepper(pasoActual, totalPasos = 8)
+        Stepper(pasoActual, totalPasos = if (isLomasCountry) 7 else 8)
         Spacer(Modifier.height(24.dp))
 
         when (pasoActual) {
             1 -> PasoTelefono(viewModel, isLomasCountry)
-            2 -> PasoDocumento(viewModel)
-            3 -> PasoVerificacion(viewModel)
-            4 -> PasoDestino(viewModel)
-            5 -> PasoFotos(viewModel)
-            6 -> PasoConfirmacion(viewModel)
-            7 -> PasoAutorizacion(viewModel)
-            8 -> PasoFinal(viewModel, navController)
+            2 -> if (isLomasCountry) PasoVerificacion(viewModel) else PasoDocumento(viewModel)
+            3 -> if (isLomasCountry) PasoDestino(viewModel) else PasoVerificacion(viewModel)
+            4 -> if (isLomasCountry) PasoFotos(viewModel) else PasoDestino(viewModel)
+            5 -> if (isLomasCountry) PasoConfirmacion(viewModel) else PasoFotos(viewModel)
+            6 -> if (isLomasCountry) PasoAutorizacion(viewModel) else PasoConfirmacion(viewModel)
+            7 -> if (isLomasCountry) PasoFinal(viewModel, navController) else PasoAutorizacion(viewModel)
+            8 -> if (!isLomasCountry) PasoFinal(viewModel, navController)
         }
     }
     }

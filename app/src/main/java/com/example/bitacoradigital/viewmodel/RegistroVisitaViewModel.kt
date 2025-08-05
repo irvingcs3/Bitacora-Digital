@@ -75,6 +75,30 @@ class RegistroVisitaViewModel(
         }
     }
 
+    suspend fun cargarDatosCredencial() = withContext(Dispatchers.IO) {
+        try {
+            val client = OkHttpClient()
+            val body = "".toRequestBody("application/json".toMediaType())
+            val request = Request.Builder()
+                .url("http://192.168.100.8:3000/api/credencial/")
+                .post(body)
+                .build()
+            val response = client.newCall(request).execute()
+            response.use { resp ->
+                if (resp.isSuccessful) {
+                    val json = JSONObject(resp.body?.string() ?: "{}")
+                    nombre.value = json.optString("nombre")
+                    apellidoPaterno.value = json.optString("paterno")
+                    apellidoMaterno.value = json.optString("materno")
+                } else {
+                    Log.e("RegistroVisita", "Error cargando credencial: ${'$'}{resp.code}")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("RegistroVisita", "Error cargando credencial", e)
+        }
+    }
+
     var tipoDocumento = MutableStateFlow<String?>(null)
     var fotoDocumentoUri = MutableStateFlow<String?>(null)
 
