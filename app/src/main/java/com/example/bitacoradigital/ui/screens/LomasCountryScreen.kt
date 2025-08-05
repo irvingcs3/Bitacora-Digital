@@ -39,7 +39,7 @@ fun LomasCountryScreen(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            if ("Registrar Visitas" in permisos) {
+            if ("bitacora general" in permisos) {
                 PermisoCard(
                     icon = Icons.Default.PersonAdd,
                     titulo = "Registrar Visitas",
@@ -47,9 +47,7 @@ fun LomasCountryScreen(
                     color = MaterialTheme.colorScheme.primary,
                     onClick = { navController.navigate("lomascountry/manual") }
                 )
-            }
 
-            if ("Registro por QR" in permisos) {
                 PermisoCard(
                     icon = Icons.Default.QrCodeScanner,
                     titulo = "Registro por QR",
@@ -57,9 +55,7 @@ fun LomasCountryScreen(
                     color = MaterialTheme.colorScheme.primary,
                     onClick = { navController.navigate("lomascountry/qr") }
                 )
-            }
 
-            if ("Generar Código QR" in permisos) {
                 PermisoCard(
                     icon = Icons.Default.QrCode,
                     titulo = "Generar Código QR",
