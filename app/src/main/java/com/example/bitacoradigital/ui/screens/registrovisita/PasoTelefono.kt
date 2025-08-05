@@ -86,27 +86,39 @@ fun PasoTelefono(viewModel: RegistroVisitaViewModel, isLomasCountry: Boolean = f
                     coroutineScope.launch {
                         verificacionFallida = false
                         val existe = viewModel.verificarNumeroWhatsApp(telefono)
-                        cargando = false
                         if (existe) {
                             viewModel.numeroVerificado.value = true
+                            if (isLomasCountry) {
+                                viewModel.cargarDatosCredencial()
+                            }
                             viewModel.avanzarPaso()
                         } else {
                             mensajeError = "Número inválido o no verificado en WhatsApp"
                             verificacionFallida = true
                         }
+                        cargando = false
                     }
                 },
                 enabled = !cargando,
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(4.dp, shape = MaterialTheme.shapes.medium)
-            ) { 
+            ) {
                 Text(if (cargando) "Verificando..." else "Verificar número")
             }
             if (verificacionFallida) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = { viewModel.avanzarPaso() },
+                    onClick = {
+                        coroutineScope.launch {
+                            if (isLomasCountry) {
+                                cargando = true
+                                viewModel.cargarDatosCredencial()
+                                cargando = false
+                            }
+                            viewModel.avanzarPaso()
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .shadow(4.dp, shape = MaterialTheme.shapes.medium)
