@@ -185,6 +185,7 @@ class RegistroVisitaViewModel(
         residentesDestino.value = emptyList()
         invitanteId.value = if (isLomasCountry) 334 else null
         _codigoErrorCredencial.value = null
+
     }
     val nivelesDestino = MutableStateFlow<List<NivelDestino>>(emptyList())
     val seleccionDestino = MutableStateFlow<Map<Int, OpcionDestino>>(emptyMap())
@@ -315,6 +316,7 @@ class RegistroVisitaViewModel(
     val cargandoResidentes = MutableStateFlow(false)
     val errorResidentes = MutableStateFlow<String?>(null)
     val invitanteId = MutableStateFlow(if (isLomasCountry) 334 else null)
+
 
     fun agregarFoto(uri: Uri) {
         if (fotosAdicionales.value.size < 3) {
@@ -525,6 +527,68 @@ class RegistroVisitaViewModel(
                         if (!isLomasCountry) {
                             qrBitmap.value = qrImg
                         }
+                        registroCompleto.value = true
+                    } else {
+                        val errorBody = withContext(Dispatchers.IO) { resp.body?.string() }
+                        Log.e("RegistroVisita", "Error en el registro: $errorBody")
+                        _errorDestino.value = "Registro fallido: ${resp.code}"
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e("RegistroVisita", "Excepción en el registro", e)
+                _errorDestino.value = "Error al registrar visita: ${e.localizedMessage}"
+            } finally {
+                _cargandoRegistro.value = false
+            }
+        }
+    }
+
+    fun registrarBitacoraGeneral(context: android.content.Context) {
+        viewModelScope.launch {
+            _cargandoRegistro.value = true
+            try {
+                val token = withContext(Dispatchers.IO) {
+                    sessionPrefs.sessionToken.first()
+                } ?: throw Exception("Token vacío")
+
+                val zonaId = destinoSeleccionado.value?.perimetro_id
+                    ?: throw Exception("Zona destino no seleccionada")
+
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }
+                val fechaIso8601 = dateFormat.format(Date())
+
+                val json = org.json.JSONObject().apply {
+                    put("nombre", nombre.value)
+                    put("apellido_pat", apellidoPaterno.value)
+                    put("apellido_mat", apellidoMaterno.value)
+                    put("numero", telefono.value)
+                    put("id_perimetro", zonaId)
+                    put("fecha", fechaIso8601)
+                    put("general", destinoGeneral.value)
+                }
+
+                val mediaType = "application/json; charset=utf-8".toMediaType()
+                val body = json.toString().toRequestBody(mediaType)
+
+                val request = Request.Builder()
+                    .url("https://bit.cs3.mx/api/v1/registro-visita/")
+                    .post(body)
+                    .addHeader("x-session-token", token)
+                    .addHeader("Content-Type", "application/json")
+                    .build()
+
+                val client = OkHttpClient()
+                val response = withContext(Dispatchers.IO) {
+                    client.newCall(request).execute()
+                }
+
+                response.use { resp ->
+                    if (resp.isSuccessful) {
+                        val bodyStr = withContext(Dispatchers.IO) { resp.body?.string() }
+                        respuestaRegistro.value = bodyStr
                         registroCompleto.value = true
                     } else {
                         val errorBody = withContext(Dispatchers.IO) { resp.body?.string() }
