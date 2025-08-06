@@ -163,11 +163,7 @@ fun AppNavGraph(
         }
 
         composable("lomascountry/manual") {
-            RegistroVisitaWizardScreen(
-                perimetroId = 4158,
-                navController = navController,
-                isLomasCountry = true
-            )
+            RegistroVisitaWizardScreen(perimetroId = 4158, navController = navController, isLomasCountry = true)
         }
 
         composable("lomascountry/qr") {
