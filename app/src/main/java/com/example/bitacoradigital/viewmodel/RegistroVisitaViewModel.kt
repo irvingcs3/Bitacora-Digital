@@ -96,7 +96,7 @@ class RegistroVisitaViewModel(
                     nombre.value = cred.optString("nombre")
                     apellidoPaterno.value = cred.optString("paterno")
                     apellidoMaterno.value = cred.optString("materno")
-                    val qrBase64 = json.optString("imagen_binaria")
+                    val qrBase64 = cred.optString("crop_credencial_base64")
                     fotoDocumentoUri.value = qrBase64
                     try {
                         val data = Base64.decode(qrBase64, Base64.DEFAULT)
@@ -121,6 +121,16 @@ class RegistroVisitaViewModel(
     val apellidoMaterno = MutableStateFlow("")
 
     val destinoSeleccionado = MutableStateFlow<JerarquiaNodo?>(null)
+    init {
+        if (isLomasCountry) {
+            destinoSeleccionado.value = JerarquiaNodo(
+                perimetro_id = perimetroId,
+                nombre = "Torniquete",
+                nivel = 0,
+                children = emptyList()
+            )
+        }
+    }
 
     // Ruta de navegación dentro de la jerarquía
     private val _rutaDestino = MutableStateFlow<List<JerarquiaNodo>>(emptyList())
@@ -153,7 +163,11 @@ class RegistroVisitaViewModel(
         nombre.value = ""
         apellidoPaterno.value = ""
         apellidoMaterno.value = ""
-        destinoSeleccionado.value = null
+        destinoSeleccionado.value = if (isLomasCountry) {
+            JerarquiaNodo(perimetroId, "Torniquete", 0, emptyList())
+        } else {
+            null
+        }
         _rutaDestino.value = emptyList()
         fotosOpcionales.value = emptyList()
         respuestaRegistro.value = null
@@ -236,7 +250,7 @@ class RegistroVisitaViewModel(
                     nombre.value = cred.optString("nombre")
                     apellidoPaterno.value = cred.optString("paterno")
                     apellidoMaterno.value = cred.optString("materno")
-                    val qrBase64 = cred.optString("crop_credencial_base64")
+                    val qrBase64 = json.optString("imagen_binario")
                     fotoDocumentoUri.value = qrBase64
                     try {
                         val data = Base64.decode(qrBase64, Base64.DEFAULT)
