@@ -185,6 +185,8 @@ class RegistroVisitaViewModel(
         residentesDestino.value = emptyList()
         invitanteId.value = if (isLomasCountry) 334 else null
         _codigoErrorCredencial.value = null
+        registroCompleto.value = false
+
     }
     val nivelesDestino = MutableStateFlow<List<NivelDestino>>(emptyList())
     val seleccionDestino = MutableStateFlow<Map<Int, OpcionDestino>>(emptyMap())
@@ -423,10 +425,13 @@ class RegistroVisitaViewModel(
         }
     }
 
-    fun registrarVisita(context: android.content.Context) {
-        viewModelScope.launch {
+    fun registrarVisita(
+        context: android.content.Context,
+        onComplete: (Boolean) -> Unit = {}
+    ) {        viewModelScope.launch {
             _cargandoRegistro.value = true
-            try {
+        var success = false
+        try {
                 val token = withContext(Dispatchers.IO) {
                     sessionPrefs.sessionToken.first()
                 } ?: throw Exception("Token vacío")
@@ -526,6 +531,7 @@ class RegistroVisitaViewModel(
                             qrBitmap.value = qrImg
                         }
                         registroCompleto.value = true
+                        success = true
                     } else {
                         val errorBody = withContext(Dispatchers.IO) { resp.body?.string() }
                         Log.e("RegistroVisita", "Error en el registro: $errorBody")
@@ -538,7 +544,9 @@ class RegistroVisitaViewModel(
                 _errorDestino.value = "Error al registrar visita: ${e.localizedMessage}"
             } finally {
                 _cargandoRegistro.value = false
-            }
+                onComplete(success)
+
+        }
         }
     }
 
