@@ -46,8 +46,10 @@ fun PasoFinal(viewModel: RegistroVisitaViewModel, navController: NavHostControll
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        respuesta?.let {
-            Text(it, fontSize = 20.sp)
+        if (!viewModel.isLomasCountry) {
+            respuesta?.let {
+                Text(it, fontSize = 20.sp)
+            }
         }
 
         qrBitmap?.let { bmp ->

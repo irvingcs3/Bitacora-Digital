@@ -64,7 +64,7 @@ fun RegistroVisitaWizardScreen(
         Spacer(Modifier.height(24.dp))
 
         when (pasoActual) {
-            1 -> PasoTelefono(viewModel, isLomasCountry)
+            1 -> PasoTelefono(viewModel, navController, isLomasCountry)
             2 -> if (isLomasCountry) PasoVerificacion(viewModel) else PasoDocumento(viewModel)
             3 -> if (isLomasCountry) PasoConfirmacion(viewModel) else PasoVerificacion(viewModel)
             4 -> if (isLomasCountry) PasoFinal(viewModel, navController) else PasoDestino(viewModel)

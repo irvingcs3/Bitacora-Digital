@@ -17,11 +17,15 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
 import kotlinx.coroutines.launch
+import androidx.navigation.NavHostController
+
 
 @Composable
-fun PasoTelefono(viewModel: RegistroVisitaViewModel, isLomasCountry: Boolean = false) {
+fun PasoTelefono(viewModel: RegistroVisitaViewModel, navController: NavHostController, isLomasCountry: Boolean = false) {
     val telefono by viewModel.telefono.collectAsState()
     val verificado by viewModel.numeroVerificado.collectAsState()
+    val codigoError by viewModel.codigoErrorCredencial.collectAsState()
+
 
     var cargando by remember { mutableStateOf(false) }
     var mensajeError by remember { mutableStateOf<String?>(null) }
@@ -88,10 +92,10 @@ fun PasoTelefono(viewModel: RegistroVisitaViewModel, isLomasCountry: Boolean = f
                         val existe = viewModel.verificarNumeroWhatsApp(telefono)
                         if (existe) {
                             viewModel.numeroVerificado.value = true
-                            if (isLomasCountry) {
-                                viewModel.cargarDatosCredencial()
+                            val credOk = if (isLomasCountry) viewModel.cargarDatosCredencial() else true
+                            if (credOk) {
+                                viewModel.avanzarPaso()
                             }
-                            viewModel.avanzarPaso()
                         } else {
                             mensajeError = "Número inválido o no verificado en WhatsApp"
                             verificacionFallida = true
@@ -144,6 +148,26 @@ fun PasoTelefono(viewModel: RegistroVisitaViewModel, isLomasCountry: Boolean = f
             }
         }
     }
-    SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+
+        if (codigoError == 422) {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text("La credencial no se ve claramente") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.reiniciar()
+                        viewModel.limpiarErrorCredencial()
+                    }) { Text("Reintentar") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        viewModel.reiniciar()
+                        viewModel.limpiarErrorCredencial()
+                        navController.navigate("home") { popUpTo("home") { inclusive = true } }
+                    }) { Text("Cancelar") }
+                }
+            )
+        }
     }
 }

@@ -39,7 +39,7 @@ class RegistroVisitaViewModel(
     private val apiService: ApiService,
     private val sessionPrefs: SessionPreferences,
     private val perimetroId: Int,
-    private val isLomasCountry: Boolean = false
+    val isLomasCountry: Boolean = false
 
 ) : ViewModel() {
     val documentoUri = mutableStateOf<Uri?>(null)
@@ -51,6 +51,13 @@ class RegistroVisitaViewModel(
     // Datos recolectados
     var telefono = MutableStateFlow("")
     var numeroVerificado = MutableStateFlow(false)
+
+    private val _codigoErrorCredencial = MutableStateFlow<Int?>(null)
+    val codigoErrorCredencial: StateFlow<Int?> = _codigoErrorCredencial
+
+    fun limpiarErrorCredencial() {
+        _codigoErrorCredencial.value = null
+    }
 
     suspend fun verificarNumeroWhatsApp(numero: String): Boolean = withContext(Dispatchers.IO) {
         try {
@@ -77,12 +84,10 @@ class RegistroVisitaViewModel(
         }
     }
 
-    suspend fun cargarDatosCredencial() = withContext(Dispatchers.IO) {
+    suspend fun cargarDatosCredencial(): Boolean = withContext(Dispatchers.IO) {
         try {
             val client = OkHttpClient()
-            val payload = JSONObject().apply {
-                put("telefono", telefono.value)
-            }
+            val payload = JSONObject().apply { put("telefono", telefono.value) }
             val body = payload.toString().toRequestBody("application/json".toMediaType())
             val request = Request.Builder()
                 .url("http://192.168.100.8:3000/api/credencial/")
@@ -90,13 +95,13 @@ class RegistroVisitaViewModel(
                 .build()
             val response = client.newCall(request).execute()
             response.use { resp ->
-                if (resp.isSuccessful) {
+                return@withContext if (resp.isSuccessful) {
                     val json = JSONObject(resp.body?.string() ?: "{}")
                     val cred = json.optJSONObject("credential_recognition") ?: json
                     nombre.value = cred.optString("nombre")
                     apellidoPaterno.value = cred.optString("paterno")
                     apellidoMaterno.value = cred.optString("materno")
-                    val qrBase64 = cred.optString("crop_credencial_base64")
+                    val qrBase64 = json.optString("imagen_binaria")
                     fotoDocumentoUri.value = qrBase64
                     try {
                         val data = Base64.decode(qrBase64, Base64.DEFAULT)
@@ -104,12 +109,18 @@ class RegistroVisitaViewModel(
                     } catch (e: Exception) {
                         Log.e("RegistroVisita", "Error decoding QR", e)
                     }
+                    true
                 } else {
+                    if (resp.code == 422) {
+                        _codigoErrorCredencial.value = 422
+                    }
                     Log.e("RegistroVisita", "Error cargando credencial: ${resp.code}")
+                    false
                 }
             }
         } catch (e: Exception) {
             Log.e("RegistroVisita", "Error cargando credencial", e)
+            false
         }
     }
 
@@ -173,6 +184,7 @@ class RegistroVisitaViewModel(
         respuestaRegistro.value = null
         residentesDestino.value = emptyList()
         invitanteId.value = if (isLomasCountry) 334 else null
+        _codigoErrorCredencial.value = null
     }
     val nivelesDestino = MutableStateFlow<List<NivelDestino>>(emptyList())
     val seleccionDestino = MutableStateFlow<Map<Int, OpcionDestino>>(emptyMap())
