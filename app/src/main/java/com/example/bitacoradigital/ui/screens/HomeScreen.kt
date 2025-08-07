@@ -90,7 +90,7 @@ fun HomeScreen(
                 )
 
                 val perimetroMods = listOf("Dashboard", "Perímetro", "Residentes", "Accesos")
-                val accesoMods = listOf("Códigos QR", "Registros de Visitas")
+                val accesoMods = listOf("Códigos QR", "Registros de Visitas", "Lomas Country")
                 val guardiaMods = listOf("Guardia")
                 val novedadesMods = listOf("Novedades")
                 val dronGuardMods = listOf("DronGuard")
@@ -120,6 +120,7 @@ fun HomeScreen(
                                     ModuleButton(title = modulo, icon = icon) {
                                         when (modulo) {
                                             "Registros de Visitas" -> navController.navigate("visitas")
+                                            "Lomas Country" -> navController.navigate("lomascountry")
                                             "Perímetro" -> navController.navigate("perimetros")
                                             "Códigos QR" -> navController.navigate("qr")
                                             "Dashboard" -> navController.navigate("dashboard")
@@ -149,6 +150,7 @@ fun HomeScreen(
                                     ModuleButton(title = modulo, icon = icon) {
                                         when (modulo) {
                                             "Registros de Visitas" -> navController.navigate("visitas")
+                                            "Lomas Country" -> navController.navigate("lomascountry")
                                             "Perímetro" -> navController.navigate("perimetros")
                                             "Códigos QR" -> navController.navigate("qr")
                                             "Dashboard" -> navController.navigate("dashboard")

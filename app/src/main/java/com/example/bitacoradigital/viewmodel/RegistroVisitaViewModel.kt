@@ -38,7 +38,9 @@ import java.util.TimeZone
 class RegistroVisitaViewModel(
     private val apiService: ApiService,
     private val sessionPrefs: SessionPreferences,
-    private val perimetroId: Int
+    private val perimetroId: Int,
+    val isLomasCountry: Boolean = false
+
 ) : ViewModel() {
     val documentoUri = mutableStateOf<Uri?>(null)
 
@@ -49,6 +51,13 @@ class RegistroVisitaViewModel(
     // Datos recolectados
     var telefono = MutableStateFlow("")
     var numeroVerificado = MutableStateFlow(false)
+
+    private val _codigoErrorCredencial = MutableStateFlow<Int?>(null)
+    val codigoErrorCredencial: StateFlow<Int?> = _codigoErrorCredencial
+
+    fun limpiarErrorCredencial() {
+        _codigoErrorCredencial.value = null
+    }
 
     suspend fun verificarNumeroWhatsApp(numero: String): Boolean = withContext(Dispatchers.IO) {
         try {
@@ -75,6 +84,46 @@ class RegistroVisitaViewModel(
         }
     }
 
+    suspend fun cargarDatosCredencial(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val client = OkHttpClient()
+            val payload = JSONObject().apply { put("telefono", telefono.value) }
+            val body = payload.toString().toRequestBody("application/json".toMediaType())
+            val request = Request.Builder()
+                .url("http://192.168.100.8:3000/api/credencial/")
+                .post(body)
+                .build()
+            val response = client.newCall(request).execute()
+            response.use { resp ->
+                return@withContext if (resp.isSuccessful) {
+                    val json = JSONObject(resp.body?.string() ?: "{}")
+                    val cred = json.optJSONObject("credential_recognition") ?: json
+                    nombre.value = cred.optString("nombre")
+                    apellidoPaterno.value = cred.optString("paterno")
+                    apellidoMaterno.value = cred.optString("materno")
+                    val qrBase64 = json.optString("imagen_binaria")
+                    fotoDocumentoUri.value = qrBase64
+                    try {
+                        val data = Base64.decode(qrBase64, Base64.DEFAULT)
+                        qrBitmap.value = BitmapFactory.decodeByteArray(data, 0, data.size)
+                    } catch (e: Exception) {
+                        Log.e("RegistroVisita", "Error decoding QR", e)
+                    }
+                    true
+                } else {
+                    if (resp.code == 422) {
+                        _codigoErrorCredencial.value = 422
+                    }
+                    Log.e("RegistroVisita", "Error cargando credencial: ${resp.code}")
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("RegistroVisita", "Error cargando credencial", e)
+            false
+        }
+    }
+
     var tipoDocumento = MutableStateFlow<String?>(null)
     var fotoDocumentoUri = MutableStateFlow<String?>(null)
 
@@ -83,6 +132,16 @@ class RegistroVisitaViewModel(
     val apellidoMaterno = MutableStateFlow("")
 
     val destinoSeleccionado = MutableStateFlow<JerarquiaNodo?>(null)
+    init {
+        if (isLomasCountry) {
+            destinoSeleccionado.value = JerarquiaNodo(
+                perimetro_id = perimetroId,
+                nombre = "Torniquete",
+                nivel = 0,
+                children = emptyList()
+            )
+        }
+    }
 
     // Ruta de navegación dentro de la jerarquía
     private val _rutaDestino = MutableStateFlow<List<JerarquiaNodo>>(emptyList())
@@ -115,12 +174,19 @@ class RegistroVisitaViewModel(
         nombre.value = ""
         apellidoPaterno.value = ""
         apellidoMaterno.value = ""
-        destinoSeleccionado.value = null
+        destinoSeleccionado.value = if (isLomasCountry) {
+            JerarquiaNodo(perimetroId, "Torniquete", 0, emptyList())
+        } else {
+            null
+        }
         _rutaDestino.value = emptyList()
         fotosOpcionales.value = emptyList()
         respuestaRegistro.value = null
         residentesDestino.value = emptyList()
-        invitanteId.value = null
+        invitanteId.value = if (isLomasCountry) 334 else null
+        _codigoErrorCredencial.value = null
+        registroCompleto.value = false
+
     }
     val nivelesDestino = MutableStateFlow<List<NivelDestino>>(emptyList())
     val seleccionDestino = MutableStateFlow<Map<Int, OpcionDestino>>(emptyMap())
@@ -179,6 +245,48 @@ class RegistroVisitaViewModel(
         _errorReconocimiento.value = null
     }
 
+    suspend fun obtenerCredencialLomasCountry(): Boolean {
+        _cargandoReconocimiento.value = true
+        _errorReconocimiento.value = null
+        return try {
+            val empty = ByteArray(0).toRequestBody(null, 0, 0)
+            val request = Request.Builder()
+                .url("http://192.168.100.8:3000/api/credencial/")
+                .post(empty)
+                .build()
+            val client = OkHttpClient()
+            val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+            response.use { resp ->
+                if (resp.isSuccessful) {
+                    val jsonStr = resp.body?.string()
+                    val json = JSONObject(jsonStr ?: "{}")
+                    val cred = json.optJSONObject("credential_recognition") ?: json
+                    nombre.value = cred.optString("nombre")
+                    apellidoPaterno.value = cred.optString("paterno")
+                    apellidoMaterno.value = cred.optString("materno")
+                    val qrBase64 = json.optString("imagen_binario")
+                    fotoDocumentoUri.value = qrBase64
+                    try {
+                        val data = Base64.decode(qrBase64, Base64.DEFAULT)
+                        qrBitmap.value = BitmapFactory.decodeByteArray(data, 0, data.size)
+                    } catch (e: Exception) {
+                        Log.e("RegistroVisita", "Error decoding QR", e)
+                    }
+                    true
+                } else {
+                    _errorReconocimiento.value = "Error ${resp.code}"
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("RegistroVisita", "Error obteniendo credencial", e)
+            _errorReconocimiento.value = e.localizedMessage
+            false
+        } finally {
+            _cargandoReconocimiento.value = false
+        }
+    }
+
     private val _cargandoRegistro = MutableStateFlow(false)
     val cargandoRegistro: StateFlow<Boolean> = _cargandoRegistro
 
@@ -208,7 +316,7 @@ class RegistroVisitaViewModel(
     val residentesDestino = MutableStateFlow<List<Residente>>(emptyList())
     val cargandoResidentes = MutableStateFlow(false)
     val errorResidentes = MutableStateFlow<String?>(null)
-    val invitanteId = MutableStateFlow<Int?>(null)
+    val invitanteId = MutableStateFlow(if (isLomasCountry) 334 else null)
 
     fun agregarFoto(uri: Uri) {
         if (fotosAdicionales.value.size < 3) {
@@ -317,10 +425,13 @@ class RegistroVisitaViewModel(
         }
     }
 
-    fun registrarVisita(context: android.content.Context) {
-        viewModelScope.launch {
+    fun registrarVisita(
+        context: android.content.Context,
+        onComplete: (Boolean) -> Unit = {}
+    ) {        viewModelScope.launch {
             _cargandoRegistro.value = true
-            try {
+        var success = false
+        try {
                 val token = withContext(Dispatchers.IO) {
                     sessionPrefs.sessionToken.first()
                 } ?: throw Exception("Token vacío")
@@ -340,6 +451,7 @@ class RegistroVisitaViewModel(
                     put("numero", telefono.value)
                     put("id_perimetro", zonaId)
                     put("fecha", fechaIso8601)
+                    fotoDocumentoUri.value?.let { put("foto_credencial", it) }
                 }
 
                 val mediaType = "application/json; charset=utf-8".toMediaType()
@@ -362,12 +474,13 @@ class RegistroVisitaViewModel(
                         val bodyStr = withContext(Dispatchers.IO) { resp.body?.string() }
                         Log.d("RegistroVisita", "Registro exitoso: $bodyStr")
 
-                        // Enviar QR y whatsapp
-                        val personaId = invitanteId.value ?: 0
+                        // Enviar QR y whatsapp solo para registros normales
+                        val personaId = if (isLomasCountry) 334 else invitanteId.value ?: 0
                         val ineUri = documentoUri.value
+                            ?: if (isLomasCountry) fotosAdicionales.value.firstOrNull() else null
                         var qrMsg: String? = null
-                        var qrImg: Bitmap? = null
-                        if (ineUri != null) {
+                        var qrImg: Bitmap? = if (isLomasCountry) qrBitmap.value else null
+                        if (!isLomasCountry && ineUri != null) {
                             try {
                                 val bytes = withContext(Dispatchers.IO) {
                                     context.contentResolver.openInputStream(ineUri)?.use { it.readBytes() }
@@ -377,6 +490,7 @@ class RegistroVisitaViewModel(
                                         .addFormDataPart("id_invitante", personaId.toString())
                                         .addFormDataPart("telefono_invitado", telefono.value)
                                         .addFormDataPart("dias_activacion", "1")
+                                        .addFormDataPart("id_perimetro", perimetroId.toString())
                                         .addFormDataPart(
                                             "imagen",
                                             "ine.jpg",
@@ -413,8 +527,11 @@ class RegistroVisitaViewModel(
                         }
 
                         respuestaRegistro.value = qrMsg ?: bodyStr
-                        qrBitmap.value = qrImg
+                        if (!isLomasCountry) {
+                            qrBitmap.value = qrImg
+                        }
                         registroCompleto.value = true
+                        success = true
                     } else {
                         val errorBody = withContext(Dispatchers.IO) { resp.body?.string() }
                         Log.e("RegistroVisita", "Error en el registro: $errorBody")
@@ -427,7 +544,9 @@ class RegistroVisitaViewModel(
                 _errorDestino.value = "Error al registrar visita: ${e.localizedMessage}"
             } finally {
                 _cargandoRegistro.value = false
-            }
+                onComplete(success)
+
+        }
         }
     }
 

@@ -9,17 +9,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.example.bitacoradigital.viewmodel.RegistroVisitaViewModel
 import kotlinx.coroutines.launch
+import androidx.navigation.NavHostController
+
 
 @Composable
-fun PasoTelefono(viewModel: RegistroVisitaViewModel) {
+fun PasoTelefono(viewModel: RegistroVisitaViewModel, navController: NavHostController, isLomasCountry: Boolean = false) {
     val telefono by viewModel.telefono.collectAsState()
     val verificado by viewModel.numeroVerificado.collectAsState()
+    val codigoError by viewModel.codigoErrorCredencial.collectAsState()
+
 
     var cargando by remember { mutableStateOf(false) }
     var mensajeError by remember { mutableStateOf<String?>(null) }
@@ -28,29 +34,52 @@ fun PasoTelefono(viewModel: RegistroVisitaViewModel) {
 
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(isLomasCountry) {
+        if (isLomasCountry) {
+            focusRequester.requestFocus()
+            keyboardController?.show()
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
-                .fillMaxWidth()
-                .padding(16.dp)
+                .then(
+                    if (isLomasCountry) Modifier.fillMaxSize().padding(32.dp)
+                    else Modifier.fillMaxWidth().padding(16.dp)
+                )
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-        Text("Paso 1: Verificación de teléfono", style = MaterialTheme.typography.titleLarge)
-        Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                "Paso 1: Verificación de teléfono",
+                style = if (isLomasCountry)
+                    MaterialTheme.typography.headlineMedium
+                else
+                    MaterialTheme.typography.titleLarge
+            )
+            Spacer(modifier = Modifier.height(if (isLomasCountry) 24.dp else 16.dp))
 
         OutlinedTextField(
             value = telefono,
             onValueChange = { viewModel.telefono.value = it },
             label = { Text("Número de WhatsApp") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            modifier = Modifier.fillMaxWidth()
+            textStyle = if (isLomasCountry) MaterialTheme.typography.headlineMedium else LocalTextStyle.current,
+            singleLine = isLomasCountry,
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (isLomasCountry) Modifier.height(80.dp).focusRequester(focusRequester)
+                    else Modifier
+                )
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(if (isLomasCountry) 24.dp else 16.dp))
 
         if (!verificado) {
             Button(
@@ -61,27 +90,39 @@ fun PasoTelefono(viewModel: RegistroVisitaViewModel) {
                     coroutineScope.launch {
                         verificacionFallida = false
                         val existe = viewModel.verificarNumeroWhatsApp(telefono)
-                        cargando = false
                         if (existe) {
                             viewModel.numeroVerificado.value = true
-                            viewModel.avanzarPaso()
+                            val credOk = if (isLomasCountry) viewModel.cargarDatosCredencial() else true
+                            if (credOk) {
+                                viewModel.avanzarPaso()
+                            }
                         } else {
                             mensajeError = "Número inválido o no verificado en WhatsApp"
                             verificacionFallida = true
                         }
+                        cargando = false
                     }
                 },
                 enabled = !cargando,
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(4.dp, shape = MaterialTheme.shapes.medium)
-            ) { 
+            ) {
                 Text(if (cargando) "Verificando..." else "Verificar número")
             }
             if (verificacionFallida) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = { viewModel.avanzarPaso() },
+                    onClick = {
+                        coroutineScope.launch {
+                            if (isLomasCountry) {
+                                cargando = true
+                                viewModel.cargarDatosCredencial()
+                                cargando = false
+                            }
+                            viewModel.avanzarPaso()
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .shadow(4.dp, shape = MaterialTheme.shapes.medium)
@@ -107,6 +148,26 @@ fun PasoTelefono(viewModel: RegistroVisitaViewModel) {
             }
         }
     }
-    SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+
+        if (codigoError == 422) {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text("La credencial no se ve claramente") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.reiniciar()
+                        viewModel.limpiarErrorCredencial()
+                    }) { Text("Reintentar") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        viewModel.reiniciar()
+                        viewModel.limpiarErrorCredencial()
+                        navController.navigate("home") { popUpTo("home") { inclusive = true } }
+                    }) { Text("Cancelar") }
+                }
+            )
+        }
     }
 }

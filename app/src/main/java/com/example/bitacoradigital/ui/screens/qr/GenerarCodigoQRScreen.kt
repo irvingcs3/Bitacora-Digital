@@ -22,10 +22,12 @@ import com.example.bitacoradigital.ui.components.HomeConfigNavBar
 import androidx.navigation.NavHostController
 
 @Composable
-fun GenerarCodigoQRScreen(navController: NavHostController) {
+fun GenerarCodigoQRScreen(navController: NavHostController, perimetroId: Int? = null) {
     val context = LocalContext.current
     val prefs = remember { SessionPreferences(context) }
-    val viewModel: GenerarCodigoQRViewModel = viewModel(factory = GenerarCodigoQRViewModelFactory(prefs))
+    val viewModel: GenerarCodigoQRViewModel = viewModel(
+        factory = GenerarCodigoQRViewModelFactory(prefs, perimetroId)
+    )
 
     val telefono by viewModel.telefono.collectAsState()
     val caducidad by viewModel.caducidad.collectAsState()
