@@ -27,6 +27,7 @@ import com.example.bitacoradigital.ui.screens.perimetro.PerimetrosScreen
 import com.example.bitacoradigital.ui.screens.qr.CodigosQRScreen
 import com.example.bitacoradigital.ui.screens.qr.GenerarCodigoQRScreen
 import com.example.bitacoradigital.ui.screens.qr.SeguimientoQRScreen
+import com.example.bitacoradigital.ui.screens.handheld.EscaneoHandheldScreen
 import com.example.bitacoradigital.ui.screens.dashboard.DashboardScreen
 import com.example.bitacoradigital.ui.screens.accesos.AccesosScreen
 import com.example.bitacoradigital.ui.screens.residentes.ResidentesScreen
@@ -168,6 +169,10 @@ fun AppNavGraph(
 
         composable("lomascountry/qr") {
             RegistroQRScreen(perimetroId = 4158, navController = navController)
+        }
+
+        composable("lomascountry/handheld") {
+            EscaneoHandheldScreen(perimetroId = 4158, navController = navController)
         }
 
 
