@@ -4,7 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.util.Base64
 import android.util.Log
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -47,6 +50,9 @@ class EscaneoHandheldViewModel(
 
     private val _resultado = MutableStateFlow<String?>(null)
     val resultado: StateFlow<String?> = _resultado.asStateFlow()
+
+    val imagenCrop = MutableStateFlow<Bitmap?>(null)
+    val mostrandoImagen = MutableStateFlow(false)
 
     val networkError = MutableStateFlow(false)
 
@@ -114,7 +120,22 @@ class EscaneoHandheldViewModel(
                         Log.d(TAG, "Respuesta exitosa: $resStr")
                         val obj = JSONObject(resStr ?: "{}")
                         val estado = obj.optString("estado", null)
-                        _resultado.value = estado ?: obj.optString("error", "error")
+                        if (!estado.isNullOrBlank()) {
+                            _resultado.value = estado
+                        } else {
+                            val detalle = obj.optJSONObject("detalle")
+                            val estadoDetalle = detalle?.optString("estado")
+                            _resultado.value = when (estadoDetalle) {
+                                "invalido" -> "no permitido"
+                                null -> obj.optString("error", "error")
+                                else -> estadoDetalle
+                            }
+                        }
+
+                        obj.optString("crop")?.takeIf { it.isNotBlank() }?.let { base ->
+                            val bytes = Base64.decode(base, Base64.DEFAULT)
+                            imagenCrop.value = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                        }
                     } else {
                         Log.d(TAG, "Error ${'$'}{resp.code}")
                         _resultado.value = "error"
@@ -127,6 +148,12 @@ class EscaneoHandheldViewModel(
                 _cargando.value = false
             }
         }
+    }
+
+    fun reiniciar() {
+        _resultado.value = null
+        imagenCrop.value = null
+        mostrandoImagen.value = false
     }
 }
 
