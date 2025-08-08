@@ -56,7 +56,7 @@ class SeguimientoQRViewModel(
 
     private suspend fun cargarInfo(token: String) {
         val request = Request.Builder()
-            .url("https://bitacora.cs3.mx/api/v1/siguiente-checkpoint/?id_invitacion=${idInvitacion}")
+            .url("https://bit.cs3.mx/api/v1/siguiente-checkpoint/?id_invitacion=${idInvitacion}")
             .get()
             .addHeader("x-session-token", token)
             .build()
@@ -89,7 +89,7 @@ class SeguimientoQRViewModel(
 
     private suspend fun cargarHistorial(token: String) {
         val request = Request.Builder()
-            .url("https://bitacora.cs3.mx/api/v1/checkpoints/seguimiento-qr/?id_invitacion=${idInvitacion}")
+            .url("https://bit.cs3.mx/api/v1/checkpoints/seguimiento-qr/?id_invitacion=${idInvitacion}")
             .get()
             .addHeader("x-session-token", token)
             .build()

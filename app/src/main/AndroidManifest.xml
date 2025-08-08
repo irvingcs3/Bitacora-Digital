@@ -42,15 +42,21 @@
 
         <receiver
             android:name=".scanner.DataWedgeReceiver"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
+                <!-- MISMA acción que configuraste en DataWedge -->
                 <action android:name="com.symbol.datawedge.data" />
+                <!-- Opcional: si también quieres resultados del API de DataWedge -->
+                <action android:name="com.symbol.datawedge.api.RESULT_ACTION" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
+
+
     </application>
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="com.symbol.datawedge.permission.BROADCAST" />
 
 
 </manifest>
