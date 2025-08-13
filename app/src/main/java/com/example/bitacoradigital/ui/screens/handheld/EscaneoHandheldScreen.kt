@@ -102,9 +102,9 @@ fun EscaneoHandheldScreen(perimetroId: Int, navController: NavHostController) {
                     text = res
                 )
             }
-            if (networkError) {
+            networkError?.let { err ->
                 Text(
-                    text = "Error de red",
+                    text = err,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
                     color = MaterialTheme.colorScheme.error
                 )
