@@ -93,7 +93,6 @@ fun EscaneoHandheldScreen(perimetroId: Int, navController: NavHostController) {
                         viewModel.mostrandoImagen.value = true
                     } else {
                         viewModel.reiniciar()
-                        navController.navigate("lomascountry") { popUpTo("lomascountry") { inclusive = true } }
                     }
                 }
                 CanvasOverlay(
