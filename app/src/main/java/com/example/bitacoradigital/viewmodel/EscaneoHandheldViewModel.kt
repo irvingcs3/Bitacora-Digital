@@ -54,7 +54,7 @@ class EscaneoHandheldViewModel(
     val imagenCrop = MutableStateFlow<Bitmap?>(null)
     val mostrandoImagen = MutableStateFlow(false)
 
-    val networkError = MutableStateFlow(false)
+    val networkError = MutableStateFlow<String?>(null)
 
     private val scannerReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -78,7 +78,7 @@ class EscaneoHandheldViewModel(
     fun cargarCheckpoints() {
         viewModelScope.launch {
             _cargando.value = true
-            networkError.value = false
+            networkError.value = null
             try {
                 val token = withContext(Dispatchers.IO) { prefs.sessionToken.first() } ?: return@launch
                 Log.d(TAG, "Cargando checkpoints para perimetro $perimetroId")
@@ -86,7 +86,7 @@ class EscaneoHandheldViewModel(
                 _checkpoints.value = list
             } catch (e: Exception) {
                 Log.d(TAG, "Error cargando checkpoints", e)
-                networkError.value = true
+                networkError.value = "Error de red"
             } finally {
                 _cargando.value = false
             }
@@ -97,23 +97,46 @@ class EscaneoHandheldViewModel(
         val checkpoint = seleccionado.value ?: return
         viewModelScope.launch {
             _cargando.value = true
-            networkError.value = false
+            networkError.value = null
             try {
+                val token = withContext(Dispatchers.IO) { prefs.sessionToken.first() } ?: return@launch
                 val json = JSONObject().apply {
                     put("codigo", codigo)
                     put("checkpoint", checkpoint.checkpoint_id)
+                    put("x-session-token", token)
                 }
                 val body = json.toString().toRequestBody("application/json".toMediaType())
                 val client = OkHttpClient.Builder()
                     .connectTimeout(5, TimeUnit.SECONDS)
                     .readTimeout(5, TimeUnit.SECONDS)
                     .build()
-                val request = Request.Builder()
-                    .url("http://qr.cs3.mx/bite/leer-qr")
-                    .post(body)
-                    .addHeader("Content-Type", "application/json")
-                    .build()
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                val urls = listOf(
+                    "http://192.168.2.200:3000/api/qr/leer",
+                    "http://192.168.9.200:3000/api/qr/leer"
+                )
+                var successResponse: okhttp3.Response? = null
+                for (url in urls) {
+                    try {
+                        val req = Request.Builder()
+                            .url(url)
+                            .post(body)
+                            .addHeader("Content-Type", "application/json")
+                            .build()
+                        val resp = withContext(Dispatchers.IO) { client.newCall(req).execute() }
+                        if (resp.isSuccessful) {
+                            successResponse = resp
+                            break
+                        } else {
+                            resp.close()
+                        }
+                    } catch (_: Exception) {
+                        // Intentar siguiente URL
+                    }
+                }
+                val response = successResponse ?: run {
+                    networkError.value = "Este modulo esta unicamente pensado para redes internas de Lomas Country"
+                    return@launch
+                }
                 response.use { resp ->
                     if (resp.isSuccessful) {
                         val resStr = withContext(Dispatchers.IO) { resp.body?.string() }
@@ -143,7 +166,7 @@ class EscaneoHandheldViewModel(
                 }
             } catch (e: Exception) {
                 Log.d(TAG, "Excepcion procesando codigo", e)
-                networkError.value = true
+                networkError.value = "Error de red"
             } finally {
                 _cargando.value = false
             }
