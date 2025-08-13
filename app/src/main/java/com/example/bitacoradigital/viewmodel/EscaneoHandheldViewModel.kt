@@ -114,7 +114,7 @@ class EscaneoHandheldViewModel(
                     "http://192.168.2.200:3000/api/qr/leer",
                     "http://192.168.9.200:3000/api/qr/leer"
                 )
-                var successResponse: okhttp3.Response? = null
+                var response: okhttp3.Response? = null
                 for (url in urls) {
                     try {
                         val req = Request.Builder()
@@ -122,46 +122,31 @@ class EscaneoHandheldViewModel(
                             .post(body)
                             .addHeader("Content-Type", "application/json")
                             .build()
-                        val resp = withContext(Dispatchers.IO) { client.newCall(req).execute() }
-                        if (resp.isSuccessful) {
-                            successResponse = resp
-                            break
-                        } else {
-                            resp.close()
-                        }
+                        response = withContext(Dispatchers.IO) { client.newCall(req).execute() }
+                        break
                     } catch (_: Exception) {
-                        // Intentar siguiente URL
+                        // Intentar siguiente URL en caso de timeout o fallo de conexión
                     }
                 }
-                val response = successResponse ?: run {
+                val resp = response ?: run {
                     networkError.value = "Este modulo esta unicamente pensado para redes internas de Lomas Country"
                     return@launch
                 }
-                response.use { resp ->
-                    if (resp.isSuccessful) {
-                        val resStr = withContext(Dispatchers.IO) { resp.body?.string() }
-                        Log.d(TAG, "Respuesta exitosa: $resStr")
-                        val obj = JSONObject(resStr ?: "{}")
-                        val estado = obj.optString("estado", null)
-                        if (!estado.isNullOrBlank()) {
-                            _resultado.value = estado
-                        } else {
-                            val detalle = obj.optJSONObject("detalle")
-                            val estadoDetalle = detalle?.optString("estado")
-                            _resultado.value = when (estadoDetalle) {
-                                "invalido" -> "no permitido"
-                                null -> obj.optString("error", "error")
-                                else -> estadoDetalle
-                            }
-                        }
-
-                        obj.optString("crop")?.takeIf { it.isNotBlank() }?.let { base ->
-                            val bytes = Base64.decode(base, Base64.DEFAULT)
-                            imagenCrop.value = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                        }
-                    } else {
-                        Log.d(TAG, "Error ${'$'}{resp.code}")
-                        _resultado.value = "error"
+                resp.use {
+                    val resStr = withContext(Dispatchers.IO) { it.body?.string() }
+                    Log.d(TAG, "Respuesta: $resStr")
+                    val obj = JSONObject(resStr ?: "{}")
+                    val estado = obj.optString("estado", null)
+                    val detalle = obj.optJSONObject("detalle")
+                    val estadoDetalle = detalle?.optString("estado")
+                    _resultado.value = when {
+                        !estado.isNullOrBlank() -> estado
+                        !estadoDetalle.isNullOrBlank() -> estadoDetalle
+                        else -> obj.optString("error", "error")
+                    }
+                    obj.optString("crop")?.takeIf { it.isNotBlank() }?.let { base ->
+                        val bytes = Base64.decode(base, Base64.DEFAULT)
+                        imagenCrop.value = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                     }
                 }
             } catch (e: Exception) {
