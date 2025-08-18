@@ -251,7 +251,7 @@ class RegistroVisitaViewModel(
         return try {
             val empty = ByteArray(0).toRequestBody(null, 0, 0)
             val request = Request.Builder()
-                .url("http://192.168.100.8:3000/api/credencial/")
+                .url("http://192.168.9.200:3000/api/credencial/")
                 .post(empty)
                 .build()
             val client = OkHttpClient()
@@ -428,16 +428,19 @@ class RegistroVisitaViewModel(
     fun registrarVisita(
         context: android.content.Context,
         onComplete: (Boolean) -> Unit = {}
-    ) {        viewModelScope.launch {
+    ) {
+        viewModelScope.launch {
             _cargandoRegistro.value = true
-        var success = false
-        try {
+            var success = false
+            try {
                 val token = withContext(Dispatchers.IO) {
                     sessionPrefs.sessionToken.first()
                 } ?: throw Exception("Token vacío")
 
                 val zonaId = destinoSeleccionado.value?.perimetro_id
                     ?: throw Exception("Zona destino no seleccionada")
+
+                Log.d("RegistroVisita", "Preparando registro para zona $zonaId con telefono ${telefono.value}")
 
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
                     timeZone = TimeZone.getTimeZone("UTC")
@@ -453,6 +456,9 @@ class RegistroVisitaViewModel(
                     put("fecha", fechaIso8601)
                     fotoDocumentoUri.value?.let { put("foto_credencial", it) }
                 }
+
+                Log.d("RegistroVisita", "Payload de registro: $json")
+
 
                 val mediaType = "application/json; charset=utf-8".toMediaType()
                 val body = json.toString().toRequestBody(mediaType)
@@ -470,6 +476,10 @@ class RegistroVisitaViewModel(
                 }
 
                 response.use { resp ->
+
+                    Log.d("RegistroVisita", "Respuesta HTTP: ${resp.code}")
+
+
                     if (resp.isSuccessful) {
                         val bodyStr = withContext(Dispatchers.IO) { resp.body?.string() }
                         Log.d("RegistroVisita", "Registro exitoso: $bodyStr")
