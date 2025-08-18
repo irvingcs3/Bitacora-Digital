@@ -242,6 +242,17 @@ private fun LomasCountryRegistroContent(
                     ) {
                         Text(if (cargandoRegistro) "Registrando..." else "Nuevo registro")
                     }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            viewModel.reiniciar()
+                            verificando = false
+                            errorVerificacion = null
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Registrar otra visita")
+                    }
                 }
             }
 
