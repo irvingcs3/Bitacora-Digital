@@ -430,8 +430,9 @@ class RegistroVisitaViewModel(
         onComplete: (Boolean) -> Unit = {}
     ) {
         viewModelScope.launch {
-            _cargandoRegistro.value = true
+    _cargandoRegistro.value = true
             var success = false
+            Log.d("RegistroVisita", "Iniciando registrarVisita")
             try {
                 val token = withContext(Dispatchers.IO) {
                     sessionPrefs.sessionToken.first()

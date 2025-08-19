@@ -99,6 +99,8 @@ private fun LomasCountryRegistroContent(
     val paterno by viewModel.apellidoPaterno.collectAsState()
     val materno by viewModel.apellidoMaterno.collectAsState()
     val cargandoRegistro by viewModel.cargandoRegistro.collectAsState()
+    val registroCompleto by viewModel.registroCompleto.collectAsState()
+
 
     var verificando by remember { mutableStateOf(false) }
     var errorVerificacion by remember { mutableStateOf<String?>(null) }
@@ -187,71 +189,74 @@ private fun LomasCountryRegistroContent(
                 }
 
                 if (numeroVerificado) {
-                    Spacer(Modifier.height(24.dp))
-                    Text("Verifica tus Datos", style = MaterialTheme.typography.titleLarge)
-                    Spacer(Modifier.height(16.dp))
+                    if (!registroCompleto) {
+                        Spacer(Modifier.height(24.dp))
+                        Text("Verifica tus Datos", style = MaterialTheme.typography.titleLarge)
+                        Spacer(Modifier.height(16.dp))
 
-                    OutlinedTextField(
-                        value = nombre,
-                        onValueChange = { viewModel.nombre.value = it },
-                        label = { Text("Nombre(s)") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = paterno,
-                        onValueChange = { viewModel.apellidoPaterno.value = it },
-                        label = { Text("Apellido Paterno") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = materno,
-                        onValueChange = { viewModel.apellidoMaterno.value = it },
-                        label = { Text("Apellido Materno") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        OutlinedTextField(
+                            value = nombre,
+                            onValueChange = { viewModel.nombre.value = it },
+                            label = { Text("Nombre(s)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = paterno,
+                            onValueChange = { viewModel.apellidoPaterno.value = it },
+                            label = { Text("Apellido Paterno") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = materno,
+                            onValueChange = { viewModel.apellidoMaterno.value = it },
+                            label = { Text("Apellido Materno") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
-                    Spacer(Modifier.height(24.dp))
-                    Text("Confirma tu Registro", style = MaterialTheme.typography.titleLarge)
-                    Spacer(Modifier.height(16.dp))
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("📱 Teléfono: $telefono")
-                            Text("👤 Nombre: $nombre $paterno $materno")
+                        Spacer(Modifier.height(24.dp))
+                        Text("Confirma tu Registro", style = MaterialTheme.typography.titleLarge)
+                        Spacer(Modifier.height(16.dp))
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text("📱 Teléfono: $telefono")
+                                Text("👤 Nombre: $nombre $paterno $materno")
+                            }
                         }
-                    }
-                    Spacer(Modifier.height(24.dp))
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
+                        Spacer(Modifier.height(24.dp))
+                        Button(
+                            onClick = {
                                 viewModel.registrarVisita(context) { exito ->
-                                    if (exito) {
-                                        viewModel.reiniciar()
-                                    } else {
+                                    if (!exito) {
                                         coroutineScope.launch {
                                             snackbarHostState.showSnackbar("Error al registrar")
                                         }
                                     }
                                 }
-                            }
-                        },
-
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !cargandoRegistro
-                    ) {
-                        Text(if (cargandoRegistro) "Registrando..." else "Nuevo registro")
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedButton(
-                        onClick = {
-                            viewModel.reiniciar()
-                            verificando = false
-                            errorVerificacion = null
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Registrar otra visita")
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !cargandoRegistro
+                        ) {
+                            Text(if (cargandoRegistro) "Registrando..." else "Registrar visita")
+                        }
+                    } else {
+                        Spacer(Modifier.height(24.dp))
+                        Text("✅ Registro completado", style = MaterialTheme.typography.titleLarge)
+                        Spacer(Modifier.height(16.dp))
+                        Button(
+                            onClick = {
+                                viewModel.reiniciar()
+                                verificando = false
+                                errorVerificacion = null
+                                navController.navigate("lomascountry/manual") {
+                                    popUpTo("lomascountry/manual") { inclusive = true }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Registrar otra visita")
+                        }
                     }
                 }
             }

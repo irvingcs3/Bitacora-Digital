@@ -4,6 +4,7 @@
         <domain includeSubdomains="true">192.168.100.8</domain>
         <domain includeSubdomains="true">qr.cs3.mx</domain>
         <domain includeSubdomains="true">192.168.9.200</domain>
+        <domain includeSubdomains="true">192.168.2.200</domain>
 
     </domain-config>
 </network-security-config>
