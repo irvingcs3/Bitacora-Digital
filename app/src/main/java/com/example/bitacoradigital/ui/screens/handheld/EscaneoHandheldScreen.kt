@@ -7,6 +7,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -85,21 +86,21 @@ fun EscaneoHandheldScreen(perimetroId: Int, navController: NavHostController) {
             }
 
             resultado?.let { res ->
-                LaunchedEffect(res) {
-                    anim.snapTo(0f)
-                    anim.animateTo(1f, tween(500))
-                    delay(3000)
-                    if (res == "valido") {
-                        viewModel.mostrandoImagen.value = true
-                    } else {
+                if (res == "valido") {
+                    LaunchedEffect(res) { viewModel.mostrandoImagen.value = true }
+                } else {
+                    LaunchedEffect(res) {
+                        anim.snapTo(0f)
+                        anim.animateTo(1f, tween(500))
+                        delay(3000)
                         viewModel.reiniciar()
                     }
+                    CanvasOverlay(
+                        color = Color(0x88FF0000),
+                        progress = anim.value,
+                        text = res
+                    )
                 }
-                CanvasOverlay(
-                    color = if (res == "valido") Color(0x8800FF00) else Color(0x88FF0000),
-                    progress = anim.value,
-                    text = res
-                )
             }
             networkError?.let { err ->
                 Text(
@@ -156,7 +157,7 @@ private fun LoadingView() {
 @Composable
 private fun ImagenResultadoView(bitmap: android.graphics.Bitmap, onFinish: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().background(Color(0xFF00FF00)),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
