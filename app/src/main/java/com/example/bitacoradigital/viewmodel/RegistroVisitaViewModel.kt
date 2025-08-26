@@ -90,7 +90,7 @@ class RegistroVisitaViewModel(
             val payload = JSONObject().apply { put("telefono", telefono.value) }
             val body = payload.toString().toRequestBody("application/json".toMediaType())
             val request = Request.Builder()
-                .url("http://192.168.100.8:3000/api/credencial/")
+                .url("http://192.168.9.200:3000/api/credencial/")
                 .post(body)
                 .build()
             val response = client.newCall(request).execute()
@@ -430,8 +430,9 @@ class RegistroVisitaViewModel(
         onComplete: (Boolean) -> Unit = {}
     ) {
         viewModelScope.launch {
-            _cargandoRegistro.value = true
+    _cargandoRegistro.value = true
             var success = false
+            Log.d("RegistroVisita", "Iniciando registrarVisita")
             try {
                 val token = withContext(Dispatchers.IO) {
                     sessionPrefs.sessionToken.first()

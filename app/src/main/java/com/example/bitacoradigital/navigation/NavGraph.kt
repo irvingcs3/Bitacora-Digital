@@ -27,6 +27,7 @@ import com.example.bitacoradigital.ui.screens.perimetro.PerimetrosScreen
 import com.example.bitacoradigital.ui.screens.qr.CodigosQRScreen
 import com.example.bitacoradigital.ui.screens.qr.GenerarCodigoQRScreen
 import com.example.bitacoradigital.ui.screens.qr.SeguimientoQRScreen
+import com.example.bitacoradigital.ui.screens.handheld.EscaneoHandheldScreen
 import com.example.bitacoradigital.ui.screens.dashboard.DashboardScreen
 import com.example.bitacoradigital.ui.screens.accesos.AccesosScreen
 import com.example.bitacoradigital.ui.screens.residentes.ResidentesScreen
@@ -163,11 +164,18 @@ fun AppNavGraph(
         }
 
         composable("lomascountry/manual") {
-            RegistroVisitaWizardScreen(perimetroId = 4158, navController = navController, isLomasCountry = true)
+            val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
+            RegistroVisitaWizardScreen(perimetroId = perimetroId, navController = navController, isLomasCountry = true)
         }
 
         composable("lomascountry/qr") {
-            RegistroQRScreen(perimetroId = 4158, navController = navController)
+            val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
+            RegistroQRScreen(perimetroId = perimetroId, navController = navController)
+        }
+
+        composable("lomascountry/handheld") {
+            val perimetroId = homeViewModel.perimetroSeleccionado.value?.perimetroId ?: return@composable
+            EscaneoHandheldScreen(perimetroId = perimetroId, navController = navController)
         }
 
 

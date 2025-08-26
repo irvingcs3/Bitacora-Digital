@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.bitacoradigital.ui.components.HomeConfigNavBar
+import com.example.bitacoradigital.util.FeatureGate
 
 @Composable
 fun LomasCountryScreen(
@@ -56,14 +57,26 @@ fun LomasCountryScreen(
                     onClick = { navController.navigate("lomascountry/qr") }
                 )
 
+
+            }else if ("Escaneo para Handhelds" in permisos){
                 PermisoCard(
-                    icon = Icons.Default.QrCode,
-                    titulo = "Generar Código QR",
-                    descripcion = "Crea una invitación para acceso por QR",
+                    icon = Icons.Default.QrCodeScanner,
+                    titulo = "Escaneo con Handheld",
+                    descripcion = "Lectura de códigos con lector físico Zebra.",
                     color = MaterialTheme.colorScheme.primary,
-                    onClick = { navController.navigate("lomascountry/qr/generar") }
+                    onClick = { navController.navigate("lomascountry/handheld") }
                 )
             }
+
+
+            PermisoCard(
+                icon = Icons.Default.QrCode,
+                titulo = "Generar Código QR",
+                descripcion = "Crea una invitación para acceso por QR",
+                color = MaterialTheme.colorScheme.primary,
+                onClick = { navController.navigate("lomascountry/qr/generar") }
+            )
+
         }
     }
 }
