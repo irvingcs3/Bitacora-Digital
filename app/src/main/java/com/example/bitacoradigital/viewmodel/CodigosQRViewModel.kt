@@ -18,6 +18,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 
 class CodigosQRViewModel(
     private val prefs: SessionPreferences,
@@ -45,7 +46,15 @@ class CodigosQRViewModel(
                     .get()
                     .addHeader("x-session-token", token)
                     .build()
-                val client = OkHttpClient()
+                // The backend may return a large dataset. Remove timeouts on the
+                // HTTP client so the request isn't aborted while processing the
+                // response.
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(0, TimeUnit.MILLISECONDS)
+                    .readTimeout(0, TimeUnit.MILLISECONDS)
+                    .writeTimeout(0, TimeUnit.MILLISECONDS)
+                    .callTimeout(0, TimeUnit.MILLISECONDS)
+                    .build()
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
                 response.use { resp ->
                     if (resp.isSuccessful) {
