@@ -90,7 +90,7 @@ class RegistroVisitaViewModel(
             val payload = JSONObject().apply { put("telefono", telefono.value) }
             val body = payload.toString().toRequestBody("application/json".toMediaType())
             val request = Request.Builder()
-                .url("http://192.168.9.200:3000/api/credencial/")
+                .url("http://192.168.100.8:3000/api/credencial/")
                 .post(body)
                 .build()
             val response = client.newCall(request).execute()
@@ -251,7 +251,7 @@ class RegistroVisitaViewModel(
         return try {
             val empty = ByteArray(0).toRequestBody(null, 0, 0)
             val request = Request.Builder()
-                .url("http://192.168.9.200:3000/api/credencial/")
+                .url("http://192.168.100.8:3000/api/credencial/")
                 .post(empty)
                 .build()
             val client = OkHttpClient()
