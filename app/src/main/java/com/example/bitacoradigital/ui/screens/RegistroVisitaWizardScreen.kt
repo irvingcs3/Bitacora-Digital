@@ -95,15 +95,13 @@ private fun LomasCountryRegistroContent(
 ) {
     val telefono by viewModel.telefono.collectAsState()
     val numeroVerificado by viewModel.numeroVerificado.collectAsState()
-    val nombre by viewModel.nombre.collectAsState()
-    val paterno by viewModel.apellidoPaterno.collectAsState()
-    val materno by viewModel.apellidoMaterno.collectAsState()
     val cargandoRegistro by viewModel.cargandoRegistro.collectAsState()
     val registroCompleto by viewModel.registroCompleto.collectAsState()
 
 
     var verificando by remember { mutableStateOf(false) }
     var errorVerificacion by remember { mutableStateOf<String?>(null) }
+
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -189,60 +187,25 @@ private fun LomasCountryRegistroContent(
                 }
 
                 if (numeroVerificado) {
-                    if (!registroCompleto) {
-                        Spacer(Modifier.height(24.dp))
-                        Text("Verifica tus Datos", style = MaterialTheme.typography.titleLarge)
-                        Spacer(Modifier.height(16.dp))
-
-                        OutlinedTextField(
-                            value = nombre,
-                            onValueChange = { viewModel.nombre.value = it },
-                            label = { Text("Nombre(s)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = paterno,
-                            onValueChange = { viewModel.apellidoPaterno.value = it },
-                            label = { Text("Apellido Paterno") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = materno,
-                            onValueChange = { viewModel.apellidoMaterno.value = it },
-                            label = { Text("Apellido Materno") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(Modifier.height(24.dp))
-                        Text("Confirma tu Registro", style = MaterialTheme.typography.titleLarge)
-                        Spacer(Modifier.height(16.dp))
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text("📱 Teléfono: $telefono")
-                                Text("👤 Nombre: $nombre $paterno $materno")
-                            }
-                        }
-                        Spacer(Modifier.height(24.dp))
-                        Button(
-                            onClick = {
-                                viewModel.registrarVisita(context) { exito ->
-                                    if (!exito) {
-                                        coroutineScope.launch {
-                                            snackbarHostState.showSnackbar("Error al registrar")
-                                        }
+                    LaunchedEffect(numeroVerificado) {
+                        if (numeroVerificado) {
+                            viewModel.registrarVisita(context) { exito ->
+                                if (!exito) {
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("Error al registrar")
                                     }
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = !cargandoRegistro
-                        ) {
-                            Text(if (cargandoRegistro) "Registrando..." else "Registrar visita")
+                            }
                         }
+                    }
+                    Spacer(Modifier.height(24.dp))
+                    if (!registroCompleto) {
+                        Text("Enviando código...", style = MaterialTheme.typography.titleLarge)
+                        Spacer(Modifier.height(16.dp))
+                        CircularProgressIndicator()
+
                     } else {
-                        Spacer(Modifier.height(24.dp))
-                        Text("✅ Registro completado", style = MaterialTheme.typography.titleLarge)
+                        Text("Código fue enviado", style = MaterialTheme.typography.titleLarge)
                         Spacer(Modifier.height(16.dp))
                         Button(
                             onClick = {
