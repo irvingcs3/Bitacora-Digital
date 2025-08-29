@@ -14,6 +14,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +30,8 @@ import com.example.bitacoradigital.ui.components.HomeConfigNavBar
 import com.example.bitacoradigital.viewmodel.CodigosQRViewModel
 import com.example.bitacoradigital.viewmodel.CodigosQRViewModelFactory
 import com.example.bitacoradigital.viewmodel.HomeViewModel
+
+private enum class SortOption { NEWEST, OLDEST, NAME_ASC, NAME_DESC }
 
 @Composable
 fun CodigosQRScreen(
@@ -55,6 +59,13 @@ fun CodigosQRScreen(
 
     var modificar by remember { mutableStateOf<CodigoQR?>(null) }
     var diasExtra by remember { mutableStateOf("") }
+
+    val pageSize = 20
+    var currentPage by remember { mutableStateOf(0) }
+    var sortOption by remember { mutableStateOf(SortOption.NEWEST) }
+    var nameFilter by remember { mutableStateOf("") }
+    var dateFilter by remember { mutableStateOf("") }
+    var timeFilter by remember { mutableStateOf("") }
 
     val snackbarHostState = remember { SnackbarHostState() }
     error?.let { msg ->
@@ -105,21 +116,129 @@ fun CodigosQRScreen(
                         Text("Sin códigos activos")
                     }
                 } else {
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(codigos, key = { it.id_invitacion }) { qr ->
-                            QRCard(
-                                qr = qr,
-                                puedeModificar = puedeModificar,
-                                puedeEliminar = puedeEliminar,
-                                onSeguimiento = {
-                                    navController.navigate("qr/seguimiento/${qr.id_invitacion}")
-                                },
-                                onModificar = { modificar = qr; diasExtra = "" },
-                                onEliminar = { viewModel.borrarCodigo(qr.id_invitacion) }
+                    val processedCodigos = remember(codigos, sortOption, nameFilter, dateFilter, timeFilter) {
+                        codigos
+                            .filter { nameFilter.isBlank() || it.nombre_invitado.contains(nameFilter, ignoreCase = true) }
+                            .filter { dateFilter.isBlank() || it.periodo_activo.contains(dateFilter) }
+                            .filter { timeFilter.isBlank() || it.periodo_activo.contains(timeFilter) }
+                            .let { list ->
+                                when (sortOption) {
+                                    SortOption.NEWEST -> list.sortedByDescending { it.id_invitacion }
+                                    SortOption.OLDEST -> list.sortedBy { it.id_invitacion }
+                                    SortOption.NAME_ASC -> list.sortedBy { it.nombre_invitado }
+                                    SortOption.NAME_DESC -> list.sortedByDescending { it.nombre_invitado }
+                                }
+                            }
+                    }
+                    val pageCount = (processedCodigos.size + pageSize - 1) / pageSize
+                    val paginated = processedCodigos.drop(currentPage * pageSize).take(pageSize)
+
+                    Column(Modifier.weight(1f)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = nameFilter,
+                                onValueChange = { nameFilter = it; currentPage = 0 },
+                                label = { Text("Nombre") },
+                                modifier = Modifier.weight(1f)
                             )
+                            OutlinedTextField(
+                                value = dateFilter,
+                                onValueChange = { dateFilter = it; currentPage = 0 },
+                                label = { Text("Fecha") },
+                                modifier = Modifier.weight(1f)
+                            )
+                            OutlinedTextField(
+                                value = timeFilter,
+                                onValueChange = { timeFilter = it; currentPage = 0 },
+                                label = { Text("Hora") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        var sortMenu by remember { mutableStateOf(false) }
+                        Box {
+                            TextButton(onClick = { sortMenu = true }) {
+                                Text(
+                                    when (sortOption) {
+                                        SortOption.NEWEST -> "Más recientes"
+                                        SortOption.OLDEST -> "Más antiguos"
+                                        SortOption.NAME_ASC -> "Nombre A-Z"
+                                        SortOption.NAME_DESC -> "Nombre Z-A"
+                                    }
+                                )
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                            }
+                            DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
+                                DropdownMenuItem(
+                                    text = { Text("Más recientes") },
+                                    onClick = {
+                                        sortOption = SortOption.NEWEST
+                                        currentPage = 0
+                                        sortMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Más antiguos") },
+                                    onClick = {
+                                        sortOption = SortOption.OLDEST
+                                        currentPage = 0
+                                        sortMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Nombre A-Z") },
+                                    onClick = {
+                                        sortOption = SortOption.NAME_ASC
+                                        currentPage = 0
+                                        sortMenu = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Nombre Z-A") },
+                                    onClick = {
+                                        sortOption = SortOption.NAME_DESC
+                                        currentPage = 0
+                                        sortMenu = false
+                                    }
+                                )
+                            }
+                        }
+                        LazyColumn(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            items(paginated, key = { it.id_invitacion }) { qr ->
+                                QRCard(
+                                    qr = qr,
+                                    puedeModificar = puedeModificar,
+                                    puedeEliminar = puedeEliminar,
+                                    onSeguimiento = {
+                                        navController.navigate("qr/seguimiento/${qr.id_invitacion}")
+                                    },
+                                    onModificar = { modificar = qr; diasExtra = "" },
+                                    onEliminar = { viewModel.borrarCodigo(qr.id_invitacion) }
+                                )
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = { if (currentPage > 0) currentPage-- }, enabled = currentPage > 0) {
+                                Icon(Icons.Default.ArrowBack, contentDescription = null)
+                            }
+                            Text("${currentPage + 1} / $pageCount", modifier = Modifier.padding(horizontal = 8.dp))
+                            IconButton(
+                                onClick = { if (currentPage < pageCount - 1) currentPage++ },
+                                enabled = currentPage < pageCount - 1
+                            ) {
+                                Icon(Icons.Default.ArrowForward, contentDescription = null)
+                            }
                         }
                     }
                 }
