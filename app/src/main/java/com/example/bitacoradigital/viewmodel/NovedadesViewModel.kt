@@ -2,6 +2,8 @@ package com.example.bitacoradigital.viewmodel
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -22,6 +24,10 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.TimeUnit
 
 class NovedadesViewModel(
     private val prefs: SessionPreferences,
@@ -59,7 +65,12 @@ class NovedadesViewModel(
                     .get()
                     .addHeader("x-session-token", token)
                     .build()
-                val client = OkHttpClient()
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(0, TimeUnit.MILLISECONDS)
+                    .readTimeout(0, TimeUnit.MILLISECONDS)
+                    .writeTimeout(0, TimeUnit.MILLISECONDS)
+                    .callTimeout(0, TimeUnit.MILLISECONDS)
+                    .build()
                 val resp = withContext(Dispatchers.IO) { client.newCall(request).execute() }
                 resp.use { r ->
                     if (r.isSuccessful) {
@@ -103,7 +114,12 @@ class NovedadesViewModel(
                     .addHeader("x-session-token", token)
                     .addHeader("Content-Type", "application/json")
                     .build()
-                val client = OkHttpClient()
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(0, TimeUnit.MILLISECONDS)
+                    .readTimeout(0, TimeUnit.MILLISECONDS)
+                    .writeTimeout(0, TimeUnit.MILLISECONDS)
+                    .callTimeout(0, TimeUnit.MILLISECONDS)
+                    .build()
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
                 response.use { resp ->
                     if (resp.isSuccessful) {
@@ -130,7 +146,12 @@ class NovedadesViewModel(
                     .delete()
                     .addHeader("x-session-token", token)
                     .build()
-                val client = OkHttpClient()
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(0, TimeUnit.MILLISECONDS)
+                    .readTimeout(0, TimeUnit.MILLISECONDS)
+                    .writeTimeout(0, TimeUnit.MILLISECONDS)
+                    .callTimeout(0, TimeUnit.MILLISECONDS)
+                    .build()
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
                 response.use { resp ->
                     if (resp.isSuccessful) {
@@ -172,29 +193,71 @@ class NovedadesViewModel(
         )
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun publicarComentario(context: Context, contenido: String, imagenUri: Uri?, padreId: Int?) {
         viewModelScope.launch {
+            if (contenido.contains("@asistencia") && imagenUri == null) return@launch
             _cargando.value = true
             try {
                 val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
+                var finalContenido = contenido
+                var imageBytes: ByteArray? = null
+                if (imagenUri != null) {
+                    imageBytes = withContext(Dispatchers.IO) {
+                        context.contentResolver.openInputStream(imagenUri)?.use { it.readBytes() }
+                    }
+                }
+                if (contenido.contains("@asistencia") && imageBytes != null) {
+                    val zone = ZoneId.of("America/Mexico_City")
+                    val now = ZonedDateTime.now(zone)
+                    val ts = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"))
+                    val tsReadable = now.format(DateTimeFormatter.ofPattern("dd/MM/yyyy, HH:mm:ss"))
+                    val request = Request.Builder()
+                        .url("https://agente.cs3.mx/webhook/testimg")
+                        .post(imageBytes.toRequestBody("image/jpeg".toMediaType()))
+                        .addHeader("Content-Type", "image/jpeg")
+                        .addHeader("X-Filename", "imagen.jpg")
+                        .addHeader("X-Timestamp", ts)
+                        .addHeader("X-Timestamp-Readable", tsReadable)
+                        .addHeader("X-Timezone", "America/Mexico_City")
+                        .build()
+                    val client = OkHttpClient.Builder()
+                        .connectTimeout(0, TimeUnit.MILLISECONDS)
+                        .readTimeout(0, TimeUnit.MILLISECONDS)
+                        .writeTimeout(0, TimeUnit.MILLISECONDS)
+                        .callTimeout(0, TimeUnit.MILLISECONDS)
+                        .build()
+                    val resp = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                    resp.use { r ->
+                        if (r.isSuccessful) {
+                            val arr = JSONArray(r.body?.string() ?: "[]")
+                            for (i in 0 until arr.length()) {
+                                val obj = arr.optJSONObject(i)
+                                if (obj != null && obj.has("output")) {
+                                    finalContenido = obj.getString("output")
+                                    break
+                                }
+                            }
+                        } else {
+                            _error.value = "Error ${r.code}"
+                            return@launch
+                        }
+                    }
+                }
+
                 val builder = MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
-                    .addFormDataPart("contenido", contenido)
+                    .addFormDataPart("contenido", finalContenido)
                     .addFormDataPart("perimetro", perimetroId.toString())
                 if (padreId != null) {
                     builder.addFormDataPart("padre", padreId.toString())
                 }
-                if (imagenUri != null) {
-                    val bytes = withContext(Dispatchers.IO) {
-                        context.contentResolver.openInputStream(imagenUri)?.use { it.readBytes() }
-                    }
-                    bytes?.let {
-                        builder.addFormDataPart(
-                            "imagen",
-                            "imagen.jpg",
-                            it.toRequestBody("image/jpeg".toMediaTypeOrNull())
-                        )
-                    }
+                imageBytes?.let {
+                    builder.addFormDataPart(
+                        "imagen",
+                        "imagen.jpg",
+                        it.toRequestBody("image/jpeg".toMediaTypeOrNull())
+                    )
                 }
                 val requestBody = builder.build()
                 val request = Request.Builder()
@@ -202,7 +265,12 @@ class NovedadesViewModel(
                     .post(requestBody)
                     .addHeader("x-session-token", token)
                     .build()
-                val client = OkHttpClient()
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(0, TimeUnit.MILLISECONDS)
+                    .readTimeout(0, TimeUnit.MILLISECONDS)
+                    .writeTimeout(0, TimeUnit.MILLISECONDS)
+                    .callTimeout(0, TimeUnit.MILLISECONDS)
+                    .build()
                 val resp = withContext(Dispatchers.IO) { client.newCall(request).execute() }
                 resp.use { r ->
                     if (!r.isSuccessful) {

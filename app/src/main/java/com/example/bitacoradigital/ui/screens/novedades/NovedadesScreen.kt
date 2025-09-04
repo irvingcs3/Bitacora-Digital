@@ -335,7 +335,7 @@ fun NovedadesScreen(
             Spacer(Modifier.height(4.dp))
             if (!puedeVer) {
                 Text("Sin permisos para ver novedades")
-            } else if (cargando) {
+            } else if (cargando && comentarios.isEmpty()) {
                 CircularProgressIndicator()
             } else if (filtrados.isEmpty()) {
                 Box(
@@ -450,9 +450,17 @@ fun NovedadesScreen(
                     }
                     Button(
                         onClick = {
-                            viewModel.publicarComentario(context, nuevo, imagenNueva, null)
-                            nuevo = ""
-                            imagenNueva = null
+                            if (nuevo.contains("@asistencia")) {
+                                if (imagenNueva != null) {
+                                    viewModel.publicarComentario(context, nuevo, imagenNueva, null)
+                                    nuevo = ""
+                                    imagenNueva = null
+                                }
+                            } else {
+                                viewModel.publicarComentario(context, nuevo, imagenNueva, null)
+                                nuevo = ""
+                                imagenNueva = null
+                            }
                         },
                         enabled = nuevo.isNotBlank()
                     ) {
