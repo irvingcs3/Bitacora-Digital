@@ -74,5 +74,6 @@ fun moduloIcon(nombre: String): ImageVector = when (nombre) {
     "Lomas Country" -> Icons.Default.ListAlt
     "Accesos" -> Icons.Default.DirectionsCar
     "DronGuard" -> Icons.Default.Warning
+    "Calendario de Actividades" -> Icons.Default.Event
     else -> Icons.Default.Dashboard
 }
