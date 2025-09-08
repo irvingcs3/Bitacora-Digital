@@ -94,6 +94,8 @@ fun HomeScreen(
                 val guardiaMods = listOf("Guardia")
                 val novedadesMods = listOf("Novedades")
                 val dronGuardMods = listOf("DronGuard")
+                val amenidadesMods = activo.modulos["Amenidades"] ?: emptyList()
+
 
                 val modulosVisibles = activo.modulos.keys.filterNot { it in ocultos }
 
@@ -225,6 +227,30 @@ fun HomeScreen(
                                     ModuleButton(title = modulo, icon = icon) {
                                         when (modulo) {
                                             "DronGuard" -> navController.navigate("dronGuard")
+                                            else -> {}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (amenidadesMods.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text("Amenidades", style = MaterialTheme.typography.titleMedium)
+                                amenidadesMods.forEach { modulo ->
+                                    val icon = moduloIcon(modulo)
+                                    ModuleButton(title = modulo, icon = icon) {
+                                        when (modulo) {
+                                            "Calendario de Actividades" -> navController.navigate("amenidades/calendario")
                                             else -> {}
                                         }
                                     }

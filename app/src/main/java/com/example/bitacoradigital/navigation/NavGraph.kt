@@ -35,6 +35,7 @@ import com.example.bitacoradigital.ui.screens.novedades.NovedadesScreen
 import com.example.bitacoradigital.ui.screens.novedades.DestacadosScreen
 import com.example.bitacoradigital.ui.screens.guardia.DronGuardScreen
 import com.example.bitacoradigital.ui.screens.guardia.GuardiaScreen
+import com.example.bitacoradigital.ui.screens.amenidades.CalendarioActividadesScreen
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.LoginViewModel
 import com.example.bitacoradigital.viewmodel.SessionViewModel
@@ -275,6 +276,9 @@ fun AppNavGraph(
             DronGuardScreen(viewModel = viewModel, navController = navController)
         }
 
+        composable("amenidades/calendario") {
+            CalendarioActividadesScreen(navController = navController)
+        }
 
         composable("configuracion") {
             ConfiguracionScreen(
