@@ -50,8 +50,6 @@ fun CodigosQRScreen(
     val codigos by viewModel.codigos.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
     val error by viewModel.error.collectAsState()
-    val page by viewModel.page.collectAsState()
-    val pageCount by viewModel.pageCount.collectAsState()
 
     val puedeVer = "Ver Códigos QR" in permisos
     val puedeEliminar = "Eliminar Código QR" in permisos
@@ -62,6 +60,8 @@ fun CodigosQRScreen(
     var modificar by remember { mutableStateOf<CodigoQR?>(null) }
     var diasExtra by remember { mutableStateOf("") }
 
+    val pageSize = 20
+    var currentPage by remember { mutableStateOf(0) }
     var sortOption by remember { mutableStateOf(SortOption.NEWEST) }
     var nameFilter by remember { mutableStateOf("") }
     var dateFilter by remember { mutableStateOf("") }
@@ -130,6 +130,8 @@ fun CodigosQRScreen(
                                 }
                             }
                     }
+                    val pageCount = (processedCodigos.size + pageSize - 1) / pageSize
+                    val paginated = processedCodigos.drop(currentPage * pageSize).take(pageSize)
 
                     Column(Modifier.weight(1f)) {
                         Row(
@@ -140,19 +142,19 @@ fun CodigosQRScreen(
                         ) {
                             OutlinedTextField(
                                 value = nameFilter,
-                                onValueChange = { nameFilter = it },
+                                onValueChange = { nameFilter = it; currentPage = 0 },
                                 label = { Text("Nombre") },
                                 modifier = Modifier.weight(1f)
                             )
                             OutlinedTextField(
                                 value = dateFilter,
-                                onValueChange = { timeFilter = it },
+                                onValueChange = { dateFilter = it; currentPage = 0 },
                                 label = { Text("Fecha") },
                                 modifier = Modifier.weight(1f)
                             )
                             OutlinedTextField(
                                 value = timeFilter,
-                                onValueChange = { timeFilter = it },
+                                onValueChange = { timeFilter = it; currentPage = 0 },
                                 label = { Text("Hora") },
                                 modifier = Modifier.weight(1f)
                             )
@@ -175,6 +177,7 @@ fun CodigosQRScreen(
                                     text = { Text("Más recientes") },
                                     onClick = {
                                         sortOption = SortOption.NEWEST
+                                        currentPage = 0
                                         sortMenu = false
                                     }
                                 )
@@ -182,6 +185,7 @@ fun CodigosQRScreen(
                                     text = { Text("Más antiguos") },
                                     onClick = {
                                         sortOption = SortOption.OLDEST
+                                        currentPage = 0
                                         sortMenu = false
                                     }
                                 )
@@ -189,6 +193,7 @@ fun CodigosQRScreen(
                                     text = { Text("Nombre A-Z") },
                                     onClick = {
                                         sortOption = SortOption.NAME_ASC
+                                        currentPage = 0
                                         sortMenu = false
                                     }
                                 )
@@ -196,6 +201,7 @@ fun CodigosQRScreen(
                                     text = { Text("Nombre Z-A") },
                                     onClick = {
                                         sortOption = SortOption.NAME_DESC
+                                        currentPage = 0
                                         sortMenu = false
                                     }
                                 )
@@ -205,7 +211,7 @@ fun CodigosQRScreen(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            items(processedCodigos, key = { it.id_invitacion }) { qr ->
+                            items(paginated, key = { it.id_invitacion }) { qr ->
                                 QRCard(
                                     qr = qr,
                                     puedeModificar = puedeModificar,
@@ -223,13 +229,13 @@ fun CodigosQRScreen(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = { viewModel.cargarAnterior() }, enabled = page > 1) {
+                            IconButton(onClick = { if (currentPage > 0) currentPage-- }, enabled = currentPage > 0) {
                                 Icon(Icons.Default.ArrowBack, contentDescription = null)
                             }
-                            Text("$page / $pageCount", modifier = Modifier.padding(horizontal = 8.dp))
+                            Text("${currentPage + 1} / $pageCount", modifier = Modifier.padding(horizontal = 8.dp))
                             IconButton(
-                                onClick = { viewModel.cargarSiguiente() },
-                                enabled = page < pageCount
+                                onClick = { if (currentPage < pageCount - 1) currentPage++ },
+                                enabled = currentPage < pageCount - 1
                             ) {
                                 Icon(Icons.Default.ArrowForward, contentDescription = null)
                             }
