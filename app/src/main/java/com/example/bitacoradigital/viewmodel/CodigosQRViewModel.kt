@@ -35,20 +35,29 @@ class CodigosQRViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    fun cargarCodigos() {
+    private val pageSize = 10
+    private val _page = MutableStateFlow(1)
+    val page: StateFlow<Int> = _page.asStateFlow()
+    private val _pageCount = MutableStateFlow(1)
+    val pageCount: StateFlow<Int> = _pageCount.asStateFlow()
+
+    private var nextUrl: String? = null
+    private var prevUrl: String? = null
+
+    fun cargarCodigos(url: String? = null) {
         viewModelScope.launch {
+            if (url == null) _page.value = 1
             _cargando.value = true
             _error.value = null
             try {
                 val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
+                val finalUrl = url ?: "https://bit.cs3.mx/api/v1/registro-visita/?perimetro_id=$perimetroId&page=${_page.value}&page_size=$pageSize"
                 val request = Request.Builder()
-                    .url("https://bit.cs3.mx/api/v1/invitaciones-detalle/?perimetro_id=$perimetroId&empresa_id=$empresaId")
+                    .url(finalUrl)
                     .get()
                     .addHeader("x-session-token", token)
                     .build()
-                // The backend may return a large dataset. Remove timeouts on the
-                // HTTP client so the request isn't aborted while processing the
-                // response.
+
                 val client = OkHttpClient.Builder()
                     .connectTimeout(0, TimeUnit.MILLISECONDS)
                     .readTimeout(0, TimeUnit.MILLISECONDS)
@@ -61,18 +70,29 @@ class CodigosQRViewModel(
                         val jsonStr = withContext(Dispatchers.IO) { resp.body?.string() }
                         val list = mutableListOf<CodigoQR>()
                         if (!jsonStr.isNullOrBlank()) {
-                            val arr = JSONArray(jsonStr)
+                            val obj = JSONObject(jsonStr)
+                            nextUrl = obj.optString("next", null).takeIf { it != "null" }
+                            prevUrl = obj.optString("previous", null).takeIf { it != "null" }
+                            _pageCount.value = (obj.optInt("count") + pageSize - 1) / pageSize
+                            val arr = obj.optJSONArray("results") ?: JSONArray()
                             for (i in 0 until arr.length()) {
-                                val obj = arr.getJSONObject(i)
+                                val item = arr.getJSONObject(i)
+                                val persona = item.optJSONObject("persona_data")
+                                val perimetro = item.optJSONObject("perimetro_data")
+                                val nombre = buildString {
+                                    persona?.optString("nombre")?.let { append(it).append(' ') }
+                                    persona?.optString("apellido_pat")?.let { append(it).append(' ') }
+                                    persona?.optString("apellido_mat")?.let { append(it) }
+                                }.trim()
                                 list.add(
                                     CodigoQR(
-                                        id_invitacion = obj.optInt("id_invitacion"),
-                                        nombre_invitado = obj.optString("nombre_invitado"),
-                                        nombre_invitante = obj.optString("nombre_invitante"),
-                                        destino = obj.optString("destino"),
-                                        caducidad_dias = obj.optDouble("caducidad_dias"),
-                                        estado = obj.optString("estado"),
-                                        periodo_activo = obj.optString("periodo_activo")
+                                        id_invitacion = item.optInt("registro_visita_id"),
+                                        nombre_invitado = nombre,
+                                        nombre_invitante = "",
+                                        destino = perimetro?.optString("nombre") ?: "",
+                                        caducidad_dias = 0.0,
+                                        estado = "ACTIVO",
+                                        periodo_activo = item.optString("fecha")
                                     )
                                 )
                             }
@@ -86,6 +106,22 @@ class CodigosQRViewModel(
                 _error.value = e.localizedMessage
             } finally {
                 _cargando.value = false
+            }
+        }
+    }
+
+    fun cargarSiguiente() {
+        nextUrl?.let {
+            _page.value += 1
+            cargarCodigos(it)
+        }
+    }
+
+    fun cargarAnterior() {
+        if (_page.value > 1) {
+            prevUrl?.let {
+                _page.value -= 1
+                cargarCodigos(it)
             }
         }
     }
