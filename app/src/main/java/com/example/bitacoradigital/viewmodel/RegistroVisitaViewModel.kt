@@ -34,6 +34,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import java.net.SocketTimeoutException
+
 
 class RegistroVisitaViewModel(
     private val apiService: ApiService,
@@ -471,7 +473,12 @@ class RegistroVisitaViewModel(
                     .addHeader("Content-Type", "application/json")
                     .build()
 
-                val client = OkHttpClient()
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(60, TimeUnit.SECONDS)
+                    .readTimeout(60, TimeUnit.SECONDS)
+                    .writeTimeout(60, TimeUnit.SECONDS)
+                    .callTimeout(60, TimeUnit.SECONDS)
+                    .build()
                 val response = withContext(Dispatchers.IO) {
                     client.newCall(request).execute()
                 }
@@ -550,6 +557,9 @@ class RegistroVisitaViewModel(
                     }
                 }
 
+            } catch (e: SocketTimeoutException) {
+                Log.e("RegistroVisita", "Timeout en el registro", e)
+                _errorDestino.value = "Error al registrar visita: tiempo de espera agotado"
             } catch (e: Exception) {
                 Log.e("RegistroVisita", "Excepción en el registro", e)
                 _errorDestino.value = "Error al registrar visita: ${e.localizedMessage}"
