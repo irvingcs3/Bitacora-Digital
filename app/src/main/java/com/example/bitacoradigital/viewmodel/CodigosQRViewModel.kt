@@ -1,5 +1,6 @@
 package com.example.bitacoradigital.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -18,6 +19,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
 class CodigosQRViewModel(
@@ -25,6 +27,8 @@ class CodigosQRViewModel(
     private val perimetroId: Int,
     private val empresaId: Int
 ) : ViewModel() {
+
+    private val tag = "CodigosQRVM"
 
     private val _codigos = MutableStateFlow<List<CodigoQR>>(emptyList())
     val codigos: StateFlow<List<CodigoQR>> = _codigos.asStateFlow()
@@ -43,15 +47,26 @@ class CodigosQRViewModel(
 
     private var nextUrl: String? = null
     private var prevUrl: String? = null
+    private var currentSearch: String? = null
 
-    fun cargarCodigos(url: String? = null) {
+
+    fun cargarCodigos(url: String? = null, search: String? = currentSearch) {
         viewModelScope.launch {
             if (url == null) _page.value = 1
             _cargando.value = true
             _error.value = null
             try {
                 val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
-                val finalUrl = url ?: "https://bit.cs3.mx/api/v1/registro-visita/?perimetro_id=$perimetroId&page=${_page.value}&page_size=$pageSize"
+                Log.d(tag, "Using token length ${token.length}")
+
+                val baseUrl = "https://bit.cs3.mx/api/v1/registro-visita/?perimetro_id=$perimetroId&page=${_page.value}&page_size=$pageSize"
+                val finalUrl = url ?: if (search.isNullOrBlank()) {
+                    baseUrl
+                } else {
+                    baseUrl + "&search=" + URLEncoder.encode(search, "UTF-8")
+                }
+                Log.d(tag, "Requesting $finalUrl")
+
                 val request = Request.Builder()
                     .url(finalUrl)
                     .get()
@@ -59,13 +74,15 @@ class CodigosQRViewModel(
                     .build()
 
                 val client = OkHttpClient.Builder()
-                    .connectTimeout(0, TimeUnit.MILLISECONDS)
-                    .readTimeout(0, TimeUnit.MILLISECONDS)
-                    .writeTimeout(0, TimeUnit.MILLISECONDS)
-                    .callTimeout(0, TimeUnit.MILLISECONDS)
+                    .connectTimeout(60, TimeUnit.SECONDS)
+                    .readTimeout(60, TimeUnit.SECONDS)
+                    .writeTimeout(60, TimeUnit.SECONDS)
+                    .callTimeout(60, TimeUnit.SECONDS)
                     .build()
                 val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
                 response.use { resp ->
+                    Log.d(tag, "Response code: ${resp.code}")
+
                     if (resp.isSuccessful) {
                         val jsonStr = withContext(Dispatchers.IO) { resp.body?.string() }
                         val list = mutableListOf<CodigoQR>()
@@ -98,6 +115,8 @@ class CodigosQRViewModel(
                             }
                         }
                         _codigos.value = list
+                        currentSearch = search
+
                     } else {
                         _error.value = "Error ${resp.code}"
                     }
@@ -124,6 +143,11 @@ class CodigosQRViewModel(
                 cargarCodigos(it)
             }
         }
+    }
+
+    fun buscarCodigos(query: String) {
+        currentSearch = query.takeIf { it.isNotBlank() }
+        cargarCodigos()
     }
 
     fun borrarCodigo(id: Int) {

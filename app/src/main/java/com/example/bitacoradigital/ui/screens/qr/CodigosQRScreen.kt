@@ -62,9 +62,8 @@ fun CodigosQRScreen(
     var diasExtra by remember { mutableStateOf("") }
 
     var sortOption by remember { mutableStateOf(SortOption.NEWEST) }
-    var nameFilter by remember { mutableStateOf("") }
-    var dateFilter by remember { mutableStateOf("") }
-    var timeFilter by remember { mutableStateOf("") }
+    var searchText by remember { mutableStateOf("") }
+
 
     val snackbarHostState = remember { SnackbarHostState() }
     error?.let { msg ->
@@ -115,19 +114,15 @@ fun CodigosQRScreen(
                         Text("Sin códigos activos")
                     }
                 } else {
-                    val processedCodigos = remember(codigos, sortOption, nameFilter, dateFilter, timeFilter) {
-                        codigos
-                            .filter { nameFilter.isBlank() || it.nombre_invitado.contains(nameFilter, ignoreCase = true) }
-                            .filter { dateFilter.isBlank() || it.periodo_activo.contains(dateFilter) }
-                            .filter { timeFilter.isBlank() || it.periodo_activo.contains(timeFilter) }
-                            .let { list ->
-                                when (sortOption) {
-                                    SortOption.NEWEST -> list.sortedByDescending { it.id_invitacion }
-                                    SortOption.OLDEST -> list.sortedBy { it.id_invitacion }
-                                    SortOption.NAME_ASC -> list.sortedBy { it.nombre_invitado }
-                                    SortOption.NAME_DESC -> list.sortedByDescending { it.nombre_invitado }
-                                }
+                    val processedCodigos = remember(codigos, sortOption) {
+                        codigos.let { list ->
+                            when (sortOption) {
+                                SortOption.NEWEST -> list.sortedByDescending { it.id_invitacion }
+                                SortOption.OLDEST -> list.sortedBy { it.id_invitacion }
+                                SortOption.NAME_ASC -> list.sortedBy { it.nombre_invitado }
+                                SortOption.NAME_DESC -> list.sortedByDescending { it.nombre_invitado }
                             }
+                        }
                     }
 
                     Column(Modifier.weight(1f)) {
@@ -138,23 +133,14 @@ fun CodigosQRScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             OutlinedTextField(
-                                value = nameFilter,
-                                onValueChange = { nameFilter = it },
-                                label = { Text("Nombre") },
+                                value = searchText,
+                                onValueChange = { searchText = it },
+                                label = { Text("Buscar") },
                                 modifier = Modifier.weight(1f)
                             )
-                            OutlinedTextField(
-                                value = dateFilter,
-                                onValueChange = { dateFilter = it },
-                                label = { Text("Fecha") },
-                                modifier = Modifier.weight(1f)
-                            )
-                            OutlinedTextField(
-                                value = timeFilter,
-                                onValueChange = { timeFilter = it },
-                                label = { Text("Hora") },
-                                modifier = Modifier.weight(1f)
-                            )
+                            Button(onClick = { viewModel.buscarCodigos(searchText) }) {
+                                Text("Buscar")
+                            }
                         }
                         var sortMenu by remember { mutableStateOf(false) }
                         Box {
