@@ -14,6 +14,8 @@ import com.example.bitacoradigital.model.JerarquiaNodo
 import com.example.bitacoradigital.model.Residente
 import com.example.bitacoradigital.model.NodoHoja
 import com.example.bitacoradigital.network.ApiService
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -60,6 +62,11 @@ class RegistroVisitaViewModel(
     private val _codigoErrorCredencial = MutableStateFlow<Int?>(null)
     val codigoErrorCredencial: StateFlow<Int?> = _codigoErrorCredencial
 
+    private val _cargandoCredencial = MutableStateFlow(false)
+    val cargandoCredencial: StateFlow<Boolean> = _cargandoCredencial
+
+    private var credencialJob: Job? = null
+
     fun limpiarErrorCredencial() {
         _codigoErrorCredencial.value = null
     }
@@ -89,43 +96,55 @@ class RegistroVisitaViewModel(
         }
     }
 
-    suspend fun cargarDatosCredencial(): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val client = OkHttpClient()
-            val payload = JSONObject().apply { put("telefono", telefono.value) }
-            val body = payload.toString().toRequestBody("application/json".toMediaType())
-            val request = Request.Builder()
-                .url("http://192.168.100.8:3000/api/credencial/")
-                .post(body)
-                .build()
-            val response = client.newCall(request).execute()
-            response.use { resp ->
-                return@withContext if (resp.isSuccessful) {
-                    val json = JSONObject(resp.body?.string() ?: "{}")
-                    val cred = json.optJSONObject("credential_recognition") ?: json
-                    nombre.value = cred.optString("nombre")
-                    apellidoPaterno.value = cred.optString("paterno")
-                    apellidoMaterno.value = cred.optString("materno")
-                    val qrBase64 = json.optString("imagen_binaria")
-                    fotoDocumentoUri.value = qrBase64
-                    try {
-                        val data = Base64.decode(qrBase64, Base64.DEFAULT)
-                        qrBitmap.value = BitmapFactory.decodeByteArray(data, 0, data.size)
-                    } catch (e: Exception) {
-                        Log.e("RegistroVisita", "Error decoding QR", e)
+    suspend fun cargarDatosCredencial(idPersona: Int? = null): Boolean {
+        _cargandoCredencial.value = true
+        _codigoErrorCredencial.value = null
+        return try {
+            withContext(Dispatchers.IO) {
+                try {
+                    val client = OkHttpClient()
+                    val payload = JSONObject().apply {
+                        put("telefono", telefono.value)
+                        idPersona?.let { put("id_persona", it) }
                     }
-                    true
-                } else {
-                    if (resp.code == 422) {
-                        _codigoErrorCredencial.value = 422
+                    val body = payload.toString().toRequestBody("application/json".toMediaType())
+                    val request = Request.Builder()
+                        .url("http://192.168.100.8:3000/api/credencial/")
+                        .post(body)
+                        .build()
+                    val response = client.newCall(request).execute()
+                    response.use { resp ->
+                        if (resp.isSuccessful) {
+                            val json = JSONObject(resp.body?.string() ?: "{}")
+                            val cred = json.optJSONObject("credential_recognition") ?: json
+                            nombre.value = cred.optString("nombre")
+                            apellidoPaterno.value = cred.optString("paterno")
+                            apellidoMaterno.value = cred.optString("materno")
+                            val qrBase64 = json.optString("imagen_binaria")
+                            fotoDocumentoUri.value = qrBase64
+                            try {
+                                val data = Base64.decode(qrBase64, Base64.DEFAULT)
+                                qrBitmap.value = BitmapFactory.decodeByteArray(data, 0, data.size)
+                            } catch (e: Exception) {
+                                Log.e("RegistroVisita", "Error decoding QR", e)
+                            }
+                            true
+                        } else {
+                            _codigoErrorCredencial.value = resp.code
+                            Log.e("RegistroVisita", "Error cargando credencial: ${resp.code}")
+                            false
+                        }
                     }
-                    Log.e("RegistroVisita", "Error cargando credencial: ${resp.code}")
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e("RegistroVisita", "Error cargando credencial", e)
+                    _codigoErrorCredencial.value = -1
                     false
                 }
             }
-        } catch (e: Exception) {
-            Log.e("RegistroVisita", "Error cargando credencial", e)
-            false
+        } finally {
+            _cargandoCredencial.value = false
         }
     }
 
@@ -138,6 +157,7 @@ class RegistroVisitaViewModel(
 
     val destinoSeleccionado = MutableStateFlow<JerarquiaNodo?>(null)
     val destinoLomasSeleccionado = MutableStateFlow<NodoHoja?>(null)
+    val residenteSeleccionado = MutableStateFlow<Residente?>(null)
 
 
     // Ruta de navegación dentro de la jerarquía
@@ -180,7 +200,10 @@ class RegistroVisitaViewModel(
         fotosOpcionales.value = emptyList()
         respuestaRegistro.value = null
         residentesDestino.value = emptyList()
-        invitanteId.value = if (isLomasCountry) 334 else null
+        residenteSeleccionado.value = null
+        credencialJob?.cancel()
+        _cargandoCredencial.value = false
+        invitanteId.value = null
         _codigoErrorCredencial.value = null
         registroCompleto.value = false
 
@@ -299,6 +322,12 @@ class RegistroVisitaViewModel(
                 } ?: throw Exception("Token vacío")
                 if (isLomasCountry) {
                     destinoLomasSeleccionado.value = null
+                    residenteSeleccionado.value = null
+                    residentesDestino.value = emptyList()
+                    invitanteId.value = null
+                    credencialJob?.cancel()
+                    _cargandoCredencial.value = false
+                    _codigoErrorCredencial.value = null
                     val request = Request.Builder()
                         .url("https://bit.cs3.mx/api/v1/perimetro/${perimetroId}/nodos-hoja")
                         .get()
@@ -343,7 +372,7 @@ class RegistroVisitaViewModel(
     val residentesDestino = MutableStateFlow<List<Residente>>(emptyList())
     val cargandoResidentes = MutableStateFlow(false)
     val errorResidentes = MutableStateFlow<String?>(null)
-    val invitanteId = MutableStateFlow(if (isLomasCountry) 334 else null)
+    val invitanteId = MutableStateFlow<Int?>(null)
 
     fun agregarFoto(uri: Uri) {
         if (fotosAdicionales.value.size < 3) {
@@ -355,10 +384,60 @@ class RegistroVisitaViewModel(
         fotosAdicionales.value = fotosAdicionales.value - uri
     }
 
+    fun clearErrorResidentes() {
+        errorResidentes.value = null
+    }
+
+    private fun solicitarCredencialParaResidente(idPersona: Int) {
+        credencialJob?.cancel()
+        credencialJob = viewModelScope.launch {
+            try {
+                cargarDatosCredencial(idPersona)
+            } catch (e: CancellationException) {
+                // Ignorar cancelaciones explícitas
+            }
+        }
+    }
+
+    fun seleccionarDestinoLomas(nodo: NodoHoja) {
+        destinoLomasSeleccionado.value = nodo
+        residentesDestino.value = emptyList()
+        residenteSeleccionado.value = null
+        invitanteId.value = null
+        nombre.value = ""
+        apellidoPaterno.value = ""
+        apellidoMaterno.value = ""
+        fotoDocumentoUri.value = null
+        qrBitmap.value = null
+        credencialJob?.cancel()
+        _codigoErrorCredencial.value = null
+        cargarResidentesDestino(nodo.id)
+    }
+
+    fun seleccionarResidenteLomas(residente: Residente) {
+        residenteSeleccionado.value = residente
+        invitanteId.value = residente.idPersona
+        nombre.value = ""
+        apellidoPaterno.value = ""
+        apellidoMaterno.value = ""
+        fotoDocumentoUri.value = null
+        qrBitmap.value = null
+        _codigoErrorCredencial.value = null
+        if (numeroVerificado.value) {
+            solicitarCredencialParaResidente(residente.idPersona)
+        }
+    }
+
     fun cargarResidentesDestino(perimetroHojaId: Int) {
         viewModelScope.launch {
             cargandoResidentes.value = true
             errorResidentes.value = null
+            if (isLomasCountry) {
+                residentesDestino.value = emptyList()
+                residenteSeleccionado.value = null
+                invitanteId.value = null
+                credencialJob?.cancel()
+            }
             try {
                 val token = withContext(Dispatchers.IO) { sessionPrefs.sessionToken.first() } ?: return@launch
                 val request = Request.Builder()
@@ -388,6 +467,9 @@ class RegistroVisitaViewModel(
                             )
                         }
                         residentesDestino.value = list
+                        if (isLomasCountry && list.size == 1) {
+                            seleccionarResidenteLomas(list.first())
+                        }
                     } else {
                         errorResidentes.value = "Error ${resp.code}"
                     }
