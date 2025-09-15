@@ -155,13 +155,8 @@ private fun LomasCountryRegistroContent(
                             coroutineScope.launch {
                                 val existe = viewModel.verificarNumeroWhatsApp(telefono)
                                 if (existe) {
-                                    val datosOk = viewModel.cargarDatosCredencial()
-                                    if (datosOk) {
-                                        viewModel.numeroVerificado.value = true
-                                    } else {
-                                        errorVerificacion = "Error obteniendo credencial"
-                                        viewModel.reiniciar()
-                                    }
+                                    viewModel.numeroVerificado.value = true
+                                    viewModel.cargarJerarquiaDestino()
                                 } else {
                                     errorVerificacion = "Número inválido o no verificado"
                                     viewModel.reiniciar()
@@ -195,14 +190,21 @@ private fun LomasCountryRegistroContent(
                     val destinos by viewModel.nodosHoja.collectAsState()
                     val destino by viewModel.destinoLomasSeleccionado.collectAsState()
                     val cargandoDestino by viewModel.cargandoDestino.collectAsState()
-                    val errorDestino = viewModel.errorDestino.collectAsState().value
+                    val errorDestino by viewModel.errorDestino.collectAsState()
+                    val residentes by viewModel.residentesDestino.collectAsState()
+                    val residenteSeleccionado by viewModel.residenteSeleccionado.collectAsState()
+                    val cargandoResidentes by viewModel.cargandoResidentes.collectAsState()
+                    val errorResidentes by viewModel.errorResidentes.collectAsState()
+                    val invitanteId by viewModel.invitanteId.collectAsState()
+                    val cargandoCredencial by viewModel.cargandoCredencial.collectAsState()
+                    val codigoCredencial by viewModel.codigoErrorCredencial.collectAsState()
 
                     when {
                         cargandoDestino -> {
                             CircularProgressIndicator()
                         }
                         errorDestino != null -> {
-                            val msg = errorDestino!!
+                            val msg = errorDestino
                             LaunchedEffect(msg) {
                                 snackbarHostState.showSnackbar(msg)
                                 viewModel.clearDestinoError()
@@ -235,17 +237,97 @@ private fun LomasCountryRegistroContent(
                                         .fillMaxWidth()
                                         .selectable(
                                             selected = destino?.id == nodo.id,
-                                            onClick = { viewModel.destinoLomasSeleccionado.value = nodo }
+                                            onClick = { viewModel.seleccionarDestinoLomas(nodo) }
                                         )
                                         .padding(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     RadioButton(
                                         selected = destino?.id == nodo.id,
-                                        onClick = { viewModel.destinoLomasSeleccionado.value = nodo }
+                                        onClick = { viewModel.seleccionarDestinoLomas(nodo) }
                                     )
                                     Spacer(Modifier.width(8.dp))
                                     Text(nodo.name)
+                                }
+                            }
+                            destino?.let {
+                                Spacer(Modifier.height(16.dp))
+                                when {
+                                    cargandoResidentes -> {
+                                        CircularProgressIndicator()
+                                    }
+                                    errorResidentes != null -> {
+                                        val msg = errorResidentes ?: ""
+                                        LaunchedEffect(msg) {
+                                            snackbarHostState.showSnackbar("Error al cargar residentes: $msg")
+                                            viewModel.clearErrorResidentes()
+                                        }
+                                        Text(
+                                            text = "Error al cargar residentes",
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                    residentes.isEmpty() -> {
+                                        Text("No hay residentes registrados para este destino")
+                                    }
+                                    residentes.size == 1 -> {
+                                        val seleccionado = residenteSeleccionado ?: residentes.first()
+                                        Text(
+                                            text = "Residente asignado: ${seleccionado.name}",
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                    }
+                                    else -> {
+                                        Text(
+                                            "Selecciona el residente que autoriza la visita",
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                        Spacer(Modifier.height(8.dp))
+                                        residentes.forEach { res ->
+                                            val selected = residenteSeleccionado?.idPersona == res.idPersona
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .selectable(
+                                                        selected = selected,
+                                                        onClick = { viewModel.seleccionarResidenteLomas(res) }
+                                                    )
+                                                    .padding(vertical = 8.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                RadioButton(
+                                                    selected = selected,
+                                                    onClick = { viewModel.seleccionarResidenteLomas(res) }
+                                                )
+                                                Spacer(Modifier.width(8.dp))
+                                                Column {
+                                                    Text(res.name)
+                                                    if (res.email.isNotBlank()) {
+                                                        Text(
+                                                            res.email,
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        if (residenteSeleccionado == null) {
+                                            Text(
+                                                "Selecciona un residente para continuar",
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                }
+                                if (cargandoCredencial) {
+                                    Spacer(Modifier.height(16.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        CircularProgressIndicator()
+                                    }
                                 }
                             }
                             Spacer(Modifier.height(16.dp))
@@ -259,11 +341,22 @@ private fun LomasCountryRegistroContent(
                                         }
                                     }
                                 },
-                                enabled = destino != null && !cargandoRegistro,
+                                enabled = destino != null && invitanteId != null && !cargandoRegistro && !cargandoResidentes && !cargandoCredencial,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(if (cargandoRegistro) "Enviando..." else "Enviar código")
                             }
+                        }
+                    }
+                    codigoCredencial?.let { code ->
+                        LaunchedEffect(code) {
+                            val message = when (code) {
+                                422 -> "No se encontró credencial para el residente seleccionado"
+                                -1 -> "Error al obtener la credencial. Intenta nuevamente."
+                                else -> "Error al obtener credencial ($code)"
+                            }
+                            snackbarHostState.showSnackbar(message)
+                            viewModel.limpiarErrorCredencial()
                         }
                     }
                 }
