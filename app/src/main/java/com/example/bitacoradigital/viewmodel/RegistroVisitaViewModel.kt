@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.model.JerarquiaNodo
 import com.example.bitacoradigital.model.Residente
+import com.example.bitacoradigital.model.NodoHoja
 import com.example.bitacoradigital.network.ApiService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +36,8 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import java.net.SocketTimeoutException
+import org.json.JSONArray
+
 
 
 class RegistroVisitaViewModel(
@@ -134,16 +137,8 @@ class RegistroVisitaViewModel(
     val apellidoMaterno = MutableStateFlow("")
 
     val destinoSeleccionado = MutableStateFlow<JerarquiaNodo?>(null)
-    init {
-        if (isLomasCountry) {
-            destinoSeleccionado.value = JerarquiaNodo(
-                perimetro_id = perimetroId,
-                nombre = "Torniquete",
-                nivel = 0,
-                children = emptyList()
-            )
-        }
-    }
+    val destinoLomasSeleccionado = MutableStateFlow<NodoHoja?>(null)
+
 
     // Ruta de navegación dentro de la jerarquía
     private val _rutaDestino = MutableStateFlow<List<JerarquiaNodo>>(emptyList())
@@ -176,11 +171,11 @@ class RegistroVisitaViewModel(
         nombre.value = ""
         apellidoPaterno.value = ""
         apellidoMaterno.value = ""
-        destinoSeleccionado.value = if (isLomasCountry) {
-            JerarquiaNodo(perimetroId, "Torniquete", 0, emptyList())
-        } else {
-            null
-        }
+        destinoSeleccionado.value = null
+        destinoLomasSeleccionado
+        destinoLomasSeleccionado.value = null
+
+
         _rutaDestino.value = emptyList()
         fotosOpcionales.value = emptyList()
         respuestaRegistro.value = null
@@ -226,6 +221,8 @@ class RegistroVisitaViewModel(
     }
     private val _jerarquia = MutableStateFlow<JerarquiaNodo?>(null)
     val jerarquia: StateFlow<JerarquiaNodo?> = _jerarquia
+    private val _nodosHoja = MutableStateFlow<List<NodoHoja>>(emptyList())
+    val nodosHoja: StateFlow<List<NodoHoja>> = _nodosHoja
 
     private val _cargandoDestino = MutableStateFlow(false)
     val cargandoDestino: StateFlow<Boolean> = _cargandoDestino
@@ -300,14 +297,42 @@ class RegistroVisitaViewModel(
                 val token = withContext(Dispatchers.IO) {
                     sessionPrefs.sessionToken.first()
                 } ?: throw Exception("Token vacío")
-                val response = withContext(Dispatchers.IO) {
-                    apiService.getJerarquiaPorNivel(perimetroId, token)
+                if (isLomasCountry) {
+                    destinoLomasSeleccionado.value = null
+                    val request = Request.Builder()
+                        .url("https://bit.cs3.mx/api/v1/perimetro/${perimetroId}/nodos-hoja")
+                        .get()
+                        .addHeader("x-session-token", token)
+                        .build()
+                    val client = OkHttpClient()
+                    val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                    response.use { resp ->
+                        if (resp.isSuccessful) {
+                            val jsonStr = withContext(Dispatchers.IO) { resp.body?.string() }
+                            val arr = JSONArray(jsonStr ?: "[]")
+                            val list = mutableListOf<NodoHoja>()
+                            for (i in 0 until arr.length()) {
+                                val obj = arr.getJSONObject(i)
+                                list.add(NodoHoja(obj.optInt("id"), obj.optString("name")))
+                            }
+                            _nodosHoja.value = list
+                        } else {
+                            _nodosHoja.value = emptyList()
+                            _errorDestino.value = "Error ${resp.code} al cargar destinos"
+                        }
+                    }
+                } else {
+                    val response = withContext(Dispatchers.IO) {
+                        apiService.getJerarquiaPorNivel(perimetroId, token)
+                    }
+                    Log.d("RegistroVisita", "Llamando jerarquía con perimetroId=$perimetroId y token=$token")
+                    _jerarquia.value = response
+                    iniciarRuta(response)
                 }
-                Log.d("RegistroVisita", "Llamando jerarquía con perimetroId=$perimetroId y token=$token")
-                _jerarquia.value = response
-                iniciarRuta(response)
+
             } catch (e: Exception) {
-                _errorDestino.value = "Error al cargar jerarquía: con perimetro $perimetroId ${e.localizedMessage}"
+                _nodosHoja.value = emptyList()
+                _errorDestino.value = "Error al cargar destinos: ${e.localizedMessage}"
             } finally {
                 _cargandoDestino.value = false
             }
@@ -440,8 +465,13 @@ class RegistroVisitaViewModel(
                     sessionPrefs.sessionToken.first()
                 } ?: throw Exception("Token vacío")
 
-                val zonaId = destinoSeleccionado.value?.perimetro_id
-                    ?: throw Exception("Zona destino no seleccionada")
+                val zonaId = if (isLomasCountry) {
+                    destinoLomasSeleccionado
+                    destinoLomasSeleccionado.value?.id
+                } else {
+                    destinoSeleccionado.value?.perimetro_id
+                } ?: throw Exception("Zona destino no seleccionada")
+                
 
                 Log.d("RegistroVisita", "Preparando registro para zona $zonaId con telefono ${telefono.value}")
 
@@ -582,6 +612,3 @@ data class OpcionDestino(
     val perimetroId: Int,
     val nombre: String
 )
-
-
-

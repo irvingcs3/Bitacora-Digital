@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -108,6 +109,9 @@ private fun LomasCountryRegistroContent(
     val scrollState = rememberScrollState()
     val context = LocalContext.current
 
+    LaunchedEffect(Unit) {
+        viewModel.cargarJerarquiaDestino()
+    }
 
     Scaffold(
         bottomBar = {
@@ -187,38 +191,79 @@ private fun LomasCountryRegistroContent(
                 }
 
                 if (numeroVerificado) {
-                    LaunchedEffect(numeroVerificado) {
-                        if (numeroVerificado) {
-                            viewModel.registrarVisita(context) { exito ->
-                                if (!exito) {
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Error al registrar")
-                                    }
-                                }
+                    Spacer(Modifier.height(24.dp))
+                    val destinos by viewModel.nodosHoja.collectAsState()
+                    val destino by viewModel.destinoLomasSeleccionado.collectAsState()
+                    val cargandoDestino by viewModel.cargandoDestino.collectAsState()
+                    val errorDestino = viewModel.errorDestino.collectAsState().value
+
+                    when {
+                        cargandoDestino -> {
+                            CircularProgressIndicator()
+                        }
+                        errorDestino != null -> {
+                            val msg = errorDestino!!
+                            LaunchedEffect(msg) {
+                                snackbarHostState.showSnackbar(msg)
+                                viewModel.clearDestinoError()
                             }
                         }
-                    }
-                    Spacer(Modifier.height(24.dp))
-                    if (!registroCompleto) {
-                        Text("Enviando código...", style = MaterialTheme.typography.titleLarge)
-                        Spacer(Modifier.height(16.dp))
-                        CircularProgressIndicator()
-
-                    } else {
-                        Text("Código fue enviado", style = MaterialTheme.typography.titleLarge)
-                        Spacer(Modifier.height(16.dp))
-                        Button(
-                            onClick = {
-                                viewModel.reiniciar()
-                                verificando = false
-                                errorVerificacion = null
-                                navController.navigate("lomascountry/manual") {
-                                    popUpTo("lomascountry/manual") { inclusive = true }
+                        registroCompleto -> {
+                            Text("Código fue enviado", style = MaterialTheme.typography.titleLarge)
+                            Spacer(Modifier.height(16.dp))
+                            Button(
+                                onClick = {
+                                    viewModel.reiniciar()
+                                    verificando = false
+                                    errorVerificacion = null
+                                    navController.navigate("lomascountry/manual") {
+                                        popUpTo("lomascountry/manual") { inclusive = true }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Registrar otra visita")
+                            }
+                        }
+                        destinos.isEmpty() -> {
+                            Text("No hay destinos disponibles")
+                        }
+                        else -> {
+                            destinos.forEach { nodo ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .selectable(
+                                            selected = destino?.id == nodo.id,
+                                            onClick = { viewModel.destinoLomasSeleccionado.value = nodo }
+                                        )
+                                        .padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    RadioButton(
+                                        selected = destino?.id == nodo.id,
+                                        onClick = { viewModel.destinoLomasSeleccionado.value = nodo }
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(nodo.name)
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Registrar otra visita")
+                            }
+                            Spacer(Modifier.height(16.dp))
+                            Button(
+                                onClick = {
+                                    viewModel.registrarVisita(context) { exito ->
+                                        if (!exito) {
+                                            coroutineScope.launch {
+                                                snackbarHostState.showSnackbar("Error al registrar")
+                                            }
+                                        }
+                                    }
+                                },
+                                enabled = destino != null && !cargandoRegistro,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(if (cargandoRegistro) "Enviando..." else "Enviar código")
+                            }
                         }
                     }
                 }
@@ -231,4 +276,3 @@ private fun LomasCountryRegistroContent(
         }
     }
 }
-
