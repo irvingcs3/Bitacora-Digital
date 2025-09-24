@@ -191,7 +191,7 @@ fun AppNavGraph(
         composable("qr/seguimiento/{id}") { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: return@composable
             SeguimientoQRScreen(
-                idInvitacion = id,
+                idQr = id,
                 permisos = homeViewModel.perimetroSeleccionado.value?.modulos?.get("Códigos QR") ?: emptyList(),
                 navController = navController
             )

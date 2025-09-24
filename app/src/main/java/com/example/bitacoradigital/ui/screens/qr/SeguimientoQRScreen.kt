@@ -28,14 +28,14 @@ import com.example.bitacoradigital.viewmodel.SeguimientoQRViewModelFactory
 
 @Composable
 fun SeguimientoQRScreen(
-    idInvitacion: Int,
+    idQr: Int,
     permisos: List<String>,
     navController: NavHostController
 ) {
     val context = LocalContext.current
     val prefs = remember { SessionPreferences(context) }
     val viewModel: SeguimientoQRViewModel =
-        viewModel(factory = SeguimientoQRViewModelFactory(prefs, idInvitacion))
+        viewModel(factory = SeguimientoQRViewModelFactory(prefs, idQr))
 
     val info by viewModel.info.collectAsState()
     val historial by viewModel.historial.collectAsState()

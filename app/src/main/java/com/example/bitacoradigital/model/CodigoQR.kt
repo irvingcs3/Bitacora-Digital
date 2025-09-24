@@ -2,7 +2,7 @@ package com.example.bitacoradigital.model
 
 /** Modelo para una invitación de QR con detalles */
 data class CodigoQR(
-    val id_invitacion: Int,
+    val idQr: Int,
     val nombre_invitado: String,
     val nombre_invitante: String,
     val destino: String,

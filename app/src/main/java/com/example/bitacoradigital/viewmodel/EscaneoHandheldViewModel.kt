@@ -112,7 +112,8 @@ class EscaneoHandheldViewModel(
                     .build()
                 val urls = listOf(
                     "http://192.168.2.200:3000/api/qr/leer",
-                    "http://192.168.9.200:3000/api/qr/leer"
+                    "http://192.168.9.200:3000/api/qr/leer",
+                    "http://192.168.100.8:3000/api/qr/leer"
                 )
                 var response: okhttp3.Response? = null
                 for (url in urls) {

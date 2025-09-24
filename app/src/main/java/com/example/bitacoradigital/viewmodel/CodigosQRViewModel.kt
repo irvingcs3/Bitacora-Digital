@@ -103,7 +103,8 @@ class CodigosQRViewModel(
                                 }.trim()
                                 list.add(
                                     CodigoQR(
-                                        id_invitacion = item.optInt("registro_visita_id"),
+                                        idQr = item.optInt("id_qr").takeIf { it != 0 }
+                                            ?: item.optInt("registro_visita_id"),
                                         nombre_invitado = nombre,
                                         nombre_invitante = "",
                                         destino = perimetro?.optString("nombre") ?: "",
@@ -155,7 +156,7 @@ class CodigosQRViewModel(
             _cargando.value = true
             _error.value = null
             try {
-                val json = JSONObject().apply { put("id_invitacion", id) }
+                val json = JSONObject().apply { put("id_qr", id) }
                 val body = json.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder()
                     .url("http://qr.cs3.mx/bite/borrar-qr/")
@@ -186,7 +187,7 @@ class CodigosQRViewModel(
             _error.value = null
             try {
                 val json = JSONObject().apply {
-                    put("id_invitacion", id)
+                    put("id_qr", id)
                     put("dias_extra", dias)
                 }
                 val body = json.toString().toRequestBody("application/json".toMediaType())
