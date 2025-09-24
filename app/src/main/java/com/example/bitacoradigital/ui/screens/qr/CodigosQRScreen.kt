@@ -117,8 +117,8 @@ fun CodigosQRScreen(
                     val processedCodigos = remember(codigos, sortOption) {
                         codigos.let { list ->
                             when (sortOption) {
-                                SortOption.NEWEST -> list.sortedByDescending { it.id_invitacion }
-                                SortOption.OLDEST -> list.sortedBy { it.id_invitacion }
+                                SortOption.NEWEST -> list.sortedByDescending { it.idQr }
+                                SortOption.OLDEST -> list.sortedBy { it.idQr }
                                 SortOption.NAME_ASC -> list.sortedBy { it.nombre_invitado }
                                 SortOption.NAME_DESC -> list.sortedByDescending { it.nombre_invitado }
                             }
@@ -190,16 +190,16 @@ fun CodigosQRScreen(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            items(processedCodigos, key = { it.id_invitacion }) { qr ->
+                            items(processedCodigos, key = { it.idQr }) { qr ->
                                 QRCard(
                                     qr = qr,
                                     puedeModificar = puedeModificar,
                                     puedeEliminar = puedeEliminar,
                                     onSeguimiento = {
-                                        navController.navigate("qr/seguimiento/${qr.id_invitacion}")
+                                        navController.navigate("qr/seguimiento/${qr.idQr}")
                                     },
                                     onModificar = { modificar = qr; diasExtra = "" },
-                                    onEliminar = { viewModel.borrarCodigo(qr.id_invitacion) }
+                                    onEliminar = { viewModel.borrarCodigo(qr.idQr) }
                                 )
                             }
                         }
@@ -230,7 +230,7 @@ fun CodigosQRScreen(
             onDismissRequest = { modificar = null },
             confirmButton = {
                 TextButton(onClick = {
-                    diasExtra.toIntOrNull()?.let { viewModel.modificarCaducidad(qr.id_invitacion, it) }
+                    diasExtra.toIntOrNull()?.let { viewModel.modificarCaducidad(qr.idQr, it) }
                     modificar = null
                 }, enabled = diasExtra.toIntOrNull() != null) {
                     Text("Guardar")

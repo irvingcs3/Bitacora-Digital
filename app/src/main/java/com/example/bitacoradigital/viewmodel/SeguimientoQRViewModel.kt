@@ -23,7 +23,7 @@ import org.json.JSONObject
 
 class SeguimientoQRViewModel(
     private val prefs: SessionPreferences,
-    private val idInvitacion: Int
+    private val idQr: Int
 ) : ViewModel() {
 
     private val _info = MutableStateFlow<SeguimientoInfo?>(null)
@@ -56,7 +56,7 @@ class SeguimientoQRViewModel(
 
     private suspend fun cargarInfo(token: String) {
         val request = Request.Builder()
-            .url("https://bit.cs3.mx/api/v1/siguiente-checkpoint/?id_invitacion=${idInvitacion}")
+            .url("https://bit.cs3.mx/api/v1/siguiente-checkpoint/?id_qr=${idQr}")
             .get()
             .addHeader("x-session-token", token)
             .build()
@@ -89,7 +89,7 @@ class SeguimientoQRViewModel(
 
     private suspend fun cargarHistorial(token: String) {
         val request = Request.Builder()
-            .url("https://bit.cs3.mx/api/v1/checkpoints/seguimiento-qr/?id_invitacion=${idInvitacion}")
+            .url("https://bit.cs3.mx/api/v1/checkpoints/seguimiento-qr/?id_qr=${idQr}")
             .get()
             .addHeader("x-session-token", token)
             .build()
@@ -123,7 +123,7 @@ class SeguimientoQRViewModel(
             _error.value = null
             try {
                 val json = JSONObject().apply {
-                    put("id_invitacion", idInvitacion)
+                    put("id_qr", idQr)
                     put("dias_extra", dias)
                 }
                 val body = json.toString().toRequestBody("application/json".toMediaType())
@@ -149,7 +149,7 @@ class SeguimientoQRViewModel(
             _cargando.value = true
             _error.value = null
             try {
-                val json = JSONObject().apply { put("id_invitacion", idInvitacion) }
+                val json = JSONObject().apply { put("id_qr", idQr) }
                 val body = json.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder()
                     .url("http://qr.cs3.mx/bite/borrar-qr/")
@@ -171,12 +171,12 @@ class SeguimientoQRViewModel(
 
 class SeguimientoQRViewModelFactory(
     private val prefs: SessionPreferences,
-    private val idInvitacion: Int
+    private val idQr: Int
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SeguimientoQRViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SeguimientoQRViewModel(prefs, idInvitacion) as T
+            return SeguimientoQRViewModel(prefs, idQr) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

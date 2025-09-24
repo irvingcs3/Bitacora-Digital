@@ -206,7 +206,7 @@ private fun LomasCountryRegistroContent(
                         errorDestino != null -> {
                             val msg = errorDestino
                             LaunchedEffect(msg) {
-                                snackbarHostState.showSnackbar(msg)
+                                snackbarHostState.showSnackbar(msg!!)
                                 viewModel.clearDestinoError()
                             }
                         }
@@ -369,3 +369,4 @@ private fun LomasCountryRegistroContent(
         }
     }
 }
+
