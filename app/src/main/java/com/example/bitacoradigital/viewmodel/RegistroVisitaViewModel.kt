@@ -159,6 +159,16 @@ class RegistroVisitaViewModel(
     val destinoLomasSeleccionado = MutableStateFlow<NodoHoja?>(null)
     val residenteSeleccionado = MutableStateFlow<Residente?>(null)
 
+    private fun calcularIdInvitante(residente: Residente?): Int? {
+        val personaId = residente?.idPersona ?: return null
+        return personaId.takeIf { it > 0 }
+    }
+
+    fun seleccionarInvitante(residente: Residente) {
+        residenteSeleccionado.value = residente
+        invitanteId.value = calcularIdInvitante(residente)
+    }
+
 
     // Ruta de navegación dentro de la jerarquía
     private val _rutaDestino = MutableStateFlow<List<JerarquiaNodo>>(emptyList())
@@ -415,8 +425,7 @@ class RegistroVisitaViewModel(
     }
 
     fun seleccionarResidenteLomas(residente: Residente) {
-        residenteSeleccionado.value = residente
-        invitanteId.value = residente.idPersona
+        seleccionarInvitante(residente)
         nombre.value = ""
         apellidoPaterno.value = ""
         apellidoMaterno.value = ""
@@ -424,7 +433,10 @@ class RegistroVisitaViewModel(
         qrBitmap.value = null
         _codigoErrorCredencial.value = null
         if (numeroVerificado.value) {
-            solicitarCredencialParaResidente(residente.idPersona)
+            val personaId = residente.idPersona.takeIf { it > 0 }
+            if (personaId != null) {
+                solicitarCredencialParaResidente(personaId)
+            }
         }
     }
 
@@ -437,6 +449,9 @@ class RegistroVisitaViewModel(
                 residenteSeleccionado.value = null
                 invitanteId.value = null
                 credencialJob?.cancel()
+            } else {
+                residenteSeleccionado.value = null
+                invitanteId.value = null
             }
             try {
                 val token = withContext(Dispatchers.IO) { sessionPrefs.sessionToken.first() } ?: return@launch
@@ -469,6 +484,8 @@ class RegistroVisitaViewModel(
                         residentesDestino.value = list
                         if (isLomasCountry && list.size == 1) {
                             seleccionarResidenteLomas(list.first())
+                        } else if (!isLomasCountry && list.size == 1) {
+                            seleccionarInvitante(list.first())
                         }
                     } else {
                         errorResidentes.value = "Error ${resp.code}"
@@ -605,7 +622,13 @@ class RegistroVisitaViewModel(
                         Log.d("RegistroVisita", "Registro exitoso: $bodyStr")
 
                         // Enviar QR y whatsapp solo para registros normales
-                        val personaId = if (isLomasCountry) 334 else invitanteId.value ?: 0
+                        val personaId = if (isLomasCountry) {
+                            334
+                        } else {
+                            calcularIdInvitante(residenteSeleccionado.value)
+                                ?: invitanteId.value?.takeIf { it > 0 }
+                                ?: throw Exception("Invitante no seleccionado")
+                        }
                         val ineUri = documentoUri.value
                             ?: if (isLomasCountry) fotosAdicionales.value.firstOrNull() else null
                         var qrMsg: String? = null
