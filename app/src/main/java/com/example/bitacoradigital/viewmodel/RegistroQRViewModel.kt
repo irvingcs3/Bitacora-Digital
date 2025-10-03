@@ -30,7 +30,12 @@ class RegistroQRViewModel(
 
     companion object {
         private const val TAG = "RegistroQR"
+        private const val PERIMETRO_TORNIQUETES_STANCE = 4166
+        private const val PERIMETRO_STANCE = 4378
+        private const val OBTENER_DESTINO_URL = "http://qr.cs3.mx/bite/obtener-destino"
     }
+
+    private val stancePrimerOverrideAplicado = mutableSetOf<String>()
 
     private val _checkpoints = MutableStateFlow<List<Checkpoint>>(emptyList())
     val checkpoints: StateFlow<List<Checkpoint>> = _checkpoints.asStateFlow()
@@ -102,11 +107,23 @@ class RegistroQRViewModel(
             _cargando.value = true
             _error.value = null
             try {
+                val destinoInfo = consultarDestino(codigo)
+                val forzarPrimerDestino = debeForzarPrimerDestinoStance(destinoInfo, codigo)
+                val checkpointIdForRequest = if (forzarPrimerDestino) {
+                    PERIMETRO_TORNIQUETES_STANCE
+                } else {
+                    checkpoint.checkpoint_id
+                }
+
                 val json = JSONObject().apply {
                     put("codigo", codigo)
-                    put("checkpoint", checkpoint.checkpoint_id)
+                    put("checkpoint", checkpointIdForRequest)
                 }
-                Log.d(TAG, "Enviando codigo $codigo al checkpoint ${checkpoint.checkpoint_id}")
+                Log.d(
+                    TAG,
+                    "Enviando codigo $codigo al checkpoint $checkpointIdForRequest" +
+                            if (forzarPrimerDestino) " (override Torniquetes-Stance)" else ""
+                )
                 Log.d(TAG, "Request body: $json")
                 val body = json.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder()
@@ -125,6 +142,9 @@ class RegistroQRViewModel(
                         val estado = obj.optString("estado", null)
                         if (!estado.isNullOrBlank()) {
                             resultado.value = estado
+                            if (forzarPrimerDestino) {
+                                registrarPrimerOverrideTorniquetesStance(codigo)
+                            }
                             if (estado == "valido") {
                                 obj.optJSONArray("siguiente_checkpoints")?.let { arr ->
                                     if (arr.length() > 0) {
@@ -207,6 +227,68 @@ class RegistroQRViewModel(
         mostrandoImagen.value = false
         _nombreSiguientePerimetro.value = null
     }
+    private suspend fun consultarDestino(codigo: String): DestinoLookup? {
+        val json = JSONObject().apply { put("codigo", codigo) }
+        val body = json.toString().toRequestBody("application/json".toMediaType())
+        val request = Request.Builder()
+            .url(OBTENER_DESTINO_URL)
+            .post(body)
+            .addHeader("Content-Type", "application/json")
+            .build()
+        val client = OkHttpClient()
+
+        return withContext(Dispatchers.IO) {
+            try {
+                client.newCall(request).execute().use { resp ->
+                    val responseBody = resp.body?.string()
+                    Log.d(TAG, "obtener-destino (${resp.code}): $responseBody")
+                    if (responseBody.isNullOrBlank()) {
+                        null
+                    } else {
+                        val obj = JSONObject(responseBody)
+                        DestinoLookup(
+                            ok = obj.optBoolean("ok"),
+                            destinoId = if (obj.has("destino")) obj.optInt("destino") else null,
+                            nombreDestino = obj.optString("nombre_destino", null).takeIf { !it.isNullOrBlank() },
+                            error = obj.optString("error", null).takeIf { !it.isNullOrBlank() }
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error consultando obtener-destino", e)
+                null
+            }
+        }
+    }
+
+    private fun debeForzarPrimerDestinoStance(destinoInfo: DestinoLookup?, codigo: String): Boolean {
+        if (perimetroId != PERIMETRO_TORNIQUETES_STANCE) return false
+        val info = destinoInfo ?: return false
+        if (!info.ok) {
+            info.error?.let { Log.w(TAG, "Destino no disponible para $codigo: $it") }
+            return false
+        }
+        val esStanceNombre = info.nombreDestino?.equals("stance", ignoreCase = true) == true
+        val esStance = info.destinoId == PERIMETRO_STANCE || esStanceNombre
+        if (!esStance) return false
+        if (stancePrimerOverrideAplicado.contains(codigo)) {
+            Log.d(TAG, "QR $codigo ya aplico override inicial de Torniquetes-Stance anteriormente")
+            return false
+        }
+        Log.d(TAG, "Aplicando override inicial de Torniquetes-Stance para QR $codigo")
+        return true
+    }
+
+    private fun registrarPrimerOverrideTorniquetesStance(codigo: String) {
+        stancePrimerOverrideAplicado.add(codigo)
+    }
+
+    private data class DestinoLookup(
+        val ok: Boolean,
+        val destinoId: Int?,
+        val nombreDestino: String?,
+        val error: String?
+    )
 }
 
 class RegistroQRViewModelFactory(

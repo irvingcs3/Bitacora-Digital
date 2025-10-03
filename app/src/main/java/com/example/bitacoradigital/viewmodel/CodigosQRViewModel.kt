@@ -18,6 +18,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
@@ -59,7 +60,8 @@ class CodigosQRViewModel(
                 val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
                 Log.d(tag, "Using token length ${token.length}")
 
-                val baseUrl = "https://bit.cs3.mx/api/v1/registro-visita/?perimetro_id=$perimetroId&page=${_page.value}&page_size=$pageSize"
+                val baseUrl ="https://bit.cs3.mx/api/v1/invitaciones-detalle/?perimetro_id=$perimetroId&empresa_id=$empresaId&page=${_page.value}&page_size=$pageSize"
+
                 val finalUrl = url ?: if (search.isNullOrBlank()) {
                     baseUrl
                 } else {
@@ -87,32 +89,41 @@ class CodigosQRViewModel(
                         val jsonStr = withContext(Dispatchers.IO) { resp.body?.string() }
                         val list = mutableListOf<CodigoQR>()
                         if (!jsonStr.isNullOrBlank()) {
-                            val obj = JSONObject(jsonStr)
-                            nextUrl = obj.optString("next", null).takeIf { it != "null" }
-                            prevUrl = obj.optString("previous", null).takeIf { it != "null" }
-                            _pageCount.value = (obj.optInt("count") + pageSize - 1) / pageSize
-                            val arr = obj.optJSONArray("results") ?: JSONArray()
-                            for (i in 0 until arr.length()) {
-                                val item = arr.getJSONObject(i)
-                                val persona = item.optJSONObject("persona_data")
-                                val perimetro = item.optJSONObject("perimetro_data")
-                                val nombre = buildString {
-                                    persona?.optString("nombre")?.let { append(it).append(' ') }
-                                    persona?.optString("apellido_pat")?.let { append(it).append(' ') }
-                                    persona?.optString("apellido_mat")?.let { append(it) }
-                                }.trim()
-                                list.add(
-                                    CodigoQR(
-                                        idQr = item.optInt("id_qr").takeIf { it != 0 }
-                                            ?: item.optInt("registro_visita_id"),
-                                        nombre_invitado = nombre,
-                                        nombre_invitante = "",
-                                        destino = perimetro?.optString("nombre") ?: "",
-                                        caducidad_dias = 0.0,
-                                        estado = "ACTIVO",
-                                        periodo_activo = item.optString("fecha")
-                                    )
-                                )
+                            try {
+                                val obj = JSONObject(jsonStr)
+                                nextUrl = obj.optString("next", null).takeIf { it != "null" }
+                                prevUrl = obj.optString("previous", null).takeIf { it != "null" }
+                                val arr = obj.optJSONArray("results") ?: JSONArray().apply {
+                                    if (length() == 0 && obj.has("id_qr")) {
+                                        put(obj)
+                                    }
+                                }
+                                val total = obj.optInt("count").takeIf { it > 0 } ?: arr.length()
+                                _pageCount.value = if (total > 0) {
+                                    (total + pageSize - 1) / pageSize
+                                } else {
+                                    1
+                                }
+                                for (i in 0 until arr.length()) {
+                                    arr.optJSONObject(i)?.let { item ->
+                                        parseCodigo(item)?.let { list.add(it) }
+                                    }
+                                }
+                            } catch (e: JSONException) {
+                                val arr = JSONArray(jsonStr)
+                                nextUrl = null
+                                prevUrl = null
+                                val total = arr.length()
+                                _pageCount.value = if (total > 0) {
+                                    (total + pageSize - 1) / pageSize
+                                } else {
+                                    1
+                                }
+                                for (i in 0 until arr.length()) {
+                                    arr.optJSONObject(i)?.let { item ->
+                                        parseCodigo(item)?.let { list.add(it) }
+                                    }
+                                }
                             }
                         }
                         _codigos.value = list
@@ -213,6 +224,23 @@ class CodigosQRViewModel(
             }
         }
     }
+}
+private fun parseCodigo(item: JSONObject): CodigoQR? {
+    val idQr = when (val raw = item.opt("id_qr")) {
+        is Number -> raw.toInt()
+        is String -> raw.toIntOrNull() ?: 0
+        else -> 0
+    }
+    if (idQr == 0) return null
+    return CodigoQR(
+        idQr = idQr,
+        nombre_invitado = item.optString("nombre_invitado"),
+        nombre_invitante = item.optString("nombre_invitante"),
+        destino = item.optString("destino"),
+        caducidad_dias = item.optDouble("caducidad_dias"),
+        estado = item.optString("estado"),
+        periodo_activo = item.optString("periodo_activo")
+    )
 }
 
 class CodigosQRViewModelFactory(

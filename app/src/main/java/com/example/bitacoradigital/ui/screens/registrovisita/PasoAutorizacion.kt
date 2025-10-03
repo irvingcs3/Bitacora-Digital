@@ -23,6 +23,7 @@ fun PasoAutorizacion(viewModel: RegistroVisitaViewModel) {
     val residentes by viewModel.residentesDestino.collectAsState()
     val invitanteId by viewModel.invitanteId.collectAsState()
     val cargando by viewModel.cargandoResidentes.collectAsState()
+    val residenteSeleccionado by viewModel.residenteSeleccionado.collectAsState()
     val error by viewModel.errorResidentes.collectAsState()
     val cargandoReg by viewModel.cargandoRegistro.collectAsState()
     val registroCompleto by viewModel.registroCompleto.collectAsState()
@@ -38,7 +39,7 @@ fun PasoAutorizacion(viewModel: RegistroVisitaViewModel) {
     }
 
     var expanded by remember { mutableStateOf(false) }
-    val seleccionado = residentes.find { it.idPersona == invitanteId }
+    val seleccionado = residenteSeleccionado
 
     Box(Modifier.fillMaxSize()) {
         Column(
@@ -69,10 +70,13 @@ fun PasoAutorizacion(viewModel: RegistroVisitaViewModel) {
                     )
                     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         residentes.forEach { res ->
-                            DropdownMenuItem(text = { Text(res.name) }, onClick = {
-                                viewModel.invitanteId.value = res.idPersona
-                                expanded = false
-                            })
+                            DropdownMenuItem(
+                                text = { Text(res.name) },
+                                onClick = {
+                                    viewModel.seleccionarInvitante(res)
+                                    expanded = false
+                                }
+                            )
                         }
                     }
                 }
