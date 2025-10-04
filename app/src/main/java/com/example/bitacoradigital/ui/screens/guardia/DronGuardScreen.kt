@@ -34,9 +34,6 @@ import androidx.navigation.NavHostController
 import com.example.bitacoradigital.viewmodel.DronGuardViewModel
 import com.google.android.gms.location.LocationServices
 import android.util.Log
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun DronGuardScreen(viewModel: DronGuardViewModel, navController: NavHostController) {
@@ -44,8 +41,6 @@ fun DronGuardScreen(viewModel: DronGuardViewModel, navController: NavHostControl
     val fused = remember { LocationServices.getFusedLocationProviderClient(context) }
     val locationManager = remember { context.getSystemService(Context.LOCATION_SERVICE) as LocationManager }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
-    val scope = rememberCoroutineScope()
-
     var envioIniciado by remember { mutableStateOf(false) }
     val direccionEvento by viewModel.direccionEvento.collectAsState()
     val showMessage = envioIniciado && direccionEvento != null
@@ -55,7 +50,6 @@ fun DronGuardScreen(viewModel: DronGuardViewModel, navController: NavHostControl
 
     LaunchedEffect(Unit) {
         viewModel.clearDireccionEvento()
-        viewModel.registrarBotonPanico()
     }
 
     LaunchedEffect(pressed) {

@@ -8,7 +8,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -21,7 +20,12 @@ import org.json.JSONObject
 
 class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
 
-    private val _uuid = MutableStateFlow<String?>(null)
+    companion object {
+        private const val DEFAULT_UUID = "a1b9c0f1-65e3-4e32-b439-9b5df53172f1"
+        private const val PROJECT_ID = 2
+    }
+
+    private val _uuid = MutableStateFlow<String?>(DEFAULT_UUID)
     val uuid: StateFlow<String?> = _uuid.asStateFlow()
 
     private val _direccionEvento = MutableStateFlow<String?>(null)
@@ -33,75 +37,13 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
         viewModelScope.launch {
             prefs.uuidBoton.collect { value ->
                 Log.d("DronGuard", "UUID collected from prefs: $value")
-                _uuid.value = value
+                _uuid.value = value ?: DEFAULT_UUID
             }
         }
     }
 
     fun clearDireccionEvento() {
         _direccionEvento.value = null
-    }
-
-    fun registrarBotonPanico() {
-        viewModelScope.launch {
-            try {
-                val existing = prefs.uuidBoton.first()
-                if (!existing.isNullOrBlank()) {
-                    Log.d("DronGuard", "UUID ya almacenado: $existing")
-                    return@launch
-                }
-
-                // Obtener datos de usuario almacenados en preferencias
-                val userJson = prefs.jsonSession.first()
-                val usuarioObj = userJson?.let { JSONObject(it) }
-
-                val bodyJson = JSONObject().apply {
-                    // Utilizar información disponible del usuario si existe
-                    put("nombre", usuarioObj?.optString("nombre") ?: "javier")
-                    put("apellido_paterno", usuarioObj?.optString("apellido_paterno") ?: "fernandez")
-                    put("apellido_materno", usuarioObj?.optString("apellido_materno") ?: "ayala")
-                    put("direccion", "av. revolucion 439")
-                    put("calle", "av. revolucion 439")
-                    put("colonia", "San Pedro de los Pinos")
-                    put("municipio", "Benito Juarez")
-                    put("estado", "CDMX")
-                    put("cp", "03800")
-                    put("celular", usuarioObj?.optString("telefono") ?: "5535033739")
-                    put("correo", usuarioObj?.optString("email") ?: "fjfayala@gmail.com")
-                    put("contacto_1", "franciso fernandez")
-                    put("telefono_1", "5512345678")
-                    put("contacto_2", "roverto ayala")
-                    put("telefono_2", "5587654321")
-                }
-
-                val body = bodyJson.toString().toRequestBody("application/json".toMediaType())
-                val request = Request.Builder()
-                    .url(com.example.bitacoradigital.util.Constants.DRON_GUARD_REGISTRO)
-                    .post(body)
-                    .addHeader("X-Authorization", com.example.bitacoradigital.util.Constants.DRON_GUARD_TOKEN)
-                    .addHeader("Content-Type", "application/json")
-                    .build()
-
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                Log.d("DronGuard", "Registro enviado")
-
-                val respBody = response.body?.string()
-                if (response.isSuccessful) {
-                    val uuid = JSONObject(respBody ?: "{}").optString("uuid_usuario")
-                    if (uuid.isNotEmpty()) {
-                        prefs.guardarUuidBoton(uuid)
-                        Log.d("DronGuard", "Registro exitoso uuid=$uuid")
-                    } else {
-                        Log.d("DronGuard", "Registro sin uuid: $respBody")
-                    }
-                } else {
-                    Log.e("DronGuard", "Fallo registro code=${'$'}{response.code} body=${'$'}respBody")
-                }
-                response.close()
-            } catch (e: Exception) {
-                Log.e("DronGuard", "Error registrando usuario", e)
-            }
-        }
     }
 
     fun enviarAlerta(lat: Double, lng: Double) {
@@ -120,8 +62,9 @@ class DronGuardViewModel(private val prefs: SessionPreferences) : ViewModel() {
                     put("uuid_usuario", id)
                     put("lat", lat.toString())
                     put("lng", lng.toString())
+                    put("project", PROJECT_ID)
                 }
-                Log.d("DronGuard", "Enviando alerta uuid=$id lat=$lat lng=$lng")
+                Log.d("DronGuard", "Enviando alerta uuid=$id lat=$lat lng=$lng project=$PROJECT_ID")
 
                 val body = bodyJson.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder()
