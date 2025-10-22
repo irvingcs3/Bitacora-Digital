@@ -189,7 +189,8 @@ class NovedadesViewModel(
             fecha_creacion = obj.optString("fecha_creacion"),
             perimetro = obj.optInt("perimetro"),
             padre = padreId,
-            respuestas = hijos
+            respuestas = hijos,
+            tipo = obj.optString("tipo").takeIf { it.isNotBlank() }
         )
     }
 

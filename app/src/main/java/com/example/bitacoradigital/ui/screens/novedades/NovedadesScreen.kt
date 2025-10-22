@@ -575,6 +575,10 @@ fun ComentarioItem(
                             comentario.fecha_creacion.toReadableDateTime(),
                             style = MaterialTheme.typography.labelMedium
                         )
+                        comentario.tipo?.let { tipo ->
+                            Spacer(Modifier.height(4.dp))
+                            TipoBadge(tipo)
+                        }
                     }
                     IconButton(onClick = { onToggleDestacado(comentario.id) }) {
                         val marcado = destacados.contains(comentario.id)
@@ -735,6 +739,36 @@ fun ComentarioItem(
         }
     }
 }
+@Composable
+private fun TipoBadge(tipo: String) {
+    val normalized = tipo
+        .lowercase()
+        .replace('_', ' ')
+        .split(" ")
+        .filter { it.isNotBlank() }
+        .joinToString(" ") { token -> token.replaceFirstChar { c -> c.uppercase() } }
+        .ifEmpty { tipo }
+    val uppercase = tipo.uppercase()
+    val (containerColor, labelColor) = when (uppercase) {
+        "INCIDENCIA" -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
+        "CONSIGNA" -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+        "RESPUESTA" -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+        else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) to MaterialTheme.colorScheme.primary
+    }
+    AssistChip(
+        onClick = {},
+        enabled = false,
+        border = null,
+        label = { Text(normalized) },
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = containerColor,
+            labelColor = labelColor,
+            disabledContainerColor = containerColor,
+            disabledLabelColor = labelColor
+        )
+    )
+}
+
 enum class CtpatEstado(val label: String) { CONFORME("Conforme"), NO_CONFORME("No conforme"), NA("N/A") }
 
 private val ctpatItems = listOf(
