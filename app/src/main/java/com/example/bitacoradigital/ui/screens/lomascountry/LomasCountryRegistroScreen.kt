@@ -141,7 +141,7 @@ private fun LomasCountryRegistroContent(
                         scrollState = scrollState,
                         context = context,
                         onElegirOtroNumero = {
-                            viewModel.reiniciar()
+                            viewModel.reiniciarSeleccionTelefono()
                         }
                     )
                 }

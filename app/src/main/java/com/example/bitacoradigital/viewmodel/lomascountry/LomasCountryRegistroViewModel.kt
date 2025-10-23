@@ -65,6 +65,16 @@ class LomasCountryRegistroViewModel(
         }
     }
 
+    fun detenerActualizacionTelefonos() {
+        telefonosPollingJob?.cancel()
+        telefonosPollingJob = null
+    }
+
+    fun reiniciarSeleccionTelefono() {
+        super.reiniciar()
+        iniciarActualizacionTelefonos()
+    }
+
     private suspend fun obtenerTelefonosDisponibles(): List<String>? = withContext(Dispatchers.IO) {
         for (endpoint in telefonosEndpoints) {
             try {
@@ -99,6 +109,7 @@ class LomasCountryRegistroViewModel(
     fun prepararRegistroConTelefono(numero: String) {
         val limpio = numero.filter { it.isDigit() }
         reiniciar()
+        detenerActualizacionTelefonos()
         telefono.value = limpio
         numeroVerificado.value = true
         cargarJerarquiaDestino()
@@ -106,6 +117,6 @@ class LomasCountryRegistroViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        telefonosPollingJob?.cancel()
+        detenerActualizacionTelefonos()
     }
 }
