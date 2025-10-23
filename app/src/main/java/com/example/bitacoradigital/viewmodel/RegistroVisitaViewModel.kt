@@ -42,7 +42,7 @@ import org.json.JSONArray
 
 
 
-class RegistroVisitaViewModel(
+open class RegistroVisitaViewModel(
     private val apiService: ApiService,
     private val sessionPrefs: SessionPreferences,
     private val perimetroId: Int,

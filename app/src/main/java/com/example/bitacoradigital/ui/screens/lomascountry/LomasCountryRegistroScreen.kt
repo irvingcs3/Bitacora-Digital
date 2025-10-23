@@ -26,7 +26,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -264,7 +263,7 @@ private fun NumeroWhatsAppCard(
             .clip(RoundedCornerShape(24.dp))
             .clickable(
                 interactionSource = interactionSource,
-                indication = rememberRipple(bounded = true, color = MaterialTheme.colorScheme.primary),
+                indication = null,
                 onClick = onClick
             )
     ) {
