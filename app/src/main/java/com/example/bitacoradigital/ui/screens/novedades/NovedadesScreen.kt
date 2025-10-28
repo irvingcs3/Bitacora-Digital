@@ -52,6 +52,8 @@ import kotlinx.coroutines.launch
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import android.Manifest
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import java.io.File
@@ -123,12 +125,14 @@ fun NovedadesScreen(
     val cargando by viewModel.cargando.collectAsState()
     val error by viewModel.error.collectAsState()
     val destacados by viewModel.destacados.collectAsState()
+    val reportePdfUri by viewModel.reportePdfUri.collectAsState()
 
     val puedeResponder = "Responder Comentario" in permisos
     val puedeEditar = "Editar Comentario" in permisos
     val puedeEliminar = "Borrar Comentario" in permisos
     val puedeVer = "Ver Novedades" in permisos
     val puedePublicar = "Publicar Novedad" in permisos
+    val puedeSolicitarReporteIA = "reporte_con_ia" in permisos
 
     var filterText by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf(FilterType.CONTENIDO) }
@@ -169,6 +173,15 @@ fun NovedadesScreen(
     var showCtpatDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+    var mentionStartIndex by remember { mutableStateOf<Int?>(null) }
+    var mentionQuery by remember { mutableStateOf("") }
+    var showMentionDropdown by remember { mutableStateOf(false) }
+    val mentionOptions = remember(puedeSolicitarReporteIA) {
+        buildList {
+            if (puedeSolicitarReporteIA) add("@ia")
+            add("@asistencia")
+        }
+    }
     val showScrollToTop by remember {
         derivedStateOf {
             listState.firstVisibleItemIndex > 0 ||
@@ -206,6 +219,23 @@ fun NovedadesScreen(
         contract = ActivityResultContracts.TakePicture()
     ) { success -> if (success) tempUri?.let { imagenNueva = it } }
     val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(reportePdfUri) {
+        reportePdfUri?.let { uri ->
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/pdf")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            val chooser = Intent.createChooser(intent, "Abrir reporte generado")
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            try {
+                ContextCompat.startActivity(context, chooser, null)
+            } catch (e: ActivityNotFoundException) {
+                snackbarHostState.showSnackbar("No se encontró una aplicación para abrir PDF")
+            } finally {
+                viewModel.clearReportePdfUri()
+            }
+        }
+    }
     error?.let { msg ->
         LaunchedEffect(msg) {
             snackbarHostState.showSnackbar(msg)
@@ -384,12 +414,71 @@ fun NovedadesScreen(
                 }
             }
             if (puedePublicar) {
-                OutlinedTextField(
-                    value = nuevo,
-                    onValueChange = { nuevo = it },
-                    label = { Text("Nuevo comentario") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                val mentionSuggestions = remember(mentionOptions, mentionQuery) {
+                    val query = mentionQuery.lowercase()
+                    if (query.isEmpty()) mentionOptions
+                    else mentionOptions.filter { option ->
+                        option.removePrefix("@").lowercase().startsWith(query)
+                    }
+                }
+                Box {
+                    OutlinedTextField(
+                        value = nuevo,
+                        onValueChange = { value ->
+                            nuevo = value
+                            val cursor = value.length
+                            val lastAt = if (cursor > 0) value.lastIndexOf('@', startIndex = cursor - 1) else -1
+                            if (lastAt != -1 && (lastAt == 0 || value[lastAt - 1].isWhitespace())) {
+                                val query = value.substring(lastAt + 1, cursor)
+                                if (query.any { it.isWhitespace() }) {
+                                    mentionStartIndex = null
+                                    mentionQuery = ""
+                                    showMentionDropdown = false
+                                } else {
+                                    mentionStartIndex = lastAt
+                                    mentionQuery = query
+                                    showMentionDropdown = true
+                                }
+                            } else {
+                                mentionStartIndex = null
+                                mentionQuery = ""
+                                showMentionDropdown = false
+                            }
+                        },
+                        label = { Text("Nuevo comentario") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    DropdownMenu(
+                        expanded = showMentionDropdown && mentionSuggestions.isNotEmpty(),
+                        onDismissRequest = {
+                            showMentionDropdown = false
+                            mentionStartIndex = null
+                            mentionQuery = ""
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        mentionSuggestions.forEach { suggestion ->
+                            DropdownMenuItem(
+                                text = { Text(suggestion) },
+                                onClick = {
+                                    val start = mentionStartIndex ?: return@DropdownMenuItem
+                                    val end = start + mentionQuery.length + 1
+                                    val before = nuevo.take(start)
+                                    val after = if (end <= nuevo.length) nuevo.drop(end) else ""
+                                    nuevo = buildString {
+                                        append(before)
+                                        append(suggestion)
+                                        append(' ')
+                                        append(after)
+                                    }
+                                    mentionStartIndex = null
+                                    mentionQuery = ""
+                                    showMentionDropdown = false
+                                }
+                            )
+                        }
+                    }
+                }
                 imagenNueva?.let { uri ->
                     Spacer(Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -450,6 +539,20 @@ fun NovedadesScreen(
                     }
                     Button(
                         onClick = {
+                            val trimmed = nuevo.trimStart()
+                            val iniciaConIa = trimmed.startsWith("@ia", ignoreCase = true)
+                            if (iniciaConIa) {
+                                if (puedeSolicitarReporteIA) {
+                                    val prompt = trimmed.drop(3).trimStart()
+                                        .ifBlank { "Dame el reporte de incidencias de esta semana" }
+                                    viewModel.solicitarReporteIA(context, prompt)
+                                } else {
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("No cuentas con permiso para solicitar reportes con IA")
+                                    }
+                                    return@Button
+                                }
+                            }
                             if (nuevo.contains("@asistencia")) {
                                 if (imagenNueva != null) {
                                     viewModel.publicarComentario(context, nuevo, imagenNueva, null)
