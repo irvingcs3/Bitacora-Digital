@@ -195,35 +195,20 @@ class NovedadesViewModel(
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun publicarComentario(
-        context: Context,
-        contenido: String,
-        imagenUri: Uri?,
-        padreId: Int?,
-        permiteReporteIA: Boolean
-    ) {
+    fun publicarComentario(context: Context, contenido: String, imagenUri: Uri?, padreId: Int?) {
         viewModelScope.launch {
             if (contenido.contains("@asistencia") && imagenUri == null) return@launch
             _cargando.value = true
             try {
                 val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
                 var finalContenido = contenido
-                var fileBytes: ByteArray? = null
-                var fileMime: String? = null
-                var fileName: String? = null
+                var imageBytes: ByteArray? = null
                 if (imagenUri != null) {
-                    val mime = context.contentResolver.getType(imagenUri) ?: "image/jpeg"
-                    fileBytes = withContext(Dispatchers.IO) {
+                    imageBytes = withContext(Dispatchers.IO) {
                         context.contentResolver.openInputStream(imagenUri)?.use { it.readBytes() }
                     }
-                    fileMime = mime
-                    fileName = when (mime.substringAfterLast('/')) {
-                        "png" -> "imagen.png"
-                        "jpeg", "jpg" -> "imagen.jpg"
-                        else -> "archivo.${mime.substringAfterLast('/', "bin")}"
-                    }
                 }
-                if (contenido.contains("@asistencia") && fileBytes != null) {
+                if (contenido.contains("@asistencia") && imageBytes != null) {
                     val zone = ZoneId.of("America/Mexico_City")
                     val now = ZonedDateTime.now(zone)
                     val ts = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"))
@@ -260,75 +245,6 @@ class NovedadesViewModel(
                         }
                     }
                 }
-                if (permiteReporteIA && contenido.trimStart().startsWith("@ia", ignoreCase = true)) {
-                    val normalized = contenido.trimStart()
-                    val prompt = normalized.drop(3).trimStart()
-                    if (prompt.isBlank()) {
-                        _error.value = "Debes escribir una solicitud para @ia"
-                        return@launch
-                    }
-                    val zone = ZoneId.of("America/Mexico_City")
-                    val now = ZonedDateTime.now(zone)
-                    val htmlRequestBody = JSONObject().apply {
-                        put("userprompt", prompt)
-                    }.toString().toRequestBody("application/json".toMediaType())
-                    val iaRequest = Request.Builder()
-                        .url("https://agente.cs3.mx/webhook/wrapnove")
-                        .post(htmlRequestBody)
-                        .addHeader("Content-Type", "application/json")
-                        .build()
-                    val client = OkHttpClient.Builder()
-                        .connectTimeout(0, TimeUnit.MILLISECONDS)
-                        .readTimeout(0, TimeUnit.MILLISECONDS)
-                        .writeTimeout(0, TimeUnit.MILLISECONDS)
-                        .callTimeout(0, TimeUnit.MILLISECONDS)
-                        .build()
-                    val iaResponse = withContext(Dispatchers.IO) { client.newCall(iaRequest).execute() }
-                    val htmlContent = iaResponse.use { response ->
-                        if (!response.isSuccessful) {
-                            _error.value = "Error ${response.code}"
-                            return@launch
-                        }
-                        response.body?.string()
-                    } ?: ""
-                    if (htmlContent.isBlank()) {
-                        _error.value = "Sin contenido para el reporte"
-                        return@launch
-                    }
-                    val filename = "reporte_${now.format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))}.pdf"
-                    val pdfBody = JSONObject().apply {
-                        put("html", htmlContent)
-                        put("filename", filename)
-                    }.toString().toRequestBody("application/json".toMediaType())
-                    val pdfRequest = Request.Builder()
-                        .url("https://bit.cs3.mx/api/v1/utils/html-to-pdf/")
-                        .post(pdfBody)
-                        .addHeader("Content-Type", "application/json")
-                        .addHeader("x-session-token", token)
-                        .build()
-                    val pdfClient = OkHttpClient.Builder()
-                        .connectTimeout(0, TimeUnit.MILLISECONDS)
-                        .readTimeout(0, TimeUnit.MILLISECONDS)
-                        .writeTimeout(0, TimeUnit.MILLISECONDS)
-                        .callTimeout(0, TimeUnit.MILLISECONDS)
-                        .build()
-                    val pdfResponse = withContext(Dispatchers.IO) { pdfClient.newCall(pdfRequest).execute() }
-                    val pdfBytes = pdfResponse.use { response ->
-                        if (!response.isSuccessful) {
-                            _error.value = "Error ${response.code}"
-                            return@launch
-                        }
-                        response.body?.bytes()
-                    }
-                    if (pdfBytes.isNullOrEmpty()) {
-                        _error.value = "No se pudo generar el reporte"
-                        return@launch
-                    }
-                    fileBytes = pdfBytes
-                    fileMime = "application/pdf"
-                    fileName = filename
-                    finalContenido = prompt.ifBlank { "Reporte generado por IA" }
-                }
 
                 val builder = MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
@@ -337,13 +253,11 @@ class NovedadesViewModel(
                 if (padreId != null) {
                     builder.addFormDataPart("padre", padreId.toString())
                 }
-                fileBytes?.let { bytes ->
-                    val mime = fileMime ?: "application/octet-stream"
-                    val name = fileName ?: if (mime == "application/pdf") "reporte.pdf" else "imagen.jpg"
+                imageBytes?.let {
                     builder.addFormDataPart(
                         "imagen",
-                        name,
-                        bytes.toRequestBody(mime.toMediaTypeOrNull())
+                        "imagen.jpg",
+                        it.toRequestBody("image/jpeg".toMediaTypeOrNull())
                     )
                 }
                 val requestBody = builder.build()
