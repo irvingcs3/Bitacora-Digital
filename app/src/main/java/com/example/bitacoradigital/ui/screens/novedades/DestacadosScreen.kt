@@ -26,6 +26,19 @@ import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.NovedadesViewModel
 import com.example.bitacoradigital.viewmodel.NovedadesViewModelFactory
 import androidx.navigation.NavHostController
+import java.text.Normalizer
+
+private val permisoCleanupRegex = "[^a-z0-9]".toRegex()
+
+private fun hasReporteIAPermiso(permisos: List<String>): Boolean {
+    return permisos.any { permiso ->
+        val normalized = Normalizer.normalize(permiso, Normalizer.Form.NFD)
+            .replace("\\p{Mn}".toRegex(), "")
+            .lowercase()
+            .replace(permisoCleanupRegex, "")
+        normalized == "reporteconia"
+    }
+}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,6 +60,14 @@ fun DestacadosScreen(
     val puedeEditar = "Editar Comentario" in permisos
     val puedeEliminar = "Borrar Comentario" in permisos
     val puedeVer = "Ver Novedades" in permisos
+    val puedeReporteIA = hasReporteIAPermiso(permisos)
+
+    val mentionOptions = remember(puedeReporteIA) {
+        buildList {
+            add("@asistencia")
+            if (puedeReporteIA) add("@ia")
+        }
+    }
 
     LaunchedEffect(Unit) {
         if (puedeVer) viewModel.cargarComentarios()
@@ -117,13 +138,14 @@ fun DestacadosScreen(
                         destacados = destacados,
                         onToggleDestacado = { viewModel.toggleDestacado(it) },
                         onResponder = { id, texto, uri ->
-                            viewModel.publicarComentario(context, texto, uri, id)
+                            viewModel.publicarComentario(context, texto, uri, id, puedeReporteIA)
                         },
                         onEditar = { id, txt -> viewModel.editarComentario(id, txt) },
                         onEliminar = { viewModel.eliminarComentario(it) },
                         puedeResponder = puedeResponder,
                         puedeEditar = puedeEditar,
-                        puedeEliminar = puedeEliminar
+                        puedeEliminar = puedeEliminar,
+                        mentionOptions = mentionOptions
                     )
                 }
             }
