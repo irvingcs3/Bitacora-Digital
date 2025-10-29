@@ -48,20 +48,14 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.PictureAsPdf
 import kotlinx.coroutines.launch
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import android.Manifest
-import android.app.DownloadManager
 import android.content.pm.PackageManager
 import android.net.Uri
 import java.io.File
-import android.os.Environment
-import android.widget.Toast
 import androidx.compose.material3.*
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.DatePickerDialog
@@ -112,31 +106,6 @@ fun autorColor(name: String): Color {
     return palette[index]
 }
 
-private val mentionDelimiters = charArrayOf(' ', '\n', '\t', ',', '.', ';', ':')
-
-private data class MentionMatch(val start: Int, val end: Int, val token: String, val suggestions: List<String>)
-
-private fun findMentionMatch(text: String, options: List<String>): MentionMatch? {
-    if (options.isEmpty() || text.isEmpty()) return null
-    val cursor = text.length
-    val before = text.substring(0, cursor)
-    val lastAt = before.lastIndexOf('@')
-    if (lastAt == -1) return null
-    if (lastAt > 0) {
-        val prev = before[lastAt - 1]
-        if (!prev.isWhitespace() && prev != '\n') return null
-    }
-    val mentionEnd = text.indexOfAny(mentionDelimiters, startIndex = lastAt + 1).let { idx ->
-        if (idx == -1) text.length else idx
-    }
-    if (cursor < lastAt + 1 || cursor > mentionEnd) return null
-    val token = text.substring(lastAt, cursor)
-    if (token.isEmpty()) return null
-    val suggestions = options.filter { it.startsWith(token, ignoreCase = true) }
-    if (suggestions.isEmpty()) return null
-    return MentionMatch(lastAt, mentionEnd, token, suggestions)
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -160,14 +129,6 @@ fun NovedadesScreen(
     val puedeEliminar = "Borrar Comentario" in permisos
     val puedeVer = "Ver Novedades" in permisos
     val puedePublicar = "Publicar Novedad" in permisos
-    val puedeReporteIA = "reporte_con_ia" in permisos
-
-    val mentionOptions = remember(puedeReporteIA) {
-        buildList {
-            add("@asistencia")
-            if (puedeReporteIA) add("@ia")
-        }
-    }
 
     var filterText by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf(FilterType.CONTENIDO) }
@@ -410,59 +371,25 @@ fun NovedadesScreen(
                                 destacados = destacados,
                                 onToggleDestacado = { viewModel.toggleDestacado(it) },
                                 onResponder = { id, texto, uri ->
-                                    viewModel.publicarComentario(context, texto, uri, id, puedeReporteIA)
+                                    viewModel.publicarComentario(context, texto, uri, id)
                                 },
                                 onEditar = { id, txt -> viewModel.editarComentario(id, txt) },
                                 onEliminar = { viewModel.eliminarComentario(it) },
                                 puedeResponder = puedeResponder,
                                 puedeEditar = puedeEditar,
-                                puedeEliminar = puedeEliminar,
-                                mentionOptions = mentionOptions
+                                puedeEliminar = puedeEliminar
                             )
                         }
                     }
                 }
             }
             if (puedePublicar) {
-                var mentionMatchNuevo by remember { mutableStateOf<MentionMatch?>(null) }
-                var mentionExpandedNuevo by remember { mutableStateOf(false) }
-                Box {
-                    OutlinedTextField(
-                        value = nuevo,
-                        onValueChange = { input ->
-                            nuevo = input
-                            val match = findMentionMatch(input, mentionOptions)
-                            mentionMatchNuevo = match
-                            mentionExpandedNuevo = match != null
-                        },
-                        label = { Text("Nuevo comentario") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    DropdownMenu(
-                        expanded = mentionExpandedNuevo,
-                        onDismissRequest = { mentionExpandedNuevo = false }
-                    ) {
-                        val suggestions = mentionMatchNuevo?.suggestions.orEmpty()
-                        suggestions.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option) },
-                                onClick = {
-                                    val currentText = nuevo
-                                    val match = mentionMatchNuevo
-                                    if (match != null) {
-                                        val before = currentText.substring(0, match.start)
-                                        val after = currentText.substring(match.end)
-                                        val needsSpace = after.isNotEmpty() && !after.first().isWhitespace()
-                                        val appended = option + if (needsSpace || after.isEmpty()) " " else ""
-                                        nuevo = before + appended + after
-                                    }
-                                    mentionExpandedNuevo = false
-                                    mentionMatchNuevo = null
-                                }
-                            )
-                        }
-                    }
-                }
+                OutlinedTextField(
+                    value = nuevo,
+                    onValueChange = { nuevo = it },
+                    label = { Text("Nuevo comentario") },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 imagenNueva?.let { uri ->
                     Spacer(Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -525,12 +452,12 @@ fun NovedadesScreen(
                         onClick = {
                             if (nuevo.contains("@asistencia")) {
                                 if (imagenNueva != null) {
-                                    viewModel.publicarComentario(context, nuevo, imagenNueva, null, puedeReporteIA)
+                                    viewModel.publicarComentario(context, nuevo, imagenNueva, null)
                                     nuevo = ""
                                     imagenNueva = null
                                 }
                             } else {
-                                viewModel.publicarComentario(context, nuevo, imagenNueva, null, puedeReporteIA)
+                                viewModel.publicarComentario(context, nuevo, imagenNueva, null)
                                 nuevo = ""
                                 imagenNueva = null
                             }
@@ -547,50 +474,6 @@ fun NovedadesScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun PdfAttachment(url: String) {
-    val context = LocalContext.current
-    val fileName = remember(url) {
-        Uri.parse(url).lastPathSegment?.takeIf { it.isNotBlank() }?.substringAfterLast('/')?.let {
-            if (it.lowercase().endsWith(".pdf")) it else "$it.pdf"
-        } ?: "reporte.pdf"
-    }
-    OutlinedButton(
-        onClick = {
-            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
-            if (downloadManager != null) {
-                try {
-                    val request = DownloadManager.Request(Uri.parse(url))
-                        .setTitle(fileName)
-                        .setDescription("Descargando reporte")
-                        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                        .setAllowedOverMetered(true)
-                        .setAllowedOverRoaming(true)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        request.setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, fileName)
-                    } else {
-                        @Suppress("DEPRECATION")
-                        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-                    }
-                    downloadManager.enqueue(request)
-                    Toast.makeText(context, "Descarga iniciada", Toast.LENGTH_SHORT).show()
-                } catch (e: Exception) {
-                    Toast.makeText(context, "No se pudo iniciar la descarga", Toast.LENGTH_SHORT).show()
-                }
-            } else {
-                Toast.makeText(context, "No se pudo acceder a descargas", Toast.LENGTH_SHORT).show()
-            }
-        },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Icon(Icons.Default.PictureAsPdf, contentDescription = null)
-        Spacer(Modifier.width(8.dp))
-        Text(fileName)
-        Spacer(Modifier.weight(1f))
-        Icon(Icons.Default.Download, contentDescription = null)
     }
 }
 
@@ -642,8 +525,7 @@ fun ComentarioItem(
     onEliminar: (Int) -> Unit,
     puedeResponder: Boolean,
     puedeEditar: Boolean,
-    puedeEliminar: Boolean,
-    mentionOptions: List<String>
+    puedeEliminar: Boolean
 ) {
     var responder by remember { mutableStateOf(false) }
     var texto by remember { mutableStateOf("") }
@@ -725,27 +607,19 @@ fun ComentarioItem(
                 )
                 comentario.imagen?.let { url ->
                     Spacer(Modifier.height(4.dp))
-                    val isPdf = remember(url) {
-                        val segment = Uri.parse(url).lastPathSegment?.lowercase() ?: ""
-                        segment.endsWith(".pdf") || url.lowercase().contains(".pdf")
-                    }
-                    if (isPdf) {
-                        PdfAttachment(url)
-                    } else {
-                        val request = ImageRequest.Builder(LocalContext.current)
-                            .data(url)
-                            .crossfade(true)
-                            .build()
-                        AsyncImage(
-                            model = request,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(150.dp)
-                                .clickable { showImage = url },
-                            contentScale = ContentScale.Crop
-                        )
-                    }
+                    val request = ImageRequest.Builder(LocalContext.current)
+                        .data(url)
+                        .crossfade(true)
+                        .build()
+                    AsyncImage(
+                        model = request,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp)
+                            .clickable { showImage = url },
+                        contentScale = ContentScale.Crop
+                    )
                 }
                 Spacer(Modifier.height(4.dp))
                 if (puedeResponder) {
@@ -755,45 +629,12 @@ fun ComentarioItem(
                 }
                 AnimatedVisibility(visible = responder && puedeResponder, enter = fadeIn(), exit = fadeOut()) {
                     Column {
-                        var mentionMatchRespuesta by remember { mutableStateOf<MentionMatch?>(null) }
-                        var mentionExpandedRespuesta by remember { mutableStateOf(false) }
-                        Box {
-                            OutlinedTextField(
-                                value = texto,
-                                onValueChange = { input ->
-                                    texto = input
-                                    val match = findMentionMatch(input, mentionOptions)
-                                    mentionMatchRespuesta = match
-                                    mentionExpandedRespuesta = match != null
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text("Escribe una respuesta") }
-                            )
-                            DropdownMenu(
-                                expanded = mentionExpandedRespuesta,
-                                onDismissRequest = { mentionExpandedRespuesta = false }
-                            ) {
-                                val suggestions = mentionMatchRespuesta?.suggestions.orEmpty()
-                                suggestions.forEach { option ->
-                                    DropdownMenuItem(
-                                        text = { Text(option) },
-                                        onClick = {
-                                            val current = texto
-                                            val match = mentionMatchRespuesta
-                                            if (match != null) {
-                                                val before = current.substring(0, match.start)
-                                                val after = current.substring(match.end)
-                                                val needsSpace = after.isNotEmpty() && !after.first().isWhitespace()
-                                                val appended = option + if (needsSpace || after.isEmpty()) " " else ""
-                                                texto = before + appended + after
-                                            }
-                                            mentionExpandedRespuesta = false
-                                            mentionMatchRespuesta = null
-                                        }
-                                    )
-                                }
-                            }
-                        }
+                        OutlinedTextField(
+                            value = texto,
+                            onValueChange = { texto = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("Escribe una respuesta") }
+                        )
                         imagenRespuesta?.let { uri ->
                             Spacer(Modifier.height(4.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -853,8 +694,7 @@ fun ComentarioItem(
                         onEliminar = onEliminar,
                         puedeResponder = puedeResponder,
                         puedeEditar = puedeEditar,
-                        puedeEliminar = puedeEliminar,
-                        mentionOptions = mentionOptions
+                        puedeEliminar = puedeEliminar
                     )
                     Spacer(Modifier.height(8.dp))
                 }

@@ -47,14 +47,6 @@ fun DestacadosScreen(
     val puedeEditar = "Editar Comentario" in permisos
     val puedeEliminar = "Borrar Comentario" in permisos
     val puedeVer = "Ver Novedades" in permisos
-    val puedeReporteIA = "reporte_con_ia" in permisos
-
-    val mentionOptions = remember(puedeReporteIA) {
-        buildList {
-            add("@asistencia")
-            if (puedeReporteIA) add("@ia")
-        }
-    }
 
     LaunchedEffect(Unit) {
         if (puedeVer) viewModel.cargarComentarios()
@@ -125,14 +117,13 @@ fun DestacadosScreen(
                         destacados = destacados,
                         onToggleDestacado = { viewModel.toggleDestacado(it) },
                         onResponder = { id, texto, uri ->
-                            viewModel.publicarComentario(context, texto, uri, id, puedeReporteIA)
+                            viewModel.publicarComentario(context, texto, uri, id)
                         },
                         onEditar = { id, txt -> viewModel.editarComentario(id, txt) },
                         onEliminar = { viewModel.eliminarComentario(it) },
                         puedeResponder = puedeResponder,
                         puedeEditar = puedeEditar,
-                        puedeEliminar = puedeEliminar,
-                        mentionOptions = mentionOptions
+                        puedeEliminar = puedeEliminar
                     )
                 }
             }
