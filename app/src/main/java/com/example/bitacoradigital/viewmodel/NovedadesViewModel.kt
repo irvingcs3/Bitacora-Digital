@@ -3,19 +3,12 @@ package com.example.bitacoradigital.viewmodel
 import android.content.Context
 import android.net.Uri
 import android.os.Build
-import android.os.CancellationSignal
-import android.os.ParcelFileDescriptor
-import android.print.PageRange
-import android.print.PrintAttributes
-import android.print.PrintDocumentAdapter
-import android.print.PrintDocumentInfo
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.model.Novedad
-import com.example.bitacoradigital.util.Constants
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +16,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -32,12 +24,6 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
-import androidx.core.content.FileProvider
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import java.io.File
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -58,8 +44,6 @@ class NovedadesViewModel(
     val error: StateFlow<String?> = _error.asStateFlow()
     private val _destacados = MutableStateFlow<Set<Int>>(emptySet())
     val destacados: StateFlow<Set<Int>> = _destacados.asStateFlow()
-    private val _reportePdfUri = MutableStateFlow<Uri?>(null)
-    val reportePdfUri: StateFlow<Uri?> = _reportePdfUri.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -70,8 +54,6 @@ class NovedadesViewModel(
     }
 
     fun clearError() { _error.value = null }
-
-    fun clearReportePdfUri() { _reportePdfUri.value = null }
 
     fun cargarComentarios() {
         viewModelScope.launch {
@@ -212,46 +194,6 @@ class NovedadesViewModel(
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    fun solicitarReporteIA(context: Context, prompt: String) {
-        viewModelScope.launch {
-            _cargando.value = true
-            try {
-                val json = JSONObject().apply { put("userprompt", prompt) }
-                val body = json.toString().toRequestBody("application/json".toMediaType())
-                val request = Request.Builder()
-                    .url("https://agente.cs3.mx/webhook/wrapnove")
-                    .post(body)
-                    .addHeader("Content-Type", "application/json")
-                    .build()
-                val client = OkHttpClient.Builder()
-                    .connectTimeout(0, TimeUnit.MILLISECONDS)
-                    .readTimeout(0, TimeUnit.MILLISECONDS)
-                    .writeTimeout(0, TimeUnit.MILLISECONDS)
-                    .callTimeout(0, TimeUnit.MILLISECONDS)
-                    .build()
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
-                response.use { resp ->
-                    if (resp.isSuccessful) {
-                        val html = resp.body?.string().orEmpty()
-                        if (html.isNotBlank()) {
-                            val uri = withContext(Dispatchers.Main) { generarPdfDesdeHtml(context, html) }
-                            _reportePdfUri.value = uri
-                        } else {
-                            _error.value = "Reporte vacío"
-                        }
-                    } else {
-                        _error.value = "Error ${resp.code}"
-                    }
-                }
-            } catch (e: Exception) {
-                _error.value = e.localizedMessage
-            } finally {
-                _cargando.value = false
-            }
-        }
-    }
-
     @RequiresApi(Build.VERSION_CODES.O)
     fun publicarComentario(context: Context, contenido: String, imagenUri: Uri?, padreId: Int?) {
         viewModelScope.launch {
@@ -351,98 +293,6 @@ class NovedadesViewModel(
         }
     }
 }
-
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-private suspend fun generarPdfDesdeHtml(context: Context, html: String): Uri =
-    suspendCancellableCoroutine { continuation ->
-        val webView = WebView(context)
-        webView.settings.defaultTextEncodingName = "UTF-8"
-        val pdfDir = File(context.cacheDir, "reports").apply { mkdirs() }
-        val file = File(pdfDir, "reporte_ia_${System.currentTimeMillis()}.pdf")
-        val cancellationSignal = CancellationSignal()
-        continuation.invokeOnCancellation {
-            cancellationSignal.cancel()
-            webView.destroy()
-        }
-        webView.webViewClient = object : WebViewClient() {
-            override fun onPageFinished(view: WebView?, url: String?) {
-                val adapter = webView.createPrintDocumentAdapter("ReporteIA")
-                val attributes = PrintAttributes.Builder()
-                    .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
-                    .setResolution(PrintAttributes.Resolution("reporte", "Reporte", 600, 600))
-                    .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
-                    .build()
-                adapter.onLayout(
-                    null,
-                    attributes,
-                    cancellationSignal,
-                    object : PrintDocumentAdapter.LayoutResultCallback() {
-                        override fun onLayoutFinished(info: PrintDocumentInfo?, changed: Boolean) {
-                            try {
-                                val parcelDescriptor = ParcelFileDescriptor.open(
-                                    file,
-                                    ParcelFileDescriptor.MODE_CREATE or
-                                            ParcelFileDescriptor.MODE_TRUNCATE or
-                                            ParcelFileDescriptor.MODE_WRITE_ONLY
-                                )
-                                adapter.onWrite(
-                                    arrayOf(PageRange.ALL_PAGES),
-                                    parcelDescriptor,
-                                    CancellationSignal(),
-                                    object : PrintDocumentAdapter.WriteResultCallback() {
-                                        override fun onWriteFinished(pages: Array<PageRange>) {
-                                            try {
-                                                parcelDescriptor.close()
-                                            } catch (_: Exception) {
-                                            }
-                                            if (continuation.isActive) {
-                                                val uri = FileProvider.getUriForFile(
-                                                    context,
-                                                    Constants.FILE_PROVIDER_AUTHORITY,
-                                                    file
-                                                )
-                                                continuation.resume(uri)
-                                            }
-                                            webView.destroy()
-                                        }
-
-                                        override fun onWriteFailed(error: CharSequence?) {
-                                            try {
-                                                parcelDescriptor.close()
-                                            } catch (_: Exception) {
-                                            }
-                                            if (continuation.isActive) {
-                                                continuation.resumeWithException(
-                                                    Exception(error?.toString() ?: "Error al generar PDF")
-                                                )
-                                            }
-                                            webView.destroy()
-                                        }
-                                    }
-                                )
-                            } catch (e: Exception) {
-                                if (continuation.isActive) {
-                                    continuation.resumeWithException(e)
-                                }
-                                webView.destroy()
-                            }
-                        }
-
-                        override fun onLayoutFailed(error: CharSequence?) {
-                            if (continuation.isActive) {
-                                continuation.resumeWithException(
-                                    Exception(error?.toString() ?: "Error al preparar PDF")
-                                )
-                            }
-                            webView.destroy()
-                        }
-                    },
-                    null
-                )
-            }
-        }
-        webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
-    }
 
 class NovedadesViewModelFactory(
     private val prefs: SessionPreferences,
