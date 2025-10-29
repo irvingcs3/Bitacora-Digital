@@ -129,6 +129,7 @@ fun NovedadesScreen(
     val puedeEliminar = "Borrar Comentario" in permisos
     val puedeVer = "Ver Novedades" in permisos
     val puedePublicar = "Publicar Novedad" in permisos
+    val puedeReporteIA = "reporte_con_ia" in permisos
 
     var filterText by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf(FilterType.CONTENIDO) }
@@ -384,12 +385,98 @@ fun NovedadesScreen(
                 }
             }
             if (puedePublicar) {
-                OutlinedTextField(
-                    value = nuevo,
-                    onValueChange = { nuevo = it },
-                    label = { Text("Nuevo comentario") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                var mentionExpanded by remember { mutableStateOf(false) }
+                var mentionQuery by remember { mutableStateOf("") }
+                var mentionRange by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+                val mentionOptions = remember { listOf("ia", "asistencia") }
+                val filteredMentionOptions = remember(mentionQuery) {
+                    if (mentionQuery.isBlank()) mentionOptions else mentionOptions.filter {
+                        it.startsWith(mentionQuery, ignoreCase = true)
+                    }
+                }
+                LaunchedEffect(filteredMentionOptions) {
+                    if (filteredMentionOptions.isEmpty()) {
+                        mentionExpanded = false
+                    }
+                }
+                LaunchedEffect(puedeReporteIA) {
+                    if (!puedeReporteIA) {
+                        mentionExpanded = false
+                        mentionQuery = ""
+                        mentionRange = null
+                    }
+                }
+                ExposedDropdownMenuBox(
+                    expanded = mentionExpanded && puedeReporteIA && filteredMentionOptions.isNotEmpty(),
+                    onExpandedChange = { expanded ->
+                        if (puedeReporteIA) {
+                            mentionExpanded = expanded && filteredMentionOptions.isNotEmpty()
+                        }
+                    }
+                ) {
+                    OutlinedTextField(
+                        value = nuevo,
+                        onValueChange = { value ->
+                            nuevo = value
+                            if (puedeReporteIA) {
+                                val caretIndex = value.length
+                                val atIndex = value.lastIndexOf('@', caretIndex - 1)
+                                if (atIndex >= 0) {
+                                    val preceding = value.getOrNull(atIndex - 1)
+                                    val mentionText = value.substring(atIndex + 1, caretIndex)
+                                    val hasSpace = mentionText.any { it.isWhitespace() }
+                                    if ((preceding == null || preceding.isWhitespace()) && !hasSpace) {
+                                        mentionRange = atIndex to caretIndex
+                                        mentionQuery = mentionText
+                                        mentionExpanded = true
+                                    } else {
+                                        mentionRange = null
+                                        mentionExpanded = false
+                                        mentionQuery = ""
+                                    }
+                                } else {
+                                    mentionRange = null
+                                    mentionExpanded = false
+                                    mentionQuery = ""
+                                }
+                            }
+                        },
+                        label = { Text("Nuevo comentario") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        trailingIcon = {
+                            if (puedeReporteIA && mentionRange != null && filteredMentionOptions.isNotEmpty()) {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = mentionExpanded)
+                            }
+                        }
+                    )
+                    ExposedDropdownMenu(
+                        expanded = mentionExpanded && puedeReporteIA && filteredMentionOptions.isNotEmpty(),
+                        onDismissRequest = { mentionExpanded = false }
+                    ) {
+                        filteredMentionOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text("@$option") },
+                                onClick = {
+                                    val range = mentionRange ?: (nuevo.length to nuevo.length)
+                                    val start = range.first
+                                    val end = range.second
+                                    val before = nuevo.substring(0, start)
+                                    val after = if (end <= nuevo.length) nuevo.substring(end) else ""
+                                    nuevo = buildString {
+                                        append(before)
+                                        append("@${option} ")
+                                        append(after)
+                                    }
+                                    mentionExpanded = false
+                                    mentionQuery = ""
+                                    mentionRange = null
+                                }
+                            )
+                        }
+                    }
+                }
                 imagenNueva?.let { uri ->
                     Spacer(Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -450,16 +537,39 @@ fun NovedadesScreen(
                     }
                     Button(
                         onClick = {
-                            if (nuevo.contains("@asistencia")) {
-                                if (imagenNueva != null) {
+                            val trimmed = nuevo.trimStart()
+                            when {
+                                puedeReporteIA && trimmed.startsWith("@ia") -> {
+                                    val prompt = trimmed.removePrefix("@ia").trimStart()
+                                    if (prompt.isBlank()) {
+                                        viewModel.mostrarError("Escribe una solicitud para @ia")
+                                    } else {
+                                        viewModel.publicarComentarioIA(nuevo, null)
+                                        nuevo = ""
+                                        imagenNueva = null
+                                        mentionExpanded = false
+                                        mentionQuery = ""
+                                        mentionRange = null
+                                    }
+                                }
+                                nuevo.contains("@asistencia") -> {
+                                    if (imagenNueva != null) {
+                                        viewModel.publicarComentario(context, nuevo, imagenNueva, null)
+                                        nuevo = ""
+                                        imagenNueva = null
+                                        mentionExpanded = false
+                                        mentionQuery = ""
+                                        mentionRange = null
+                                    }
+                                }
+                                else -> {
                                     viewModel.publicarComentario(context, nuevo, imagenNueva, null)
                                     nuevo = ""
                                     imagenNueva = null
+                                    mentionExpanded = false
+                                    mentionQuery = ""
+                                    mentionRange = null
                                 }
-                            } else {
-                                viewModel.publicarComentario(context, nuevo, imagenNueva, null)
-                                nuevo = ""
-                                imagenNueva = null
                             }
                         },
                         enabled = nuevo.isNotBlank()
