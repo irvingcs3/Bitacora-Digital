@@ -1,95 +1,130 @@
 package com.example.bitacoradigital.ui.screens.novedades
 
-import android.os.Build
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.ui.zIndex
-import androidx.compose.foundation.layout.navigationBarsPadding
-import com.example.bitacoradigital.ui.theme.BrandOrange
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import androidx.compose.ui.draw.rotate
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.background
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.window.Dialog
-import kotlin.math.abs
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.ZoomIn
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Delete
-import kotlinx.coroutines.launch
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import android.Manifest
-import android.content.pm.PackageManager
-import android.net.Uri
-import java.io.File
-import androidx.compose.material3.*
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.DatePickerDialog
 import android.app.TimePickerDialog
-import androidx.compose.runtime.*
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
+import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.annotation.RequiresApi
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.ZoneId
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.ZoomIn
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallTopAppBar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.bitacoradigital.data.SessionPreferences
 import com.example.bitacoradigital.model.Novedad
 import com.example.bitacoradigital.ui.components.HomeConfigNavBar
+import com.example.bitacoradigital.ui.theme.BrandOrange
 import com.example.bitacoradigital.util.Constants
+import com.example.bitacoradigital.util.toReadableDateTime
 import com.example.bitacoradigital.viewmodel.HomeViewModel
 import com.example.bitacoradigital.viewmodel.NovedadesViewModel
 import com.example.bitacoradigital.viewmodel.NovedadesViewModelFactory
-import com.example.bitacoradigital.util.toReadableDateTime
-
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import kotlinx.coroutines.launch
+import java.io.File
+import java.time.Instant
+import java.time.LocalTime
+import java.time.ZoneId
+import kotlin.math.abs
 
 @RequiresApi(Build.VERSION_CODES.O)
 enum class FilterType { HORA, FECHA, AUTOR, CONTENIDO }
@@ -97,8 +132,7 @@ enum class FilterType { HORA, FECHA, AUTOR, CONTENIDO }
 @Composable
 fun autorColor(name: String): Color {
     val palette = listOf(
-
-        Color(0xFFFFFFFF), // orange
+        Color(0xFFFFFFFF),
         Color(0xFF000000),
         Color(0xFFD65930)
     )
@@ -123,12 +157,15 @@ fun NovedadesScreen(
     val cargando by viewModel.cargando.collectAsState()
     val error by viewModel.error.collectAsState()
     val destacados by viewModel.destacados.collectAsState()
+    val reporte by viewModel.reporteGenerado.collectAsState()
 
     val puedeResponder = "Responder Comentario" in permisos
     val puedeEditar = "Editar Comentario" in permisos
     val puedeEliminar = "Borrar Comentario" in permisos
     val puedeVer = "Ver Novedades" in permisos
     val puedePublicar = "Publicar Novedad" in permisos
+    val puedeReporteIA = "Reporte con IA" in permisos
+
 
     var filterText by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf(FilterType.CONTENIDO) }
@@ -146,14 +183,13 @@ fun NovedadesScreen(
             val children = n.respuestas.mapNotNull { filtrar(it) }
             return if (match || children.isNotEmpty()) n.copy(respuestas = children) else null
         }
-        if (filterText.isBlank()) comentarios else comentarios.mapNotNull { filtrar(it) }
+            if (filterText.isBlank()) comentarios else comentarios.mapNotNull { filtrar(it) }
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(Unit) {
         if (puedeVer) viewModel.cargarComentarios()
     }
-
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -164,26 +200,24 @@ fun NovedadesScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    var nuevo by remember { mutableStateOf("") }
+
+    var nuevo by rememberSaveable { mutableStateOf("") }
     var imagenNueva by remember { mutableStateOf<Uri?>(null) }
     var showCtpatDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-    val showScrollToTop by remember {
-        derivedStateOf {
-            listState.firstVisibleItemIndex > 0 ||
-                    listState.firstVisibleItemScrollOffset > 0
-        }
-    }
+    val showScrollToTop by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0 } }
+
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imagenNueva = uri }
+
     var hasCameraPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(
+            androidx.core.content.ContextCompat.checkSelfPermission(
                 context,
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED
+                android.Manifest.permission.CAMERA
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         )
     }
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -195,7 +229,7 @@ fun NovedadesScreen(
     fun createImageUri(): Uri {
         val imagesDir = File(context.cacheDir, "images").apply { mkdirs() }
         val image = File.createTempFile("comment_", ".jpg", imagesDir)
-        return FileProvider.getUriForFile(
+        return androidx.core.content.FileProvider.getUriForFile(
             context,
             Constants.FILE_PROVIDER_AUTHORITY,
             image
@@ -205,11 +239,32 @@ fun NovedadesScreen(
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success -> if (success) tempUri?.let { imagenNueva = it } }
+
     val snackbarHostState = remember { SnackbarHostState() }
     error?.let { msg ->
         LaunchedEffect(msg) {
             snackbarHostState.showSnackbar(msg)
             viewModel.clearError()
+        }
+    }
+
+    val savePdfLauncher = rememberLauncherForActivityResult(
+        CreateDocument("application/pdf")
+    ) { uri: Uri? ->
+        val currentReporte = viewModel.reporteGenerado.value
+        if (uri != null && currentReporte != null) {
+            try {
+                context.contentResolver.openOutputStream(uri)?.use { out ->
+                    out.write(currentReporte.bytes)
+                    out.flush()
+                }
+                viewModel.confirmarDescargaExitosa()
+                coroutineScope.launch { snackbarHostState.showSnackbar("PDF guardado correctamente") }
+                nuevo = ""
+                imagenNueva = null
+            } catch (_: Exception) {
+                coroutineScope.launch { snackbarHostState.showSnackbar("Error al guardar") }
+            }
         }
     }
 
@@ -236,17 +291,14 @@ fun NovedadesScreen(
         floatingActionButton = {
             AnimatedVisibility(showScrollToTop) {
                 FloatingActionButton(
-                    onClick = {
-                        coroutineScope.launch { listState.animateScrollToItem(0) }
-                    },
+                    onClick = { coroutineScope.launch { listState.animateScrollToItem(0) } },
                     containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier
                         .navigationBarsPadding()
                         .padding(bottom = 16.dp, end = 16.dp)
-                        .zIndex(1f)
                 ) {
-                    Icon(Icons.Default.ArrowUpward, contentDescription = "Ir al inicio")
+                    Icon(Icons.Default.ArrowUpward, contentDescription = null)
                 }
             }
         }
@@ -258,37 +310,32 @@ fun NovedadesScreen(
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             if (showDatePicker) {
+                val state = datePickerState
                 DatePickerDialog(
                     onDismissRequest = { showDatePicker = false },
                     confirmButton = {
                         TextButton(onClick = {
-                            datePickerState.selectedDateMillis?.let { millis ->
+                            state.selectedDateMillis?.let { millis ->
                                 val date = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
                                 filterText = date.toString()
                             }
                             showDatePicker = false
                         }) { Text("OK") }
                     },
-                    dismissButton = {
-                        TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
-                    }
-                ) {
-                    DatePicker(state = datePickerState)
-                }
+                    dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") } }
+                ) { DatePicker(state = state) }
             }
             if (showTimePicker) {
-                val context = LocalContext.current
+                val ctx = LocalContext.current
                 LaunchedEffect(Unit) {
                     val now = LocalTime.now()
                     val dialog = TimePickerDialog(
-                        context,
+                        ctx,
                         { _, hour, minute ->
                             filterText = LocalTime.of(hour, minute).toString()
                             showTimePicker = false
                         },
-                        now.hour,
-                        now.minute,
-                        true
+                        now.hour, now.minute, true
                     )
                     dialog.setOnDismissListener { showTimePicker = false }
                     dialog.show()
@@ -303,12 +350,8 @@ fun NovedadesScreen(
                     readOnly = filterType == FilterType.FECHA || filterType == FilterType.HORA,
                     trailingIcon = {
                         when (filterType) {
-                            FilterType.FECHA -> IconButton(onClick = { showDatePicker = true }) {
-                                Icon(Icons.Default.DateRange, contentDescription = null)
-                            }
-                            FilterType.HORA -> IconButton(onClick = { showTimePicker = true }) {
-                                Icon(Icons.Default.AccessTime, contentDescription = null)
-                            }
+                            FilterType.FECHA -> IconButton(onClick = { showDatePicker = true }) { Icon(Icons.Default.DateRange, contentDescription = null) }
+                            FilterType.HORA -> IconButton(onClick = { showTimePicker = true }) { Icon(Icons.Default.AccessTime, contentDescription = null) }
                             else -> {}
                         }
                     }
@@ -316,29 +359,22 @@ fun NovedadesScreen(
                 Spacer(Modifier.width(8.dp))
                 var menuOpen by remember { mutableStateOf(false) }
                 Box {
-                    TextButton(onClick = { menuOpen = true }) {
-                        Text(filterType.name.lowercase().replaceFirstChar { it.uppercase() })
-                    }
+                    TextButton(onClick = { menuOpen = true }) { Text(filterType.name.lowercase().replaceFirstChar { it.uppercase() }) }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         FilterType.values().forEach { opt ->
                             DropdownMenuItem(
                                 text = { Text(opt.name.lowercase().replaceFirstChar { c -> c.uppercase() }) },
-                                onClick = {
-                                    filterType = opt
-                                    menuOpen = false
-                                }
+                                onClick = { filterType = opt; menuOpen = false }
                             )
                         }
                     }
                 }
             }
             Spacer(Modifier.height(4.dp))
-            if (!puedeVer) {
-                Text("Sin permisos para ver novedades")
-            } else if (cargando && comentarios.isEmpty()) {
-                CircularProgressIndicator()
-            } else if (filtrados.isEmpty()) {
-                Box(
+            when {
+                !puedeVer -> Text("Sin permisos para ver novedades")
+                cargando && comentarios.isEmpty() -> CircularProgressIndicator()
+                filtrados.isEmpty() -> Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth(),
@@ -350,35 +386,36 @@ fun NovedadesScreen(
                         Text("Aun no hay novedades")
                     }
                 }
-            } else {
-                val swipeState = rememberSwipeRefreshState(cargando)
-                SwipeRefresh(
-                    state = swipeState,
-                    onRefresh = { viewModel.cargarComentarios() },
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                ) {
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                else -> {
+                    val swipeState = rememberSwipeRefreshState(cargando)
+                    SwipeRefresh(
+                        state = swipeState,
+                        onRefresh = { viewModel.cargarComentarios() },
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
                     ) {
-                        items(filtrados, key = { it.id }) { c ->
-                            ComentarioItem(
-                                comentario = c,
-                                nivel = 0,
-                                destacados = destacados,
-                                onToggleDestacado = { viewModel.toggleDestacado(it) },
-                                onResponder = { id, texto, uri ->
-                                    viewModel.publicarComentario(context, texto, uri, id)
-                                },
-                                onEditar = { id, txt -> viewModel.editarComentario(id, txt) },
-                                onEliminar = { viewModel.eliminarComentario(it) },
-                                puedeResponder = puedeResponder,
-                                puedeEditar = puedeEditar,
-                                puedeEliminar = puedeEliminar
-                            )
+                        LazyColumn(
+                            state = rememberLazyListState().also { _ -> },
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(filtrados, key = { it.id }) { c ->
+                                ComentarioItem(
+                                    comentario = c,
+                                    nivel = 0,
+                                    destacados = destacados,
+                                    onToggleDestacado = { viewModel.toggleDestacado(it) },
+                                    onResponder = { id, texto, uri ->
+                                        viewModel.publicarComentario(context, texto, uri, id)
+                                    },
+                                    onEditar = { id, txt -> viewModel.editarComentario(id, txt) },
+                                    onEliminar = { viewModel.eliminarComentario(it) },
+                                    puedeResponder = puedeResponder,
+                                    puedeEditar = puedeEditar,
+                                    puedeEliminar = puedeEliminar
+                                )
+                            }
                         }
                     }
                 }
@@ -435,7 +472,7 @@ fun NovedadesScreen(
                                         tempUri = uriTemp
                                         cameraLauncher.launch(uriTemp)
                                     } else {
-                                        permissionLauncher.launch(Manifest.permission.CAMERA)
+                                        permissionLauncher.launch(android.Manifest.permission.CAMERA)
                                     }
                                 }
                             )
@@ -450,16 +487,23 @@ fun NovedadesScreen(
                     }
                     Button(
                         onClick = {
-                            if (nuevo.contains("@asistencia")) {
-                                if (imagenNueva != null) {
+                            val trimmed = nuevo.trimStart()
+                            when {
+                                puedeReporteIA && trimmed.startsWith("@ia") -> {
+                                    viewModel.publicarComentarioIA(nuevo, null)
+                                }
+                                nuevo.contains("@asistencia") -> {
+                                    if (imagenNueva != null) {
+                                        viewModel.publicarComentario(context, nuevo, imagenNueva, null)
+                                        nuevo = ""
+                                        imagenNueva = null
+                                    }
+                                }
+                                else -> {
                                     viewModel.publicarComentario(context, nuevo, imagenNueva, null)
                                     nuevo = ""
                                     imagenNueva = null
                                 }
-                            } else {
-                                viewModel.publicarComentario(context, nuevo, imagenNueva, null)
-                                nuevo = ""
-                                imagenNueva = null
                             }
                         },
                         enabled = nuevo.isNotBlank()
@@ -474,6 +518,34 @@ fun NovedadesScreen(
                 }
             }
         }
+    }
+
+    val currentReporte = reporte
+    if (currentReporte != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearReporteGenerado() },
+            icon = { Icon(Icons.Default.Description, contentDescription = null) },
+            title = { Text("Reporte listo") },
+            text = {
+                Column {
+                    Text("Se generó el PDF correctamente.")
+                    Spacer(Modifier.height(8.dp))
+                    Text("Nombre sugerido: ${currentReporte.fileName}")
+                    Spacer(Modifier.height(4.dp))
+                    Text("Tamaño: ${String.format("%.1f KB", currentReporte.bytes.size / 1024.0)}")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { savePdfLauncher.launch(currentReporte.fileName) }) {
+                    Text("Descargar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.clearReporteGenerado() }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }
 
@@ -504,7 +576,7 @@ fun FullScreenImageDialog(url: String, onDismiss: () -> Unit) {
             )
             Icon(
                 Icons.Default.ZoomIn,
-                contentDescription = "Zoom",
+                contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -513,6 +585,7 @@ fun FullScreenImageDialog(url: String, onDismiss: () -> Unit) {
         }
     }
 }
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ComentarioItem(
@@ -552,8 +625,7 @@ fun ComentarioItem(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             elevation = CardDefaults.elevatedCardElevation(4.dp)
-        )
-        {
+        ) {
             Column(Modifier.padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (comentario.respuestas.isNotEmpty()) {
@@ -585,18 +657,19 @@ fun ComentarioItem(
                         Icon(
                             imageVector = if (marcado) Icons.Default.Star else Icons.Default.StarBorder,
                             contentDescription = null
-                        )                    }
+                        )
+                    }
                     if (puedeEditar) {
                         IconButton(onClick = {
                             editText = comentario.contenido
                             editDialog = true
                         }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Editar")
+                            Icon(Icons.Default.Edit, contentDescription = null)
                         }
                     }
                     if (puedeEliminar) {
                         IconButton(onClick = { confirmDelete = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                            Icon(Icons.Default.Delete, contentDescription = null)
                         }
                     }
                 }
@@ -669,8 +742,7 @@ fun ComentarioItem(
                                     responder = false
                                 },
                                 enabled = texto.isNotBlank(),
-                                modifier = Modifier
-                                    .align(Alignment.CenterVertically)
+                                modifier = Modifier.align(Alignment.CenterVertically)
                             ) {
                                 Text("Enviar")
                             }
@@ -683,7 +755,7 @@ fun ComentarioItem(
         AnimatedVisibility(visible = expandido) {
             Column {
                 Spacer(Modifier.height(8.dp))
-                comentario.respuestas.forEachIndexed { index, child ->
+                comentario.respuestas.forEach { child ->
                     ComentarioItem(
                         comentario = child,
                         nivel = nivel + 1,
@@ -700,9 +772,8 @@ fun ComentarioItem(
                 }
             }
         }
-        showImage?.let { img ->
-            FullScreenImageDialog(url = img) { showImage = null }
-        }
+        showImage?.let { img -> FullScreenImageDialog(url = img) { showImage = null } }
+
         if (confirmDelete) {
             AlertDialog(
                 onDismissRequest = { confirmDelete = false },
@@ -739,6 +810,7 @@ fun ComentarioItem(
         }
     }
 }
+
 @Composable
 private fun TipoBadge(tipo: String) {
     val normalized = tipo
@@ -798,16 +870,16 @@ fun CtpatDialog(onDismiss: () -> Unit) {
     val observaciones = remember { ctpatItems.map { mutableStateOf("") } }
     var comentarioGeneral by remember { mutableStateOf("") }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        androidx.compose.material3.Surface(
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.background
         ) {
-            Scaffold(
+            androidx.compose.material3.Scaffold(
                 topBar = { TopAppBar(title = { Text("Checklist de inspección") }) },
                 floatingActionButton = {
                     FloatingActionButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Send, contentDescription = "Enviar")
+                        Icon(Icons.Default.Send, contentDescription = null)
                     }
                 }
             ) { innerPadding ->
@@ -818,9 +890,12 @@ fun CtpatDialog(onDismiss: () -> Unit) {
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    itemsIndexed(ctpatItems) { index, item ->
+                    items(ctpatItems.size) { index ->
+                        val item = ctpatItems[index]
                         Card(
-                            modifier = Modifier.fillMaxWidth().animateContentSize(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateContentSize(),
                             shape = RoundedCornerShape(12.dp),
                             elevation = CardDefaults.cardElevation(4.dp)
                         ) {

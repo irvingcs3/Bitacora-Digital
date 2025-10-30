@@ -29,10 +29,30 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 
+data class GeneratedReport(
+    val bytes: ByteArray,
+    val fileName: String,
+    /** Texto original escrito por el usuario, p.e. "@ia dame el reporte ..." */
+    val originalPromptComment: String,
+    /** Id del comentario padre si aplica (responder a un hilo) */
+    val padreId: Int?
+)
+
 class NovedadesViewModel(
     private val prefs: SessionPreferences,
     private val perimetroId: Int
 ) : ViewModel() {
+
+    private fun httpClient(): OkHttpClient =
+        OkHttpClient.Builder()
+            .connectTimeout(0, TimeUnit.MILLISECONDS)
+            .readTimeout(0, TimeUnit.MILLISECONDS)
+            .writeTimeout(0, TimeUnit.MILLISECONDS)
+            .callTimeout(0, TimeUnit.MILLISECONDS)
+            .build()
+
+    private suspend fun obtenerToken(): String? =
+        withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() }
 
     private val _comentarios = MutableStateFlow<List<Novedad>>(emptyList())
     val comentarios: StateFlow<List<Novedad>> = _comentarios.asStateFlow()
@@ -42,8 +62,13 @@ class NovedadesViewModel(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
     private val _destacados = MutableStateFlow<Set<Int>>(emptySet())
     val destacados: StateFlow<Set<Int>> = _destacados.asStateFlow()
+
+    /** Reporte generado, listo para mostrar diálogo y permitir descarga */
+    private val _reporteGenerado = MutableStateFlow<GeneratedReport?>(null)
+    val reporteGenerado: StateFlow<GeneratedReport?> = _reporteGenerado.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -54,24 +79,19 @@ class NovedadesViewModel(
     }
 
     fun clearError() { _error.value = null }
+    fun clearReporteGenerado() { _reporteGenerado.value = null }
 
     fun cargarComentarios() {
         viewModelScope.launch {
             _cargando.value = true
             try {
-                val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
+                val token = obtenerToken() ?: return@launch
                 val request = Request.Builder()
                     .url("https://bit.cs3.mx/api/v1/novedad/")
                     .get()
                     .addHeader("x-session-token", token)
                     .build()
-                val client = OkHttpClient.Builder()
-                    .connectTimeout(0, TimeUnit.MILLISECONDS)
-                    .readTimeout(0, TimeUnit.MILLISECONDS)
-                    .writeTimeout(0, TimeUnit.MILLISECONDS)
-                    .callTimeout(0, TimeUnit.MILLISECONDS)
-                    .build()
-                val resp = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                val resp = withContext(Dispatchers.IO) { httpClient().newCall(request).execute() }
                 resp.use { r ->
                     if (r.isSuccessful) {
                         val arr = JSONArray(r.body?.string() ?: "[]")
@@ -105,7 +125,7 @@ class NovedadesViewModel(
         viewModelScope.launch {
             _cargando.value = true
             try {
-                val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
+                val token = obtenerToken() ?: return@launch
                 val json = JSONObject().apply { put("contenido", contenido) }
                 val body = json.toString().toRequestBody("application/json".toMediaType())
                 val request = Request.Builder()
@@ -114,13 +134,7 @@ class NovedadesViewModel(
                     .addHeader("x-session-token", token)
                     .addHeader("Content-Type", "application/json")
                     .build()
-                val client = OkHttpClient.Builder()
-                    .connectTimeout(0, TimeUnit.MILLISECONDS)
-                    .readTimeout(0, TimeUnit.MILLISECONDS)
-                    .writeTimeout(0, TimeUnit.MILLISECONDS)
-                    .callTimeout(0, TimeUnit.MILLISECONDS)
-                    .build()
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                val response = withContext(Dispatchers.IO) { httpClient().newCall(request).execute() }
                 response.use { resp ->
                     if (resp.isSuccessful) {
                         cargarComentarios()
@@ -140,19 +154,13 @@ class NovedadesViewModel(
         viewModelScope.launch {
             _cargando.value = true
             try {
-                val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
+                val token = obtenerToken() ?: return@launch
                 val request = Request.Builder()
                     .url("https://bit.cs3.mx/api/v1/novedad/${id}/")
                     .delete()
                     .addHeader("x-session-token", token)
                     .build()
-                val client = OkHttpClient.Builder()
-                    .connectTimeout(0, TimeUnit.MILLISECONDS)
-                    .readTimeout(0, TimeUnit.MILLISECONDS)
-                    .writeTimeout(0, TimeUnit.MILLISECONDS)
-                    .callTimeout(0, TimeUnit.MILLISECONDS)
-                    .build()
-                val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                val response = withContext(Dispatchers.IO) { httpClient().newCall(request).execute() }
                 response.use { resp ->
                     if (resp.isSuccessful) {
                         cargarComentarios()
@@ -200,7 +208,7 @@ class NovedadesViewModel(
             if (contenido.contains("@asistencia") && imagenUri == null) return@launch
             _cargando.value = true
             try {
-                val token = withContext(Dispatchers.IO) { prefs.sessionToken.firstOrNull() } ?: return@launch
+                val token = obtenerToken() ?: return@launch
                 var finalContenido = contenido
                 var imageBytes: ByteArray? = null
                 if (imagenUri != null) {
@@ -222,13 +230,7 @@ class NovedadesViewModel(
                         .addHeader("X-Timestamp-Readable", tsReadable)
                         .addHeader("X-Timezone", "America/Mexico_City")
                         .build()
-                    val client = OkHttpClient.Builder()
-                        .connectTimeout(0, TimeUnit.MILLISECONDS)
-                        .readTimeout(0, TimeUnit.MILLISECONDS)
-                        .writeTimeout(0, TimeUnit.MILLISECONDS)
-                        .callTimeout(0, TimeUnit.MILLISECONDS)
-                        .build()
-                    val resp = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                    val resp = withContext(Dispatchers.IO) { httpClient().newCall(request).execute() }
                     resp.use { r ->
                         if (r.isSuccessful) {
                             val arr = JSONArray(r.body?.string() ?: "[]")
@@ -250,9 +252,7 @@ class NovedadesViewModel(
                     .setType(MultipartBody.FORM)
                     .addFormDataPart("contenido", finalContenido)
                     .addFormDataPart("perimetro", perimetroId.toString())
-                if (padreId != null) {
-                    builder.addFormDataPart("padre", padreId.toString())
-                }
+                if (padreId != null) builder.addFormDataPart("padre", padreId.toString())
                 imageBytes?.let {
                     builder.addFormDataPart(
                         "imagen",
@@ -266,13 +266,7 @@ class NovedadesViewModel(
                     .post(requestBody)
                     .addHeader("x-session-token", token)
                     .build()
-                val client = OkHttpClient.Builder()
-                    .connectTimeout(0, TimeUnit.MILLISECONDS)
-                    .readTimeout(0, TimeUnit.MILLISECONDS)
-                    .writeTimeout(0, TimeUnit.MILLISECONDS)
-                    .callTimeout(0, TimeUnit.MILLISECONDS)
-                    .build()
-                val resp = withContext(Dispatchers.IO) { client.newCall(request).execute() }
+                val resp = withContext(Dispatchers.IO) { httpClient().newCall(request).execute() }
                 resp.use { r ->
                     if (!r.isSuccessful) {
                         _error.value = "Error ${r.code}"
@@ -287,12 +281,147 @@ class NovedadesViewModel(
             }
         }
     }
+
     fun toggleDestacado(id: Int) {
+        viewModelScope.launch { prefs.toggleDestacado(id) }
+    }
+
+    // =========================
+    //        @ia FLUJO
+    // =========================
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun publicarComentarioIA(contenido: String, padreId: Int?) {
         viewModelScope.launch {
-            prefs.toggleDestacado(id)
+            val trimmed = contenido.trimStart()
+            if (!trimmed.startsWith("@ia")) return@launch
+            val userPrompt = trimmed.removePrefix("@ia").trimStart()
+            if (userPrompt.isBlank()) {
+                _error.value = "Escribe una solicitud para @ia"
+                return@launch
+            }
+            _cargando.value = true
+            try {
+                // 1) HTML desde el agente
+                val html = solicitarReporteHtml(userPrompt)
+                val lowerHtml = html.lowercase()
+                if (!lowerHtml.contains("<html") && !lowerHtml.contains("<!doctype html")) {
+                    _error.value = "La respuesta de @ia es inválida"
+                    return@launch
+                }
+                // 2) Generar PDF (bytes)
+                val (pdfBytes, baseName) = generarPdfDesdeHtml(html)
+                // 3) Exponer al UI para mostrar diálogo de descarga
+                _reporteGenerado.value = GeneratedReport(
+                    bytes = pdfBytes,
+                    fileName = "$baseName.pdf",
+                    originalPromptComment = contenido,
+                    padreId = padreId
+                )
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage
+            } finally {
+                _cargando.value = false
+            }
+        }
+    }
+
+    /** El UI debe llamar esto tras guardar con éxito el PDF */
+    fun confirmarDescargaExitosa() {
+        val payload = _reporteGenerado.value ?: return
+        viewModelScope.launch {
+            try {
+                val token = obtenerToken() ?: return@launch
+                enviarComentario(
+                    token = token,
+                    contenido = "Reporte generado y descargado",
+                    padreId = payload.padreId,
+                    adjunto = null
+                )
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage
+            } finally {
+                clearReporteGenerado()
+            }
+        }
+    }
+
+    private suspend fun enviarComentario(
+        token: String,
+        contenido: String,
+        padreId: Int?,
+        adjunto: ComentarioAdjunto?
+    ) {
+        val builder = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("contenido", contenido)
+            .addFormDataPart("perimetro", perimetroId.toString())
+        if (padreId != null) builder.addFormDataPart("padre", padreId.toString())
+        adjunto?.let {
+            builder.addFormDataPart(
+                "imagen",
+                it.fileName,
+                it.bytes.toRequestBody(it.mimeType.toMediaTypeOrNull())
+            )
+        }
+        val requestBody = builder.build()
+        val request = Request.Builder()
+            .url("https://bit.cs3.mx/api/v1/novedad/")
+            .post(requestBody)
+            .addHeader("x-session-token", token)
+            .build()
+        val resp = withContext(Dispatchers.IO) { httpClient().newCall(request).execute() }
+        resp.use { r ->
+            if (!r.isSuccessful) _error.value = "Error ${r.code}" else cargarComentarios()
+        }
+    }
+
+    // ------ util @ia ------
+    @RequiresApi(Build.VERSION_CODES.O)
+    private suspend fun generarPdfDesdeHtml(html: String): Pair<ByteArray, String> {
+        val zone = ZoneId.of("America/Mexico_City")
+        val now = ZonedDateTime.now(zone)
+        val baseName = "reporte " + now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm"))
+        val bodyJson = JSONObject().apply {
+            put("html", html)
+            put("filename", baseName)
+        }
+        val body = bodyJson.toString().toRequestBody("application/json".toMediaType())
+        val request = Request.Builder()
+            .url("https://bit.cs3.mx/api/v1/utils/html-to-pdf/")
+            .post(body)
+            .addHeader("Content-Type", "application/json")
+            .build()
+        val response = withContext(Dispatchers.IO) { httpClient().newCall(request).execute() }
+        response.use { r ->
+            if (!r.isSuccessful) throw IllegalStateException("Error ${r.code}")
+            val bytes = r.body?.bytes() ?: ByteArray(0)
+            if (bytes.isEmpty()) throw IllegalStateException("El PDF generado está vacío")
+            return bytes to baseName
+        }
+    }
+
+    private suspend fun solicitarReporteHtml(userPrompt: String): String {
+        val json = JSONObject().apply { put("userprompt", userPrompt) }
+        val body = json.toString().toRequestBody("application/json".toMediaType())
+        val request = Request.Builder()
+            .url("https://agente.cs3.mx/webhook/wrapnove")
+            .post(body)
+            .addHeader("Content-Type", "application/json")
+            .build()
+        val response = withContext(Dispatchers.IO) { httpClient().newCall(request).execute() }
+        response.use { r ->
+            if (!r.isSuccessful) throw IllegalStateException("Error ${r.code}")
+            return r.body?.string() ?: ""
         }
     }
 }
+
+data class ComentarioAdjunto(
+    val bytes: ByteArray,
+    val fileName: String,
+    val mimeType: String
+)
 
 class NovedadesViewModelFactory(
     private val prefs: SessionPreferences,
