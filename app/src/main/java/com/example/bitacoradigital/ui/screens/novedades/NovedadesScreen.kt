@@ -73,7 +73,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallTopAppBar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -83,7 +82,6 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -125,6 +123,7 @@ import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.math.abs
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
 @RequiresApi(Build.VERSION_CODES.O)
 enum class FilterType { HORA, FECHA, AUTOR, CONTENIDO }
@@ -166,7 +165,6 @@ fun NovedadesScreen(
     val puedePublicar = "Publicar Novedad" in permisos
     val puedeReporteIA = "Reporte con IA" in permisos
 
-
     var filterText by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf(FilterType.CONTENIDO) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -180,10 +178,10 @@ fun NovedadesScreen(
                 FilterType.FECHA, FilterType.HORA -> n.fecha_creacion.contains(filterText, true)
                 FilterType.CONTENIDO -> n.contenido.contains(filterText, true)
             }
-            val children = n.respuestas.mapNotNull { filtrar(it) }
+            val children = n.respuestas.mapNotNull(::filtrar)
             return if (match || children.isNotEmpty()) n.copy(respuestas = children) else null
         }
-            if (filterText.isBlank()) comentarios else comentarios.mapNotNull { filtrar(it) }
+        if (filterText.isBlank()) comentarios else comentarios.mapNotNull(::filtrar)
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -206,7 +204,9 @@ fun NovedadesScreen(
     var showCtpatDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-    val showScrollToTop by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0 } }
+    val showScrollToTop by remember {
+        derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0 }
+    }
 
     val imageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -268,9 +268,18 @@ fun NovedadesScreen(
         }
     }
 
+    var mentionExpanded by remember { mutableStateOf(false) }
+    var mentionQuery by remember { mutableStateOf("") }
+    var mentionRange by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    val mentionOptions = remember { listOf("ia", "asistencia") }
+    val filteredMentionOptions = remember(mentionQuery) {
+        if (mentionQuery.isBlank()) mentionOptions
+        else mentionOptions.filter { it.startsWith(mentionQuery, ignoreCase = true) }
+    }
+
     Scaffold(
         topBar = {
-            SmallTopAppBar(
+            TopAppBar(
                 title = { Text("Novedades") },
                 actions = {
                     IconButton(onClick = { navController.navigate("destacados") }) {
@@ -396,7 +405,7 @@ fun NovedadesScreen(
                             .fillMaxWidth()
                     ) {
                         LazyColumn(
-                            state = rememberLazyListState().also { _ -> },
+                            state = listState,
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
@@ -421,12 +430,65 @@ fun NovedadesScreen(
                 }
             }
             if (puedePublicar) {
-                OutlinedTextField(
-                    value = nuevo,
-                    onValueChange = { nuevo = it },
-                    label = { Text("Nuevo comentario") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = nuevo,
+                        onValueChange = { value ->
+                            nuevo = value
+                            if (puedeReporteIA) {
+                                val caretIndex = value.length
+                                val atIndex = value.lastIndexOf('@', caretIndex - 1)
+                                if (atIndex >= 0) {
+                                    val preceding = value.getOrNull(atIndex - 1)
+                                    val mentionText = value.substring(atIndex + 1, caretIndex)
+                                    val hasSpace = mentionText.any { it.isWhitespace() }
+                                    if ((preceding == null || preceding.isWhitespace()) && !hasSpace) {
+                                        mentionRange = atIndex to caretIndex
+                                        mentionQuery = mentionText
+                                        mentionExpanded = filteredMentionOptions.isNotEmpty()
+                                    } else {
+                                        mentionRange = null
+                                        mentionExpanded = false
+                                        mentionQuery = ""
+                                    }
+                                } else {
+                                    mentionRange = null
+                                    mentionExpanded = false
+                                    mentionQuery = ""
+                                }
+                            }
+                        },
+                        label = { Text("Nuevo comentario") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    DropdownMenu(
+                        expanded = mentionExpanded && puedeReporteIA && filteredMentionOptions.isNotEmpty(),
+                        onDismissRequest = { mentionExpanded = false }
+                    ) {
+                        filteredMentionOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text("@$option") },
+                                onClick = {
+                                    val range = mentionRange ?: (nuevo.length to nuevo.length)
+                                    val start = range.first
+                                    val end = range.second
+                                    val before = nuevo.substring(0, start)
+                                    val after = if (end <= nuevo.length) nuevo.substring(end) else ""
+                                    nuevo = buildString {
+                                        append(before)
+                                        append("@")
+                                        append(option)
+                                        append(" ")
+                                        append(after)
+                                    }
+                                    mentionExpanded = false
+                                    mentionQuery = ""
+                                    mentionRange = null
+                                }
+                            )
+                        }
+                    }
+                }
                 imagenNueva?.let { uri ->
                     Spacer(Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -491,18 +553,27 @@ fun NovedadesScreen(
                             when {
                                 puedeReporteIA && trimmed.startsWith("@ia") -> {
                                     viewModel.publicarComentarioIA(nuevo, null)
+                                    mentionExpanded = false
+                                    mentionQuery = ""
+                                    mentionRange = null
                                 }
                                 nuevo.contains("@asistencia") -> {
                                     if (imagenNueva != null) {
                                         viewModel.publicarComentario(context, nuevo, imagenNueva, null)
                                         nuevo = ""
                                         imagenNueva = null
+                                        mentionExpanded = false
+                                        mentionQuery = ""
+                                        mentionRange = null
                                     }
                                 }
                                 else -> {
                                     viewModel.publicarComentario(context, nuevo, imagenNueva, null)
                                     nuevo = ""
                                     imagenNueva = null
+                                    mentionExpanded = false
+                                    mentionQuery = ""
+                                    mentionRange = null
                                 }
                             }
                         },
@@ -863,7 +934,7 @@ private val ctpatItems = listOf(
     "Escape (cuerda firme, empaques bien grabados)"
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CtpatDialog(onDismiss: () -> Unit) {
     val estados = remember { ctpatItems.map { mutableStateOf<CtpatEstado?>(null) } }
