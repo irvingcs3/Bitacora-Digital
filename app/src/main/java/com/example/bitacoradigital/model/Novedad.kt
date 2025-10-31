@@ -8,5 +8,6 @@ data class Novedad(
     val fecha_creacion: String,
     val perimetro: Int,
     val padre: Int?,
-    val respuestas: List<Novedad>
+    val respuestas: List<Novedad>,
+    val tipo: String?
 )

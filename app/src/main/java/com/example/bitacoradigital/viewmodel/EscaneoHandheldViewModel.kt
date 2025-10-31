@@ -33,10 +33,16 @@ class EscaneoHandheldViewModel(
     private val prefs: SessionPreferences,
     private val perimetroId: Int,
     private val repo: CheckpointRepository = CheckpointRepository()
+
 ) : ViewModel() {
 
     companion object {
         private const val TAG = "EscaneoHandheld"
+        private const val CHECKPOINT_TORNIQUETES = 89
+        private const val CHECKPOINT_TORNIQUETES_STANCE = 94
+        private const val PERIMETRO_TORNIQUETES_STANCE = 4166
+        private const val PERIMETRO_STANCE = 4378
+        private const val OBTENER_DESTINO_URL = "http://qr.cs3.mx/bite/obtener-destino"
     }
 
     private val _checkpoints = MutableStateFlow<List<Checkpoint>>(emptyList())
@@ -100,21 +106,45 @@ class EscaneoHandheldViewModel(
             networkError.value = null
             try {
                 val token = withContext(Dispatchers.IO) { prefs.sessionToken.first() } ?: return@launch
+
+                // (NUEVO) Consultar destino para decidir si aplicamos override específico 94 -> 89
+                val destinoInfo = withContext(Dispatchers.IO) { consultarDestino(codigo) }
+
+// Override SÓLO si sel=94 y destino=Stance (independiente del perimetroId actual)
+                val checkpointIdForRequest = obtenerCheckpointOverrideStance(
+                    checkpointSeleccionadoId = checkpoint.checkpoint_id,
+                    destinoInfo = destinoInfo,
+                    codigo = codigo
+                ) ?: checkpoint.checkpoint_id
+
+                Log.d(TAG, "Override check: sel=${checkpoint.checkpoint_id} destinoId=${destinoInfo?.destinoId} " +
+                        "destNom=${destinoInfo?.nombreDestino} final=$checkpointIdForRequest")
+
+
                 val json = JSONObject().apply {
                     put("codigo", codigo)
-                    put("checkpoint", checkpoint.checkpoint_id)
+                    put("checkpoint", checkpointIdForRequest)
                     put("x-session-token", token)
                 }
                 val body = json.toString().toRequestBody("application/json".toMediaType())
+
+                Log.d(
+                    TAG,
+                    "Enviando handheld codigo=$codigo checkpoint=$checkpointIdForRequest" +
+                            if (checkpointIdForRequest != checkpoint.checkpoint_id) " (override 94->89)" else ""
+                )
+
                 val client = OkHttpClient.Builder()
                     .connectTimeout(5, TimeUnit.SECONDS)
                     .readTimeout(5, TimeUnit.SECONDS)
                     .build()
+
                 val urls = listOf(
                     "http://192.168.2.200:3000/api/qr/leer",
                     "http://192.168.9.200:3000/api/qr/leer",
                     "http://192.168.100.8:3000/api/qr/leer"
                 )
+
                 var response: okhttp3.Response? = null
                 for (url in urls) {
                     try {
@@ -124,19 +154,22 @@ class EscaneoHandheldViewModel(
                             .addHeader("Content-Type", "application/json")
                             .build()
                         response = withContext(Dispatchers.IO) { client.newCall(req).execute() }
-                        break
+                        break // primera que responda, salimos
                     } catch (_: Exception) {
                         // Intentar siguiente URL en caso de timeout o fallo de conexión
                     }
                 }
+
                 val resp = response ?: run {
                     networkError.value = "Este modulo esta unicamente pensado para redes internas de Lomas Country"
                     return@launch
                 }
+
                 resp.use {
                     val resStr = withContext(Dispatchers.IO) { it.body?.string() }
                     Log.d(TAG, "Respuesta: $resStr")
                     val obj = JSONObject(resStr ?: "{}")
+
                     val estado = obj.optString("estado", null)
                     val detalle = obj.optJSONObject("detalle")
                     val estadoDetalle = detalle?.optString("estado")
@@ -145,6 +178,7 @@ class EscaneoHandheldViewModel(
                         !estadoDetalle.isNullOrBlank() -> estadoDetalle
                         else -> obj.optString("error", "error")
                     }
+
                     obj.optString("crop")?.takeIf { it.isNotBlank() }?.let { base ->
                         val bytes = Base64.decode(base, Base64.DEFAULT)
                         imagenCrop.value = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
@@ -163,6 +197,67 @@ class EscaneoHandheldViewModel(
         _resultado.value = null
         imagenCrop.value = null
         mostrandoImagen.value = false
+    }
+    // === Helpers para detectar destino y aplicar override 94 -> 89 (caso específico) ===
+
+    private data class DestinoLookup(
+        val ok: Boolean,
+        val destinoId: Int?,
+        val nombreDestino: String?,
+        val error: String?
+    )
+
+    private suspend fun consultarDestino(codigo: String): DestinoLookup? {
+        val json = JSONObject().apply { put("codigo", codigo) }
+        val body = json.toString().toRequestBody("application/json".toMediaType())
+        val request = Request.Builder()
+            .url(OBTENER_DESTINO_URL)
+            .post(body)
+            .addHeader("Content-Type", "application/json")
+            .build()
+        val client = OkHttpClient()
+
+        return withContext(Dispatchers.IO) {
+            try {
+                client.newCall(request).execute().use { resp ->
+                    val responseBody = resp.body?.string()
+                    Log.d(TAG, "obtener-destino handheld (${resp.code}): $responseBody")
+                    if (responseBody.isNullOrBlank()) null
+                    else {
+                        val obj = JSONObject(responseBody)
+                        DestinoLookup(
+                            ok = obj.optBoolean("ok"),
+                            destinoId = if (obj.has("destino")) obj.optInt("destino") else null,
+                            nombreDestino = obj.optString("nombre_destino", null).takeIf { !it.isNullOrBlank() },
+                            error = obj.optString("error", null).takeIf { !it.isNullOrBlank() }
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error consultando obtener-destino (handheld)", e)
+                null
+            }
+        }
+    }
+
+    private fun obtenerCheckpointOverrideStance(
+        checkpointSeleccionadoId: Int,
+        destinoInfo: DestinoLookup?,
+        codigo: String
+    ): Int? {
+        // Solo si el operador seleccionó Torniquetes-Stance (94)
+        if (checkpointSeleccionadoId != CHECKPOINT_TORNIQUETES_STANCE) return null
+
+        val info = destinoInfo ?: return null
+        if (!info.ok) return null
+
+        // Detectar que el QR sea de destino "Stance"
+        val esStancePorNombre = info.nombreDestino?.equals("stance", ignoreCase = true) == true
+        val esStance = (info.destinoId == PERIMETRO_STANCE) || esStancePorNombre
+        if (!esStance) return null
+
+        Log.d(TAG, "Override handheld 94 -> 89 aplicado para QR $codigo")
+        return CHECKPOINT_TORNIQUETES
     }
 }
 

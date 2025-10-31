@@ -30,12 +30,12 @@ class RegistroQRViewModel(
 
     companion object {
         private const val TAG = "RegistroQR"
+        private const val CHECKPOINT_TORNIQUETES = 89
         private const val PERIMETRO_TORNIQUETES_STANCE = 4166
         private const val PERIMETRO_STANCE = 4378
         private const val OBTENER_DESTINO_URL = "http://qr.cs3.mx/bite/obtener-destino"
     }
 
-    private val stancePrimerOverrideAplicado = mutableSetOf<String>()
 
     private val _checkpoints = MutableStateFlow<List<Checkpoint>>(emptyList())
     val checkpoints: StateFlow<List<Checkpoint>> = _checkpoints.asStateFlow()
@@ -108,12 +108,12 @@ class RegistroQRViewModel(
             _error.value = null
             try {
                 val destinoInfo = consultarDestino(codigo)
-                val forzarPrimerDestino = debeForzarPrimerDestinoStance(destinoInfo, codigo)
-                val checkpointIdForRequest = if (forzarPrimerDestino) {
-                    PERIMETRO_TORNIQUETES_STANCE
-                } else {
-                    checkpoint.checkpoint_id
-                }
+                val checkpointOverride = obtenerCheckpointOverrideStance(
+                    destinoInfo = destinoInfo,
+                    codigo = codigo,
+                    checkpointSeleccionadoId = checkpoint.checkpoint_id
+                )
+                val checkpointIdForRequest = checkpointOverride ?: checkpoint.checkpoint_id
 
                 val json = JSONObject().apply {
                     put("codigo", codigo)
@@ -122,7 +122,7 @@ class RegistroQRViewModel(
                 Log.d(
                     TAG,
                     "Enviando codigo $codigo al checkpoint $checkpointIdForRequest" +
-                            if (forzarPrimerDestino) " (override Torniquetes-Stance)" else ""
+                            if (checkpointOverride != null) " (override Torniquetes-Stance)" else ""
                 )
                 Log.d(TAG, "Request body: $json")
                 val body = json.toString().toRequestBody("application/json".toMediaType())
@@ -142,9 +142,6 @@ class RegistroQRViewModel(
                         val estado = obj.optString("estado", null)
                         if (!estado.isNullOrBlank()) {
                             resultado.value = estado
-                            if (forzarPrimerDestino) {
-                                registrarPrimerOverrideTorniquetesStance(codigo)
-                            }
                             if (estado == "valido") {
                                 obj.optJSONArray("siguiente_checkpoints")?.let { arr ->
                                     if (arr.length() > 0) {
@@ -261,26 +258,31 @@ class RegistroQRViewModel(
         }
     }
 
-    private fun debeForzarPrimerDestinoStance(destinoInfo: DestinoLookup?, codigo: String): Boolean {
-        if (perimetroId != PERIMETRO_TORNIQUETES_STANCE) return false
-        val info = destinoInfo ?: return false
+    private fun obtenerCheckpointOverrideStance(
+        destinoInfo: DestinoLookup?,
+        codigo: String,
+        checkpointSeleccionadoId: Int
+    ): Int? {
+        // Caso ESTRICTO: solo cuando estás en el perimetro Torniquetes-Stance
+        if (perimetroId != PERIMETRO_TORNIQUETES_STANCE) return null
+
+        // Solo si físicamente seleccionaste Torniquetes-Stance (94)
+        if (checkpointSeleccionadoId != 94) return null
+
+        val info = destinoInfo ?: return null
         if (!info.ok) {
             info.error?.let { Log.w(TAG, "Destino no disponible para $codigo: $it") }
-            return false
+            return null
         }
+        // Detectar destino "Stance" por ID o por nombre
         val esStanceNombre = info.nombreDestino?.equals("stance", ignoreCase = true) == true
-        val esStance = info.destinoId == PERIMETRO_STANCE || esStanceNombre
-        if (!esStance) return false
-        if (stancePrimerOverrideAplicado.contains(codigo)) {
-            Log.d(TAG, "QR $codigo ya aplico override inicial de Torniquetes-Stance anteriormente")
-            return false
-        }
-        Log.d(TAG, "Aplicando override inicial de Torniquetes-Stance para QR $codigo")
-        return true
-    }
+        val esStance = (info.destinoId == PERIMETRO_STANCE) || esStanceNombre
+        if (!esStance) return null
 
-    private fun registrarPrimerOverrideTorniquetesStance(codigo: String) {
-        stancePrimerOverrideAplicado.add(codigo)
+        // En la ruta Stance, los pasos en Torniquetes ocurren solo al inicio y al final.
+        // Por eso podemos forzar 89 (Torniquetes) siempre que el seleccionado sea 94.
+        Log.d(TAG, "Aplicando override Torniquetes-Stance -> Torniquetes (94 -> 89) para QR $codigo")
+        return CHECKPOINT_TORNIQUETES
     }
 
     private data class DestinoLookup(
