@@ -58,6 +58,8 @@ open class RegistroVisitaViewModel(
     // Datos recolectados
     var telefono = MutableStateFlow("")
     var numeroVerificado = MutableStateFlow(false)
+    private val _telefonoSeleccionDesdeLista = MutableStateFlow(false)
+    val telefonoSeleccionDesdeLista: StateFlow<Boolean> = _telefonoSeleccionDesdeLista
 
     private val _codigoErrorCredencial = MutableStateFlow<Int?>(null)
     val codigoErrorCredencial: StateFlow<Int?> = _codigoErrorCredencial
@@ -195,6 +197,7 @@ open class RegistroVisitaViewModel(
         _pasoActual.value = 1
         telefono.value = ""
         numeroVerificado.value = false
+        _telefonoSeleccionDesdeLista.value = false
         tipoDocumento.value = null
         fotoDocumentoUri.value = null
         documentoUri.value = null
@@ -217,6 +220,10 @@ open class RegistroVisitaViewModel(
         _codigoErrorCredencial.value = null
         registroCompleto.value = false
 
+    }
+
+    protected fun marcarTelefonoSeleccionadoDesdeLista(desdeLista: Boolean) {
+        _telefonoSeleccionDesdeLista.value = desdeLista
     }
     val nivelesDestino = MutableStateFlow<List<NivelDestino>>(emptyList())
     val seleccionDestino = MutableStateFlow<Map<Int, OpcionDestino>>(emptyMap())
@@ -649,8 +656,13 @@ open class RegistroVisitaViewModel(
                                             "ine.jpg",
                                             bytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
                                         ).build()
+                                    val qrEndpoint = if (telefonoSeleccionDesdeLista.value) {
+                                        "http://qr.cs3.mx/bite/enviar-qr-id-ws/"
+                                    } else {
+                                        "http://qr.cs3.mx/bite/enviar-qr-id-mws/"
+                                    }
                                     val qrRequest = Request.Builder()
-                                        .url("http://qr.cs3.mx/bite/enviar-qr-id-ws/")
+                                        .url(qrEndpoint)
                                         .post(req)
                                         .build()
                                     val qrClient = OkHttpClient.Builder()
