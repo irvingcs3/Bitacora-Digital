@@ -329,6 +329,9 @@ open class RegistroVisitaViewModel(
     private val _cargandoRegistro = MutableStateFlow(false)
     val cargandoRegistro: StateFlow<Boolean> = _cargandoRegistro
 
+    protected open fun obtenerRegistroEndpoints(): List<String> =
+        listOf("https://bit.cs3.mx/api/v1/registro-visita/")
+
     fun cargarJerarquiaDestino() {
         viewModelScope.launch {
             _cargandoDestino.value = true
@@ -600,14 +603,7 @@ open class RegistroVisitaViewModel(
 
 
                 val mediaType = "application/json; charset=utf-8".toMediaType()
-                val body = json.toString().toRequestBody(mediaType)
-
-                val request = Request.Builder()
-                    .url("https://bit.cs3.mx/api/v1/registro-visita/")
-                    .post(body)
-                    .addHeader("x-session-token", token)
-                    .addHeader("Content-Type", "application/json")
-                    .build()
+                val jsonPayload = json.toString()
 
                 val client = OkHttpClient.Builder()
                     .connectTimeout(60, TimeUnit.SECONDS)
@@ -615,18 +611,85 @@ open class RegistroVisitaViewModel(
                     .writeTimeout(60, TimeUnit.SECONDS)
                     .callTimeout(60, TimeUnit.SECONDS)
                     .build()
-                val response = withContext(Dispatchers.IO) {
-                    client.newCall(request).execute()
+                val endpoints = obtenerRegistroEndpoints()
+                var registroExitoso = false
+                var respuestaRegistroBody: String? = null
+                var endpointExitoso: String? = null
+                var ultimoCodigoError: Int? = null
+                var ultimoErrorBody: String? = null
+                var ultimaExcepcion: Exception? = null
+                var ultimoTimeout: SocketTimeoutException? = null
+
+                for (endpoint in endpoints) {
+                    try {
+                        Log.d("RegistroVisita", "Intentando registrar visita en endpoint: $endpoint")
+                        val request = Request.Builder()
+                            .url(endpoint)
+                            .post(jsonPayload.toRequestBody(mediaType))
+                            .addHeader("x-session-token", token)
+                            .addHeader("Content-Type", "application/json")
+                            .build()
+                        val response = withContext(Dispatchers.IO) {
+                            client.newCall(request).execute()
+                        }
+
+                        response.use { resp ->
+                            Log.d(
+                                "RegistroVisita",
+                                "Respuesta HTTP: ${resp.code} desde endpoint $endpoint"
+                            )
+                            if (resp.isSuccessful) {
+                                respuestaRegistroBody = withContext(Dispatchers.IO) { resp.body?.string() }
+                                endpointExitoso = endpoint
+                                registroExitoso = true
+                                return@use
+                            } else {
+                                ultimoCodigoError = resp.code
+                                ultimoErrorBody = withContext(Dispatchers.IO) { resp.body?.string() }
+                                Log.w(
+                                    "RegistroVisita",
+                                    "Registro fallido en endpoint $endpoint (${resp.code}): $ultimoErrorBody"
+                                )
+                            }
+                        }
+
+                        if (registroExitoso) {
+                            break
+                        }
+                    } catch (e: SocketTimeoutException) {
+                        Log.e(
+                            "RegistroVisita",
+                            "Timeout intentando registrar visita en endpoint $endpoint",
+                            e
+                        )
+                        ultimoTimeout = e
+                    } catch (e: Exception) {
+                        Log.e(
+                            "RegistroVisita",
+                            "Error intentando registrar visita en endpoint $endpoint",
+                            e
+                        )
+                        ultimaExcepcion = e
+                    }
                 }
 
-                response.use { resp ->
+                if (!registroExitoso) {
+                    ultimoTimeout?.let { throw it }
+                    ultimaExcepcion?.let { throw it }
+                    val codigo = ultimoCodigoError
+                    val errorBody = ultimoErrorBody
+                    Log.e(
+                        "RegistroVisita",
+                        "Error en el registro${codigo?.let { " ($it)" } ?: ""}: $errorBody"
+                    )
+                    _errorDestino.value = "Registro fallido: ${codigo ?: "sin respuesta"}"
+                    return@launch
+                }
 
-                    Log.d("RegistroVisita", "Respuesta HTTP: ${resp.code}")
-
-
-                    if (resp.isSuccessful) {
-                        val bodyStr = withContext(Dispatchers.IO) { resp.body?.string() }
-                        Log.d("RegistroVisita", "Registro exitoso: $bodyStr")
+                Log.d(
+                    "RegistroVisita",
+                    "Registro exitoso desde endpoint $endpointExitoso: $respuestaRegistroBody"
+                )
 
                         // Enviar QR y whatsapp solo para registros normales
                         val personaId = if (isLomasCountry) {
@@ -698,18 +761,12 @@ open class RegistroVisitaViewModel(
                             }
                         }
 
-                        respuestaRegistro.value = qrMsg ?: bodyStr
+                        respuestaRegistro.value = qrMsg ?: respuestaRegistroBody
                         if (!isLomasCountry) {
                             qrBitmap.value = qrImg
                         }
                         registroCompleto.value = true
                         success = true
-                    } else {
-                        val errorBody = withContext(Dispatchers.IO) { resp.body?.string() }
-                        Log.e("RegistroVisita", "Error en el registro: $errorBody")
-                        _errorDestino.value = "Registro fallido: ${resp.code}"
-                    }
-                }
 
             } catch (e: SocketTimeoutException) {
                 Log.e("RegistroVisita", "Timeout en el registro", e)
