@@ -703,8 +703,18 @@ open class RegistroVisitaViewModel(
                             ?: if (isLomasCountry) fotosAdicionales.value.firstOrNull() else null
                         var qrMsg: String? = null
                         var qrImg: Bitmap? = if (isLomasCountry) qrBitmap.value else null
-                        if (!isLomasCountry && ineUri != null) {
+                        if (ineUri != null) {
                             try {
+                                val envioDesdeLista = telefonoSeleccionDesdeLista.value
+                                val metodoEnvio = if (envioDesdeLista) {
+                                    "selección desde lista"
+                                } else {
+                                    "captura manual"
+                                }
+                                Log.d(
+                                    "RegistroVisita",
+                                    "Preparando envío de QR utilizando método de $metodoEnvio"
+                                )
                                 val bytes = withContext(Dispatchers.IO) {
                                     context.contentResolver.openInputStream(ineUri)?.use { it.readBytes() }
                                 }
@@ -719,16 +729,16 @@ open class RegistroVisitaViewModel(
                                             "ine.jpg",
                                             bytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
                                         ).build()
-                                    val qrEndpoint = if (telefonoSeleccionDesdeLista.value) {
+                                    val qrEndpoint = if (envioDesdeLista) {
                                         Log.d(
                                             "RegistroVisita",
-                                            "Enviando solicitud de QR desde el endpoint enviar-qr-id-ws"
+                                            "Identificado método por lista, usando endpoint enviar-qr-id-ws"
                                         )
                                         "http://qr.cs3.mx/bite/enviar-qr-id-ws/"
                                     } else {
                                         Log.d(
                                             "RegistroVisita",
-                                            "Enviando solicitud de QR desde el endpoint enviar-qr-id-mws"
+                                            "Identificado método manual, usando endpoint enviar-qr-id-mws"
                                         )
                                         "http://qr.cs3.mx/bite/enviar-qr-id-mws/"
                                     }
@@ -742,8 +752,15 @@ open class RegistroVisitaViewModel(
                                         .writeTimeout(0, TimeUnit.MILLISECONDS)
                                         .callTimeout(0, TimeUnit.MILLISECONDS)
                                         .build()
+                                    Log.d(
+                                        "RegistroVisita",
+                                        "Enviando solicitud de QR hacia $qrEndpoint"
+                                    )
                                     val qrResp = withContext(Dispatchers.IO) { qrClient.newCall(qrRequest).execute() }
-                                    Log.d("RegistroVisita", "Respuesta del endpoint seleccionado: $qrResp")
+                                    Log.d(
+                                        "RegistroVisita",
+                                        "Respuesta HTTP ${qrResp.code} recibida desde $qrEndpoint"
+                                    )
 
                                     qrResp.use { qrR ->
                                         if (qrR.isSuccessful) {
@@ -753,12 +770,31 @@ open class RegistroVisitaViewModel(
                                             val imgBase = qJson.optString("imagen_binaria")
                                             val data = Base64.decode(imgBase, Base64.DEFAULT)
                                             qrImg = BitmapFactory.decodeByteArray(data, 0, data.size)
+                                            Log.d(
+                                                "RegistroVisita",
+                                                "Respuesta exitosa al enviar QR desde $qrEndpoint"
+                                            )
+                                        } else {
+                                            Log.w(
+                                                "RegistroVisita",
+                                                "El endpoint $qrEndpoint respondió con código ${qrR.code}"
+                                            )
                                         }
                                     }
+                                } else {
+                                    Log.w(
+                                        "RegistroVisita",
+                                        "No se pudieron leer los bytes para el envío del QR"
+                                    )
                                 }
                             } catch (e: Exception) {
                                 Log.e("RegistroVisita", "Error QR", e)
                             }
+                        } else {
+                            Log.d(
+                                "RegistroVisita",
+                                "Se omitió el envío de QR porque no se encontró imagen a adjuntar"
+                            )
                         }
 
                         respuestaRegistro.value = qrMsg ?: respuestaRegistroBody
