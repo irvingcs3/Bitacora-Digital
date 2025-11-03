@@ -108,6 +108,7 @@ open class RegistroVisitaViewModel(
                     val payload = JSONObject().apply {
                         put("telefono", telefono.value)
                         idPersona?.let { put("id_persona", it) }
+                        put("seleccion_desde_lista", telefonoSeleccionDesdeLista.value)
                     }
                     val body = payload.toString().toRequestBody("application/json".toMediaType())
                     val request = Request.Builder()
