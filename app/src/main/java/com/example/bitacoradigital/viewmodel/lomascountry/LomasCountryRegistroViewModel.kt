@@ -45,6 +45,10 @@ class LomasCountryRegistroViewModel(
         "http://192.168.8.100:3457/bite/registro/list"
     )
 
+    private val registroEndpoints = telefonosEndpoints.map { endpoint ->
+        endpoint.replace("/list", "/create")
+    }
+
     init {
         iniciarActualizacionTelefonos()
     }
@@ -104,6 +108,10 @@ class LomasCountryRegistroViewModel(
             }
         }
         null
+    }
+
+    override fun obtenerRegistroEndpoints(): List<String> {
+        return registroEndpoints + super.obtenerRegistroEndpoints()
     }
 
     fun prepararRegistroConTelefono(numero: String, desdeLista: Boolean) {
