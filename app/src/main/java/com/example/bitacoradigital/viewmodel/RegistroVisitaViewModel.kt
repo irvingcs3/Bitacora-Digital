@@ -657,8 +657,16 @@ open class RegistroVisitaViewModel(
                                             bytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
                                         ).build()
                                     val qrEndpoint = if (telefonoSeleccionDesdeLista.value) {
+                                        Log.d(
+                                            "RegistroVisita",
+                                            "Enviando solicitud de QR desde el endpoint enviar-qr-id-ws"
+                                        )
                                         "http://qr.cs3.mx/bite/enviar-qr-id-ws/"
                                     } else {
+                                        Log.d(
+                                            "RegistroVisita",
+                                            "Enviando solicitud de QR desde el endpoint enviar-qr-id-mws"
+                                        )
                                         "http://qr.cs3.mx/bite/enviar-qr-id-mws/"
                                     }
                                     val qrRequest = Request.Builder()
@@ -672,8 +680,7 @@ open class RegistroVisitaViewModel(
                                         .callTimeout(0, TimeUnit.MILLISECONDS)
                                         .build()
                                     val qrResp = withContext(Dispatchers.IO) { qrClient.newCall(qrRequest).execute() }
-                                    Log.d("Que esta pasando", "Ayuda: algo mas")
-                                    Log.d("Que esta pasando", "Ayuda: $qrResp")
+                                    Log.d("RegistroVisita", "Respuesta del endpoint seleccionado: $qrResp")
 
                                     qrResp.use { qrR ->
                                         if (qrR.isSuccessful) {
