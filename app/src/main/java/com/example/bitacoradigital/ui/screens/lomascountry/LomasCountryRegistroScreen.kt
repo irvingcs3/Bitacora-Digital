@@ -55,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
@@ -266,6 +267,7 @@ private fun SeleccionTelefonoConLista(
         }
         Spacer(Modifier.height(24.dp))
         val inputDigits = telefono.filter { it.isDigit() }
+        val prefixDigits = if (inputDigits.length >= 4) inputDigits.take(4) else ""
         if (numerosOrdenados.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -293,10 +295,13 @@ private fun SeleccionTelefonoConLista(
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 items(numerosOrdenados) { numero ->
-                    val isExactMatch = numero.filter { it.isDigit() } == inputDigits && inputDigits.isNotEmpty()
+                    val digits = numero.filter { it.isDigit() }
+                    val isExactMatch = digits == inputDigits && inputDigits.isNotEmpty()
+                    val hasPrefixMatch = prefixDigits.isNotEmpty() && digits.startsWith(prefixDigits)
                     NumeroWhatsAppCard(
                         numero = numero,
-                        isMatch = isExactMatch,
+                        isExactMatch = isExactMatch,
+                        hasPrefixMatch = hasPrefixMatch,
                         onClick = { onTelefonoSeleccionado(numero) }
                     )
                 }
@@ -324,41 +329,48 @@ private fun SeleccionTelefonoConLista(
 private fun NumeroWhatsAppCard(
     numero: String,
     modifier: Modifier = Modifier,
-    isMatch: Boolean = false,
+    isExactMatch: Boolean = false,
+    hasPrefixMatch: Boolean = false,
     onClick: () -> Unit,
 ) {
     val formatted = remember(numero) { formatNumeroLegible(numero) }
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.97f else 1f, label = "numero_card_scale")
-    val infiniteTransition = rememberInfiniteTransition(label = "numero_card_blink")
-    val blinkAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.4f,
+    val infiniteTransition = rememberInfiniteTransition(label = "numero_card_pulse")
+    val pulseProgress by infiniteTransition.animateFloat(
+        initialValue = 0.35f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 600, easing = LinearEasing),
+            animation = tween(durationMillis = 700, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "numero_card_blink_alpha"
+        label = "numero_card_pulse_alpha"
     )
-    val highlightColor = MaterialTheme.colorScheme.primaryContainer
+    val highlightActive = hasPrefixMatch || isExactMatch
+    val highlightColor = Color(0xFFFF1744)
     val defaultColor = MaterialTheme.colorScheme.surface
+    val animatedHighlight = lerp(highlightColor.copy(alpha = 0.6f), highlightColor, pulseProgress)
     val targetColor = when {
         pressed -> highlightColor
-        isMatch -> lerp(highlightColor.copy(alpha = 0.6f), highlightColor, blinkAlpha)
+        highlightActive -> lerp(defaultColor, animatedHighlight, 0.85f)
         else -> defaultColor
     }
     val containerColor by animateColorAsState(targetColor, label = "numero_card_color")
-    val contentColor = if (pressed || isMatch) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-    val borderAlpha = if (isMatch) blinkAlpha else 0f
+    val contentColor = if (pressed || highlightActive) Color.White else MaterialTheme.colorScheme.onSurface
+    val borderColor = when {
+        pressed -> highlightColor
+        highlightActive -> highlightColor.copy(alpha = pulseProgress)
+        else -> Color.Transparent
+    }
     val tonalElevation = when {
         pressed -> 12.dp
-        isMatch -> 10.dp
+        highlightActive -> 10.dp
         else -> 6.dp
     }
     val shadowElevation = when {
         pressed -> 12.dp
-        isMatch -> 10.dp
+        highlightActive -> 10.dp
         else -> 6.dp
     }
 
@@ -377,7 +389,7 @@ private fun NumeroWhatsAppCard(
             .clip(RoundedCornerShape(24.dp))
             .border(
                 width = 2.dp,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = borderAlpha),
+                color = borderColor,
                 shape = RoundedCornerShape(24.dp)
             )
             .clickable(
