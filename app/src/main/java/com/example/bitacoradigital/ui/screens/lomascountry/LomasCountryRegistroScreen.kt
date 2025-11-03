@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -40,16 +41,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardOptions
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.bitacoradigital.data.SessionPreferences
@@ -114,11 +119,39 @@ private fun LomasCountryRegistroContent(
                 transitionSpec = { fadeIn() togetherWith fadeOut() }
             ) { verified ->
                 if (!verified) {
-                    TelefonosDisponiblesSection(
+                    var verificandoNumero by remember { mutableStateOf(false) }
+                    var verificacionError by remember { mutableStateOf<String?>(null) }
+
+                    SeleccionTelefonoConLista(
+                        telefono = telefono,
                         telefonos = telefonosDisponibles,
-                        error = errorTelefonos,
-                        modifier = Modifier.fillMaxSize(),
-                        onTelefonoSelected = { numero ->
+                        errorTelefonos = errorTelefonos,
+                        verificando = verificandoNumero,
+                        verificacionError = verificacionError,
+                        onTelefonoChange = { nuevo ->
+                            viewModel.telefono.value = nuevo
+                            verificacionError = null
+                        },
+                        onVerificarTelefono = {
+                            val numeroActual = viewModel.telefono.value.filter { it.isDigit() }
+                            if (numeroActual.isBlank()) {
+                                verificacionError = "Ingresa un número válido"
+                                return@SeleccionTelefonoConLista
+                            }
+                            viewModel.telefono.value = numeroActual
+                            coroutineScope.launch {
+                                verificandoNumero = true
+                                verificacionError = null
+                                val existe = viewModel.verificarNumeroWhatsApp(numeroActual)
+                                if (existe) {
+                                    viewModel.prepararRegistroConTelefono(numeroActual)
+                                } else {
+                                    verificacionError = "Número inválido o no verificado en WhatsApp"
+                                }
+                                verificandoNumero = false
+                            }
+                        },
+                        onTelefonoSeleccionado = { numero ->
                             viewModel.prepararRegistroConTelefono(numero)
                             coroutineScope.launch {
                                 snackbarHostState.currentSnackbarData?.dismiss()
@@ -157,30 +190,74 @@ private fun LomasCountryRegistroContent(
 }
 
 @Composable
-private fun TelefonosDisponiblesSection(
+private fun SeleccionTelefonoConLista(
+    telefono: String,
     telefonos: List<String>,
-    error: String?,
-    modifier: Modifier = Modifier,
-    onTelefonoSelected: (String) -> Unit,
+    errorTelefonos: String?,
+    verificando: Boolean,
+    verificacionError: String?,
+    onTelefonoChange: (String) -> Unit,
+    onVerificarTelefono: () -> Unit,
+    onTelefonoSeleccionado: (String) -> Unit,
 ) {
+    val numerosOrdenados = remember(telefono, telefonos) {
+        val input = telefono.filter { it.isDigit() }
+        if (input.isBlank()) {
+            telefonos
+        } else {
+            val normalizados = telefonos.map { numero ->
+                numero to numero.filter { it.isDigit() }
+            }
+            val (exactos, restantes) = normalizados.partition { it.second == input }
+            val (coinciden, otros) = restantes.partition { it.second.contains(input) }
+            (exactos + coinciden + otros).map { it.first }
+        }
+    }
+
     Column(
-        modifier = modifier,
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Selecciona el número de WhatsApp",
+            text = "Verifica o selecciona el número de WhatsApp",
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            text = "La lista se actualiza automáticamente.",
+            text = "Puedes escribir el número manualmente o elegirlo de la lista.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(24.dp))
-        if (telefonos.isEmpty()) {
+        OutlinedTextField(
+            value = telefono,
+            onValueChange = onTelefonoChange,
+            label = { Text("Número de WhatsApp") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(16.dp))
+        Button(
+            onClick = onVerificarTelefono,
+            enabled = !verificando,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(if (verificando) "Verificando..." else "Verificar número")
+        }
+        verificacionError?.let { msg ->
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = msg,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center
+            )
+        }
+        Spacer(Modifier.height(24.dp))
+        if (numerosOrdenados.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -206,10 +283,10 @@ private fun TelefonosDisponiblesSection(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
-                items(telefonos) { numero ->
+                items(numerosOrdenados) { numero ->
                     NumeroWhatsAppCard(
                         numero = numero,
-                        onClick = { onTelefonoSelected(numero) }
+                        onClick = { onTelefonoSeleccionado(numero) }
                     )
                 }
             }
@@ -220,7 +297,7 @@ private fun TelefonosDisponiblesSection(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        error?.let { msg ->
+        errorTelefonos?.let { msg ->
             Spacer(Modifier.height(12.dp))
             Text(
                 text = msg,
