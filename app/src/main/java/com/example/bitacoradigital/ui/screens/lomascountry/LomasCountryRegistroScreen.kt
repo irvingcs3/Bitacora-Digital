@@ -2,11 +2,18 @@ package com.example.bitacoradigital.ui.screens.lomascountry
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -49,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.font.FontWeight
@@ -144,7 +152,7 @@ private fun LomasCountryRegistroContent(
                                 verificacionError = null
                                 val existe = viewModel.verificarNumeroWhatsApp(numeroActual)
                                 if (existe) {
-                                    viewModel.prepararRegistroConTelefono(numeroActual)
+                                    viewModel.prepararRegistroConTelefono(numeroActual, false)
                                 } else {
                                     verificacionError = "Número inválido o no verificado en WhatsApp"
                                 }
@@ -152,7 +160,7 @@ private fun LomasCountryRegistroContent(
                             }
                         },
                         onTelefonoSeleccionado = { numero ->
-                            viewModel.prepararRegistroConTelefono(numero)
+                            viewModel.prepararRegistroConTelefono(numero, true)
                             coroutineScope.launch {
                                 snackbarHostState.currentSnackbarData?.dismiss()
                                 snackbarHostState.showSnackbar(
@@ -257,6 +265,7 @@ private fun SeleccionTelefonoConLista(
             )
         }
         Spacer(Modifier.height(24.dp))
+        val inputDigits = telefono.filter { it.isDigit() }
         if (numerosOrdenados.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -284,8 +293,10 @@ private fun SeleccionTelefonoConLista(
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 items(numerosOrdenados) { numero ->
+                    val isExactMatch = numero.filter { it.isDigit() } == inputDigits && inputDigits.isNotEmpty()
                     NumeroWhatsAppCard(
                         numero = numero,
+                        isMatch = isExactMatch,
                         onClick = { onTelefonoSeleccionado(numero) }
                     )
                 }
@@ -313,24 +324,50 @@ private fun SeleccionTelefonoConLista(
 private fun NumeroWhatsAppCard(
     numero: String,
     modifier: Modifier = Modifier,
+    isMatch: Boolean = false,
     onClick: () -> Unit,
 ) {
     val formatted = remember(numero) { formatNumeroLegible(numero) }
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.97f else 1f, label = "numero_card_scale")
-    val containerColor by animateColorAsState(
-        targetValue = if (pressed) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-        label = "numero_card_color"
+    val infiniteTransition = rememberInfiniteTransition(label = "numero_card_blink")
+    val blinkAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.4f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 600, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "numero_card_blink_alpha"
     )
-    val contentColor = if (pressed) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+    val highlightColor = MaterialTheme.colorScheme.primaryContainer
+    val defaultColor = MaterialTheme.colorScheme.surface
+    val targetColor = when {
+        pressed -> highlightColor
+        isMatch -> lerp(highlightColor.copy(alpha = 0.6f), highlightColor, blinkAlpha)
+        else -> defaultColor
+    }
+    val containerColor by animateColorAsState(targetColor, label = "numero_card_color")
+    val contentColor = if (pressed || isMatch) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+    val borderAlpha = if (isMatch) blinkAlpha else 0f
+    val tonalElevation = when {
+        pressed -> 12.dp
+        isMatch -> 10.dp
+        else -> 6.dp
+    }
+    val shadowElevation = when {
+        pressed -> 12.dp
+        isMatch -> 10.dp
+        else -> 6.dp
+    }
 
     Surface(
         color = containerColor,
         contentColor = contentColor,
         shape = RoundedCornerShape(24.dp),
-        tonalElevation = if (pressed) 12.dp else 6.dp,
-        shadowElevation = if (pressed) 12.dp else 6.dp,
+        tonalElevation = tonalElevation,
+        shadowElevation = shadowElevation,
         modifier = modifier
             .fillMaxWidth()
             .graphicsLayer {
@@ -338,6 +375,11 @@ private fun NumeroWhatsAppCard(
                 scaleY = scale
             }
             .clip(RoundedCornerShape(24.dp))
+            .border(
+                width = 2.dp,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = borderAlpha),
+                shape = RoundedCornerShape(24.dp)
+            )
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,

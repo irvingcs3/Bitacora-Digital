@@ -106,12 +106,13 @@ class LomasCountryRegistroViewModel(
         null
     }
 
-    fun prepararRegistroConTelefono(numero: String) {
+    fun prepararRegistroConTelefono(numero: String, desdeLista: Boolean) {
         val limpio = numero.filter { it.isDigit() }
         reiniciar()
         detenerActualizacionTelefonos()
         telefono.value = limpio
         numeroVerificado.value = true
+        marcarTelefonoSeleccionadoDesdeLista(desdeLista)
         cargarJerarquiaDestino()
     }
 
